@@ -6,6 +6,10 @@ export function createVNode ( type, props, key?, ref? ):VNode {
 	return { type, props, key, ref }
 }
 
+export function cloneVNode ( vnode:VNode ) {
+	return { ...vnode }
+}
+
 export function h ( type, props, ...children ) {
 	// Extract key and ref from props
 	const { key, ref, ...nodeProps } = props

@@ -1,6 +1,6 @@
 import {
 	TEXT_NODE_TYPE_NAME, ComponentInstance, RenderDom, RenderFunction,
-	shallowPropsCompare, VNode, VNodeDomType, VTextNode
+	shallowPropsCompare, VNode, VNodeDomType, VTextNode, VNodeOrVNodes
 } from "./index";
 
 // ----------------------------------------------------------------------------- CONSTANTS
@@ -209,15 +209,15 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 				parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			}
 		}
-			// Has key, but not found in old
+		// Has key, but not found in old
 		/** CREATE **/
 		else if ( newChildNode.key && !oldParentKeys[ newChildNode.key ] ) {
 			diffNode( parentDom, newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
 		}
-			// Found at same index, with same type.
-			// Old node does not have a key.
+		// Found at same index, with same type.
+		// Old node does not have a key.
 		/** UPDATE IN PLACE **/
 		else if ( i in oldChildren && oldChildren[ i ].type == newChildNode.type ) {
 			const oldNode = oldChildren[ i ]
@@ -244,27 +244,36 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 
 // ----------------------------------------------------------------------------- DIFF NODE
 
-function diffNode ( parentElement:Element, newNode:VNode, oldNode?:VNode ) {
+const flattenChildren = ( vnode:VNode ) => {
+	// Re-assign flattened array to the original virtual node, and return it
+	const { children } = vnode.props
+	vnode.props.children = children ? children.flat() : []
+	return children
+}
+
+export function diffNode ( parentElement:Element, newNode:VNode, oldNode?:VNode ) {
 	// console.log("-DiffNode", { parentElement, newNode, oldNode })
 	// Transfer component instance from old node to new node
 	let component:ComponentInstance = oldNode?.component
 	// We may need a new component instance
+	let pureFunctionalRenderResult:VNode
 	if ( !component && typeof newNode.type === "function" ) {
-		// Create component instance (without new for better performances)
+		// Create component instance (without new keyword for better performances)
 		component = createComponentInstance( newNode )
 		// Execute component's function and check what is returned
 		_hookedComponent = component;
-		const result = newNode.type.apply( component, [ newNode.props ]);
-		_hookedComponent = null;
-		let resultType = typeof result
-		// This is a factory component
+		const result = newNode.type.apply( component, [ newNode.props ]) // TODO : props proxy
+		_hookedComponent = null
+		// This is a factory component which return a render function
 		if ( typeof result === "function" ) {
-			component.render = result
+			component.render = result as RenderFunction
 			component.isFactory = true
 		}
-		// This is pure functional component which return a text or a virtual node
-		else if ( resultType === "string" || (resultType == "object" && "type" in result) )
+		// This is pure functional component which returns a virtual node
+		else if ( typeof result == "object" && "type" in result ) {
 			component.render = newNode.type as RenderFunction
+			pureFunctionalRenderResult = result
+		}
 	}
 	let dom:RenderDom
 	// Virtual node is a dom element
@@ -276,31 +285,38 @@ function diffNode ( parentElement:Element, newNode:VNode, oldNode?:VNode ) {
 		// TODO : Maybe we can optimize this a do it only when needed, maybe it would be slower tho
 		component.vnode = newNode
 		newNode.component = component
+		// If pure functional component has already been rendered
+		if ( pureFunctionalRenderResult ) {
+			// FIXME : Just inverted the last two with flatten
+			// Apply new children list to the parent component node
+			newNode.props.children = flattenChildren( pureFunctionalRenderResult );
+			// Diff rendered element
+			dom = diffElement( pureFunctionalRenderResult, oldNode )
+		}
 		// FIXME : Is it a good idea to shallow compare props on every changes by component ?
 		// 			-> It seems to be faster than preact + memo with this 👀, check other cases
 		// TODO : Maybe do not shallow by default but check if component got an "optimize" function
 		//			which can be implemented with hooks. We can skip a lot with this !
 		// If props did not changed between old and new
-		if ( !component.isDirty && oldNode && shallowPropsCompare(newNode.props, oldNode.props ) ) {
+		else if ( !component.isDirty && oldNode && shallowPropsCompare(newNode.props, oldNode.props) ) {
 			// Do not re-render, just get children and dom from old node
 			newNode.props.children = oldNode.props.children
 			dom = oldNode.dom
 		}
+		// FIXME : Dry ?
 		else {
 			// FIXME : Cannot implement Fragment with this approach.
 			//  	   Result is VNode and not VNode[] because component.vnode.dom is not an array
-			_hookedComponent = component;
-			const result = component.render.apply( component, [ newNode.props ]);
-			_hookedComponent = null;
-			// Flatten children array for this render
-			if ( result.props.children )
-				result.props.children = result.props.children.flat()
-			// Diff rendered element
-			dom = diffElement( result, oldNode )
+			_hookedComponent = component
+			const renderResult = component.render.apply( component, [ newNode.props ])
+			_hookedComponent = null
+			// FIXME : Just inverted the last two with flatten
 			// Apply new children list to the parent component node
-			newNode.props.children = result.props.children
-			component.isDirty = false;
+			newNode.props.children = flattenChildren( renderResult )
+			// Diff rendered element
+			dom = diffElement( renderResult, oldNode )
 		}
+		component.isDirty = false
 	}
 	// FIXME : Condition it ? Will it change refs ?
 	newNode.dom = dom
