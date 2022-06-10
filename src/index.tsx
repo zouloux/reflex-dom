@@ -1,6 +1,7 @@
 import { h, render } from "./vdom";
 import { ListDemoApp } from "./demos/ListDemoApp";
 import { StatefulDemoApp } from "./demos/StatefulListDemoApp";
+import { trackPerformances } from "./vdom/debug";
 
 /**
  * FEATURES :
@@ -26,16 +27,16 @@ import { StatefulDemoApp } from "./demos/StatefulListDemoApp";
  *      ✔ Remove from the middle
  *  	X✔ Swap
  *  		- Do 2 operations, should do only one
- *   - Keep track of component instances
+ *   ✔ Keep track of component instances
  *   - Remove subtrees recursively
- *   - Sub tree rendering
+ *   ✔ Sub tree rendering
  *   ✔ Rendering optimization (like memo and skip)
  *
  * - Reactive
  *   - Dom refs
  *   - Factory helpers (like hooks), find name and prefix
  *   - Var as let
- *   - States / observers
+ *   ✔ States / observers
  *   - Async states
  *   - Stores
  *
@@ -54,17 +55,15 @@ import { StatefulDemoApp } from "./demos/StatefulListDemoApp";
  * - Advanced Hot Module reloading with state keeping automagically
  */
 
-// -----------------------------------------------------------------------------
-
 
 // -----------------------------------------------------------------------------
 
 let renderIndex = 0
-function init () {
-	const start = performance.now();
+export function init () {
+	const p = trackPerformances("Root rendering")
 	// render( <ListDemoApp render={ init } renderIndex={ renderIndex ++ } />, document.body );
-	render( <StatefulDemoApp render={ init } renderIndex={ renderIndex ++ } />, document.body );
-	console.log(~~(performance.now() - start))
+	render( <StatefulDemoApp render={ init } renderIndex={ renderIndex ++ } /> , document.body );
+	p();
 }
 
 init();

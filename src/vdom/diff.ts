@@ -1,7 +1,8 @@
 import {
 	TEXT_NODE_TYPE_NAME, ComponentInstance, RenderDom, RenderFunction,
-	shallowPropsCompare, VNode, VNodeDomType, VTextNode, VNodeOrVNodes
+	shallowPropsCompare, VNode, VNodeDomType, VTextNode, ComponentFunction, ComponentReturn
 } from "./index";
+import { cloneVNode } from "./jsx";
 
 // ----------------------------------------------------------------------------- CONSTANTS
 
@@ -49,12 +50,16 @@ function setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) {
 
 // Optimize it in a function @see jsx.ts/createVNode()
 function createComponentInstance ( vnode:VNode ):ComponentInstance {
-	return { vnode, isDirty: false }
+	return {
+		vnode,
+		isDirty: false,
+		name: (vnode.type as ComponentFunction).name
+	}
 }
 
 // ----------------------------------------------------------------------------- DIFF ELEMENT
 
-function diffElement ( newNode:VNode, oldNode:VNode ) {
+export function diffElement ( newNode:VNode, oldNode:VNode ) {
 	// console.log("diffElement", newNode, oldNode)
 	const isTextNode = newNode.type == TEXT_NODE_TYPE_NAME
 	// Get dom element from oldNode or create it
@@ -143,6 +148,7 @@ function diffElement ( newNode:VNode, oldNode:VNode ) {
  * @param oldParentNode
  */
 export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
+	// console.log("Diff children", newParentNode, oldParentNode)
 	// Target new and old children.
 	const newChildren = newParentNode.props.children?.flat()
 	const oldChildren = oldParentNode?.props.children?.flat()
@@ -152,15 +158,15 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// Create key array on parent node to register keyed children
 	// This will allow us to find any child by its key directly without
 	// having to search for it
-	newParentNode.keys = {}
+	newParentNode.keys = {} // TODO : Convert to a new Map for better performances
 	const registerKey = c => {
-		if ( c ) newParentNode.keys[ c.key ] = c
+		if ( c?.key ) newParentNode.keys[ c.key ] = c
 	}
 	// This is a new parent node (no old), so no diffing
 	// we juste process and add every child node
 	if ( !oldChildren ) {
 		newChildren.map( newChildNode => {
-			diffNode( parentDom, newChildNode )
+			diffNode( newChildNode )
 			parentDom.appendChild( newChildNode.dom )
 			// Register this child with its key on its parent
 			registerKey( newChildNode )
@@ -199,7 +205,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 			&& oldParentKeys[ newChildNode.key ].type == newChildNode.type
 		) {
 			const oldNode = oldParentKeys[ newChildNode.key ]
-			diffNode( parentDom, newChildNode, oldNode )
+			diffNode( newChildNode, oldNode )
 			oldNode.keep = true;
 			// Check if index changed, compare with collapsed index to detect moves
 			const collapsedIndex = i + collapseCount
@@ -212,7 +218,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		// Has key, but not found in old
 		/** CREATE **/
 		else if ( newChildNode.key && !oldParentKeys[ newChildNode.key ] ) {
-			diffNode( parentDom, newChildNode )
+			diffNode( newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
 		}
@@ -221,13 +227,13 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		/** UPDATE IN PLACE **/
 		else if ( i in oldChildren && oldChildren[ i ].type == newChildNode.type ) {
 			const oldNode = oldChildren[ i ]
-			diffNode( parentDom, newChildNode, oldNode )
+			diffNode( newChildNode, oldNode )
 			oldNode.keep = true;
 		}
-			// Not found
+		// Not found
 		/** CREATE **/
 		else {
-			diffNode( parentDom, newChildNode )
+			diffNode( newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
 		}
@@ -244,25 +250,28 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 
 // ----------------------------------------------------------------------------- DIFF NODE
 
-const flattenChildren = ( vnode:VNode ) => {
+export function flattenChildren ( vnode:VNode ) {
 	// Re-assign flattened array to the original virtual node, and return it
-	const { children } = vnode.props
-	vnode.props.children = children ? children.flat() : []
-	return children
+	return vnode.props.children = (vnode.props.children?.flat() ?? [])
 }
 
-export function diffNode ( parentElement:Element, newNode:VNode, oldNode?:VNode ) {
-	// console.log("-DiffNode", { parentElement, newNode, oldNode })
+export function diffNode ( newNode:VNode, oldNode?:VNode ) {
+	// IMPORTANT : Here we clone node if we got the same instance
+	// 			   Otherwise, altering props.children after render will fuck everything up
+	// Clone identical nodes to be able to diff them
+	if ( oldNode && oldNode === newNode )
+		newNode = cloneVNode( oldNode )
+	// console.log("-DiffNode", { newNode, oldNode }, newNode === oldNode, oldNode?.component)
 	// Transfer component instance from old node to new node
 	let component:ComponentInstance = oldNode?.component
 	// We may need a new component instance
-	let pureFunctionalRenderResult:VNode
+	let renderResult:VNode
 	if ( !component && typeof newNode.type === "function" ) {
 		// Create component instance (without new keyword for better performances)
 		component = createComponentInstance( newNode )
 		// Execute component's function and check what is returned
 		_hookedComponent = component;
-		const result = newNode.type.apply( component, [ newNode.props ]) // TODO : props proxy
+		const result:ComponentReturn = newNode.type.apply( component, [ newNode.props ]) // TODO : props proxy
 		_hookedComponent = null
 		// This is a factory component which return a render function
 		if ( typeof result === "function" ) {
@@ -272,55 +281,53 @@ export function diffNode ( parentElement:Element, newNode:VNode, oldNode?:VNode 
 		// This is pure functional component which returns a virtual node
 		else if ( typeof result == "object" && "type" in result ) {
 			component.render = newNode.type as RenderFunction
-			pureFunctionalRenderResult = result
+			component.isFactory = false
+			renderResult = result
 		}
 	}
 	let dom:RenderDom
 	// Virtual node is a dom element
 	if ( !component )
 		dom = diffElement( newNode, oldNode )
+
 	// Virtual node is a component
 	else {
-		// Tie component and virtual node
-		// TODO : Maybe we can optimize this a do it only when needed, maybe it would be slower tho
-		component.vnode = newNode
-		newNode.component = component
-		// If pure functional component has already been rendered
-		if ( pureFunctionalRenderResult ) {
-			// FIXME : Just inverted the last two with flatten
-			// Apply new children list to the parent component node
-			newNode.props.children = flattenChildren( pureFunctionalRenderResult );
-			// Diff rendered element
-			dom = diffElement( pureFunctionalRenderResult, oldNode )
+		// If pure functional component has not already been rendered
+		if ( !renderResult ) {
+			// FIXME : Is it a good idea to shallow compare props on every changes by component ?
+			// 			-> It seems to be faster than preact + memo with this 👀, check other cases
+			// TODO : Maybe do not shallow by default but check if component got an "optimize" function
+			//			which can be implemented with hooks. We can skip a lot with this !
+			// If props did not changed between old and new
+			// Only shallow pure components, factory have state so are not 100% pure
+			if (
+				!component.isFactory && !component.isDirty
+				&& oldNode && shallowPropsCompare(newNode.props, oldNode.props)
+			) {
+				// Do not re-render, just get children and dom from old node
+				newNode.props.children = [ ...oldNode.props.children ]
+				dom = oldNode.dom
+			}
+			else {
+				_hookedComponent = component
+				renderResult = component.render.apply( component, [ newNode.props ])
+				_hookedComponent = null
+			}
 		}
-		// FIXME : Is it a good idea to shallow compare props on every changes by component ?
-		// 			-> It seems to be faster than preact + memo with this 👀, check other cases
-		// TODO : Maybe do not shallow by default but check if component got an "optimize" function
-		//			which can be implemented with hooks. We can skip a lot with this !
-		// If props did not changed between old and new
-		else if ( !component.isDirty && oldNode && shallowPropsCompare(newNode.props, oldNode.props) ) {
-			// Do not re-render, just get children and dom from old node
-			newNode.props.children = oldNode.props.children
-			dom = oldNode.dom
-		}
-		// FIXME : Dry ?
-		else {
-			// FIXME : Cannot implement Fragment with this approach.
-			//  	   Result is VNode and not VNode[] because component.vnode.dom is not an array
-			_hookedComponent = component
-			const renderResult = component.render.apply( component, [ newNode.props ])
-			_hookedComponent = null
-			// FIXME : Just inverted the last two with flatten
+		// We rendered something (not reusing old component)
+		if ( renderResult ) {
 			// Apply new children list to the parent component node
 			newNode.props.children = flattenChildren( renderResult )
 			// Diff rendered element
 			dom = diffElement( renderResult, oldNode )
 		}
+		// Tie component and virtual node
+		newNode.component = component
+		component.vnode = newNode
 		component.isDirty = false
 	}
-	// FIXME : Condition it ? Will it change refs ?
+	// FIXME : Change ref here ?
 	newNode.dom = dom
-	dom[ DOM_PRIVATE_VIRTUAL_NODE_KEY ] = newNode
 	// Diff children of this element (do not process text nodes)
 	if ( dom instanceof Element )
 		diffChildren( newNode, oldNode )

@@ -31,6 +31,7 @@ interface IListItemProps {
 }
 
 function ListItem ( props:IListItemProps ) {
+	console.log( "ListItem" );
 	return <tr class="ListItem" data-id={ props.item.id } style={ listItemStyle }>
 		<td>{ props.item.name }</td>
 		<td><button onClick={ props.moveUpClicked }>⬆</button></td>
@@ -41,7 +42,11 @@ function ListItem ( props:IListItemProps ) {
 
 // ----------------------------------------------------------------------------- LIST APP
 
-function InnerStatefulDemoApp () {
+export function StatefulDemoApp ( props ) {
+
+	/**
+	 * List state and reducers
+	 */
 
 	const list = createState<IListItem[]>([])
 
@@ -61,7 +66,9 @@ function InnerStatefulDemoApp () {
 		const index = list.value.indexOf( item ) + offset
 		if ( index < 0 || index >= list.value.length ) return;
 		removeItem( item )
-		list.set( [...list.value].splice( index, 0, item ) );
+		const newArray = [...list.value].splice( index, 0, item )
+		// FIXME : ERROR Here ?
+		list.set( newArray );
 	}
 
 	function addRandomItems ( total:number = 0 ) {
@@ -82,6 +89,10 @@ function InnerStatefulDemoApp () {
 		}
 	}
 
+	/**
+	 * Handlers
+	 */
+
 	function controlSubmitted ( event:Event ) {
 		event.preventDefault()
 		// TODO : Implement refs
@@ -93,6 +104,10 @@ function InnerStatefulDemoApp () {
 		})
 		nameInput.value = ""
 	}
+
+	/**
+	 * Sub-components
+	 */
 
 	function Controls () {
 		console.log("Controls rendered")
@@ -115,7 +130,12 @@ function InnerStatefulDemoApp () {
 		</div>
 	}
 
+	/**
+	 * Render
+	 */
+
 	return () => <div class="StatefulDemoApp">
+		<span>Root render index : { props.renderIndex }</span>
 		{/* Optimized node, should render once */}
 		<Controls />
 		<h3>{ list.value.length } element{ list.value.length > 1 ? 's' : '' }</h3>
@@ -129,15 +149,5 @@ function InnerStatefulDemoApp () {
 				/>
 			)}
 		</table>
-	</div>
-}
-
-
-let internalRenderCount = 0
-export function StatefulDemoApp () {
-	// External component to check if it re-renders when sub-component updates
-	return <div>
-		<h3>Parent app {internalRenderCount++}</h3>
-		<InnerStatefulDemoApp />
 	</div>
 }

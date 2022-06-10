@@ -1,5 +1,7 @@
 import { TEXT_NODE_TYPE_NAME, VNode } from "./index";
 
+// TODO : Move VNode type and VNode constants here (TEXT_NODE_TYPE_NAME)
+
 // NOTE : Keep it in a function and do not inline this
 // It seems to be V8 optimized. @see Preact source code
 export function createVNode ( type, props, key?, ref? ):VNode {
@@ -7,7 +9,11 @@ export function createVNode ( type, props, key?, ref? ):VNode {
 }
 
 export function cloneVNode ( vnode:VNode ) {
-	return { ...vnode }
+	return {
+		...vnode,
+		// IMPORTANT : also clone props object
+		props: { ...vnode.props }
+	}
 }
 
 export function h ( type, props, ...children ) {

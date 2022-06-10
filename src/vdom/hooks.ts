@@ -1,39 +1,41 @@
 import { createStateObservable, IStateObservable, TInitialValue } from "./observable";
 import { diffNode, getHookedComponent } from "./diff";
 import { ComponentInstance } from "./index";
-import { cloneVNode, createVNode } from "./jsx";
+import { trackPerformances } from "./debug";
 
-
-
-let invalidateTimeout;
 
 let componentsToUpdate:ComponentInstance[] = []
 
+
+const microtask = ( window.queueMicrotask ?? (h => window.setTimeout( h, 0 )) )
+
 function updateDirtyComponents () {
-	invalidateTimeout = null
+	const p = trackPerformances("Update dirty components")
+	// TODO : Update with depth ! Deepest first ? Or last ?
 	componentsToUpdate.map( component => {
-		// Clone old to a new virtual node
-		const newVNode = cloneVNode( component.vnode )
-		console.log( newVNode );
-		diffNode( component.vnode.dom.parentElement as Element, newVNode, component.vnode )
+		diffNode( component.vnode, component.vnode )
 	})
 	componentsToUpdate = []
+	p();
 }
 
 export function invalidateComponent ( component:ComponentInstance ) {
+	if ( componentsToUpdate.length === 0 )
+		microtask( updateDirtyComponents );
+	// Invalidate this component once
 	if ( component.isDirty )
 		return;
 	component.isDirty = true
+	// Store it into the list of dirty components
 	componentsToUpdate.push( component )
-	if ( !invalidateTimeout )
-		invalidateTimeout = window.setTimeout( updateDirtyComponents, 0 )
+	// TODO : Add queue task
 }
 
 
 export function createState<GType> ( initialValue?:TInitialValue<GType> ):IStateObservable<GType> {
 	const componentInstance = getHookedComponent()
 	const observable = createStateObservable( initialValue, () => invalidateComponent( componentInstance ) )
-	// TODO
+	// TODO : Register all observables so the component can be cleaned
 	// componentInstance.__observables.push( observable )
 	return observable
 }

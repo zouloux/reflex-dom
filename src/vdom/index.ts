@@ -37,13 +37,14 @@ export type RenderDom = Element|Text
 // FIXME : Cannot be VNode[] in current implementation.
 // FIXME : Cannot be string in current implementation.
 export type RenderFunction = () => VNode
-
 export type FunctionalComponent = RenderFunction
+export type ComponentReturn = RenderFunction|VNode
 export type FactoryComponent = () => RenderFunction
 export type ComponentFunction = FunctionalComponent|FactoryComponent
 
 export interface ComponentInstance {
 	vnode		:VNode
+	name		:string
 	isFactory	?:boolean
 	render		?:RenderFunction
 	isDirty		?:boolean
