@@ -1,7 +1,7 @@
-import { h, render } from "./vdom";
+import { h, render } from "./reflex";
 import { ListDemoApp } from "./demos/ListDemoApp";
 import { StoreListDemoApp } from "./demos/StoreListDemoApp";
-import { setReflexDebug, trackPerformances } from "./vdom/debug";
+import { setReflexDebug, trackPerformances } from "./reflex/debug";
 
 /**
  * FEATURES :
@@ -25,7 +25,8 @@ import { setReflexDebug, trackPerformances } from "./vdom/debug";
  *   	✔ Remove from bottom
  *   	✔ Insert in the middle
  *      ✔ Remove from the middle
- *  	X✔ Swap
+ *      ✔ Basic swap
+ *  	X Optimized Swap
  *  		- Do 2 operations, should do only one
  *   ✔ Keep track of component instances
  *   - Remove subtrees recursively
@@ -33,12 +34,13 @@ import { setReflexDebug, trackPerformances } from "./vdom/debug";
  *   ✔ Rendering optimization (like memo and skip)
  *
  * - Reactive
- *   - Dom refs
+ *   - Dom refs / component ref
  *   - Factory helpers (like hooks), find name and prefix
- *   - Var as let
+ *   - Var in ref as let ! Yeah
  *   ✔ States / observers
  *   - Async states
- *   - Stores
+ *   ✔ Stores
+ *   - Mount / Unmount / Updated
  *
  * - Types
  * 	 - Basic JSX Type

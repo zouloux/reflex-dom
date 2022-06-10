@@ -1,4 +1,4 @@
-import { h } from "../vdom";
+import { h } from "../reflex";
 import { createStore } from "../store/store";
 import { storeState } from "../store/reflexStoreState";
 
@@ -107,7 +107,8 @@ export function StoreListDemoApp ( props ) {
 		return <div className="StatefulDemoApp_controls">
 			<table>
 				<button onClick={ e => listStore.dispatch("addRandomItems") }>Add random items to bottom</button>
-				<button onClick={ e => listStore.dispatch("addRandomItems", 1000 ) }>Add 1000 items to bottom</button>
+				<button onClick={ e => listStore.dispatch("addRandomItems", 1_000 ) }>Add 1.000 items to bottom</button>
+				<button onClick={ e => listStore.dispatch("addRandomItems", 10_000 ) }>Add 10.000 items to bottom</button>
 				<button onClick={ e => listStore.dispatch("removeRandomItems") }>Remove random items</button>
 				<button onClick={ e => listStore.dispatch("clearList") }>Clear list</button>
 			</table>

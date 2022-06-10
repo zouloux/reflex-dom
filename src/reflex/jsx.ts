@@ -17,11 +17,12 @@ export function cloneVNode ( vnode:VNode ) {
 }
 
 export function h ( type, props, ...children ) {
+	// Remove debug properties
+	// FIXME : Keep them in debug mode ? But in vnode not in props.
+	delete props.__self
+	delete props.__source
 	// Extract key and ref from props
 	const { key, ref, ...nodeProps } = props
-	// FIXME : TEMP, remove debug info or use them
-	delete nodeProps.__self
-	delete nodeProps.__source
 	// Inject children in props
 	nodeProps.children = ( children ?? [] ).map( child => (
 		// Convert string and number children to text virtual nodes

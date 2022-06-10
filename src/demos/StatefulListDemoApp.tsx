@@ -1,5 +1,5 @@
-import { h } from "../vdom";
-import { state } from "../vdom/hooks";
+import { h } from "../reflex";
+import { state } from "../reflex/hooks";
 
 // ----------------------------------------------------------------------------- HELPERS
 

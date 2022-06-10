@@ -20,8 +20,7 @@ export function invalidateComponent ( component:ComponentInstance ) {
 	if ( componentsToUpdate.length === 0 )
 		microtask( updateDirtyComponents );
 	// Invalidate this component once
-	if ( component.isDirty )
-		return;
+	if ( component.isDirty ) return;
 	component.isDirty = true
 	// Store it into the list of dirty components
 	componentsToUpdate.push( component )
@@ -38,7 +37,9 @@ export function refs () {
 
 }
 
-export function find () { // FIXME : When using web components with original dom not from Reflex
+// FIXME : When using web components with original dom not from Reflex
+// FIXME : Move it in module web-components ?
+export function find () {
 
 }
 

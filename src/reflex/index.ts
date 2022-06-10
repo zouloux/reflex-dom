@@ -34,22 +34,9 @@ export const shallowPropsCompare = ( a:object, b:object ) => (
 	// Same amount of properties ?
 	Object.keys(a).length === Object.keys(b).length
 	// Every property exists in other object ?
+	// Never test "children" property which is always different
 	&& Object.keys(a).every( key => key === "children" || (b.hasOwnProperty(key) && a[key] === b[key]) )
 )
-
-// export function shallowPropsCompare (a:object, b:object) {
-// 	if ( Object.keys(a).length !== Object.keys(b).length )
-// 		return false;
-// 	return Object.keys(a).every( key => {
-// 		if (key === "children")
-// 			return true;
-// 		const has = (b.hasOwnProperty(key) && a[key] === b[key])
-// 		if (!has) {
-// 			console.log(key, b.hasOwnProperty(key), a[key], b[key], a[key] === b[key])
-// 		}
-// 		return has
-// 	})
-// }
 
 // ----------------------------------------------------------------------------- INTERNAL - CREATE COMPONENT
 

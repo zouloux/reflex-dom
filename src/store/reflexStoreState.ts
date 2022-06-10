@@ -1,5 +1,5 @@
 import { IStore } from "./store";
-import { state } from "../vdom/hooks";
+import { state } from "../reflex/hooks";
 import { IStateObservable } from "../signal/observable";
 
 
