@@ -1,6 +1,6 @@
-import { createStateObservable, IStateObservable, TInitialValue } from "./observable";
+import { createStateObservable, IStateObservable, TInitialValue } from "../signal/observable";
 import { diffNode, getHookedComponent } from "./diff";
-import { ComponentInstance, microtask, ReflexError } from "./index";
+import { ComponentInstance, microtask } from "./index";
 import { trackPerformances } from "./debug";
 
 // ----------------------------------------------------------------------------- INVALIDATION
@@ -33,7 +33,12 @@ export function invalidateComponent ( component:ComponentInstance ) {
 export function ref () {
 
 }
+
 export function refs () {
+
+}
+
+export function find () { // FIXME : When using web components with original dom not from Reflex
 
 }
 
@@ -45,29 +50,4 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IStateObser
 	// TODO : Register all observables so the component can be cleaned
 	// componentInstance.__observables.push( observable )
 	return observable
-}
-
-// ----------------------------------------------------------------------------- STORE
-
-interface IBasicStore <GStore extends object, GReducers> {
-	value		:GStore
-	dispatch	:(reducerName:GReducers, ...rest) => any|void
-}
-
-type Reducer = (...rest) => void
-
-export function createBasicStore
-	<GStore extends object, GReducers extends Record<string, Reducer>>
-	( initialValue:GStore, reducers:GReducers )
-{
-	// const componentInstance = getHookedComponent()
-	// const observable = createStateObservable( initialValue, () => invalidateComponent( componentInstance ) )
-	// return observable
-	return {
-
-	}
-}
-
-export function store ( storeObject ) {
-
 }

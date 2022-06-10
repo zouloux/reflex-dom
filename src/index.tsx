@@ -1,7 +1,7 @@
 import { h, render } from "./vdom";
 import { ListDemoApp } from "./demos/ListDemoApp";
-import { StatefulDemoApp } from "./demos/StatefulListDemoApp";
-import { ENABLE_REFLEX_DEBUG, setReflexDebug, trackPerformances } from "./vdom/debug";
+import { StoreListDemoApp } from "./demos/StoreListDemoApp";
+import { setReflexDebug, trackPerformances } from "./vdom/debug";
 
 /**
  * FEATURES :
@@ -55,7 +55,6 @@ import { ENABLE_REFLEX_DEBUG, setReflexDebug, trackPerformances } from "./vdom/d
  * - Advanced Hot Module reloading with state keeping automagically
  */
 
-
 // -----------------------------------------------------------------------------
 
 setReflexDebug( true )
@@ -64,7 +63,7 @@ let renderIndex = 0
 export function init () {
 	const p = trackPerformances("Root rendering")
 	// render( <ListDemoApp render={ init } renderIndex={ renderIndex ++ } />, document.body );
-	render( <StatefulDemoApp render={ init } renderIndex={ renderIndex ++ } /> , document.body );
+	render( <StoreListDemoApp render={ init } renderIndex={ renderIndex ++ } /> , document.body );
 	p();
 }
 
