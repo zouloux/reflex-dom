@@ -1,7 +1,7 @@
 import { h, render } from "./vdom";
 import { ListDemoApp } from "./demos/ListDemoApp";
 import { StatefulDemoApp } from "./demos/StatefulListDemoApp";
-import { trackPerformances } from "./vdom/debug";
+import { ENABLE_REFLEX_DEBUG, setReflexDebug, trackPerformances } from "./vdom/debug";
 
 /**
  * FEATURES :
@@ -57,6 +57,8 @@ import { trackPerformances } from "./vdom/debug";
 
 
 // -----------------------------------------------------------------------------
+
+setReflexDebug( true )
 
 let renderIndex = 0
 export function init () {

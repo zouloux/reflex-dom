@@ -15,6 +15,13 @@
 export const TEXT_NODE_TYPE_NAME = "#Text"
 export const ROOT_NODE_TYPE_NAME = "#Root"
 
+// ----------------------------------------------------------------------------- ERRORS
+
+export class ReflexError extends Error {}
+// ----------------------------------------------------------------------------- POLYFILLS
+
+export const microtask = ( window.queueMicrotask ?? (h => window.setTimeout( h, 0 )) )
+
 // ----------------------------------------------------------------------------- UTILS
 
 // Force a list or a lonely item to be an array with the same type
@@ -29,6 +36,20 @@ export const shallowPropsCompare = ( a:object, b:object ) => (
 	// Every property exists in other object ?
 	&& Object.keys(a).every( key => key === "children" || (b.hasOwnProperty(key) && a[key] === b[key]) )
 )
+
+// export function shallowPropsCompare (a:object, b:object) {
+// 	if ( Object.keys(a).length !== Object.keys(b).length )
+// 		return false;
+// 	return Object.keys(a).every( key => {
+// 		if (key === "children")
+// 			return true;
+// 		const has = (b.hasOwnProperty(key) && a[key] === b[key])
+// 		if (!has) {
+// 			console.log(key, b.hasOwnProperty(key), a[key], b[key], a[key] === b[key])
+// 		}
+// 		return has
+// 	})
+// }
 
 // ----------------------------------------------------------------------------- INTERNAL - CREATE COMPONENT
 
@@ -59,14 +80,12 @@ export interface VNodeBaseProps {
 	children	?:VNode[]
 }
 
-export type ParentVNodeKeyMap = Record<string|number, VNode>
-
 // FIXME
 export interface VNode <GProps = VNodeBaseProps> {
 	type			:VNodeDomType|InternalVNodeTypes|ComponentFunction // TODO 	: Generics
 	props			:GProps
-	key				:string|number
-	keys			?:ParentVNodeKeyMap
+	key				:string
+	keys			?:Map<string, VNode>
 	ref				// TODO
 	dom				?:RenderDom
 	component		?:ComponentInstance

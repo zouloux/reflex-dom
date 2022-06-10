@@ -1,6 +1,6 @@
 import {
 	TEXT_NODE_TYPE_NAME, ComponentInstance, RenderDom, RenderFunction,
-	shallowPropsCompare, VNode, VNodeDomType, VTextNode, ComponentFunction, ComponentReturn
+	shallowPropsCompare, VNode, VNodeDomType, VTextNode, ComponentFunction, ComponentReturn, ReflexError
 } from "./index";
 import { cloneVNode } from "./jsx";
 
@@ -22,7 +22,11 @@ const CAPTURE_REGEX = /Capture$/
 
 // We store current component in factory phase for hooks
 let _hookedComponent:ComponentInstance = null
-export function getHookedComponent ():ComponentInstance { return _hookedComponent }
+export function getHookedComponent ():ComponentInstance {
+	if ( !_hookedComponent && process.env.NODE_ENV !== "production" )
+		throw new ReflexError(`Using hook outside of a factory component.`)
+	return _hookedComponent
+}
 
 // ----------------------------------------------------------------------------- COMMON
 
@@ -113,7 +117,7 @@ export function diffElement ( newNode:VNode, oldNode:VNode ) {
 		else if ( name.startsWith("on") ) {
 			const { eventName, eventKey, useCapture } = getEventNameAndKey( name, dom as Element );
 			// Init a collection of handlers on the dom object as private property
-			dom[ DOM_PRIVATE_LISTENERS_KEY ] ??= {};
+			dom[ DOM_PRIVATE_LISTENERS_KEY ] ??= new Map();
 			// Store original listener to be able to remove it later
 			dom[ DOM_PRIVATE_LISTENERS_KEY ][ eventKey ] = value;
 			// And attach listener
@@ -158,9 +162,10 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// Create key array on parent node to register keyed children
 	// This will allow us to find any child by its key directly without
 	// having to search for it
-	newParentNode.keys = {} // TODO : Convert to a new Map for better performances
+	newParentNode.keys = new Map()
 	const registerKey = c => {
-		if ( c?.key ) newParentNode.keys[ c.key ] = c
+		if ( c?.key )
+			newParentNode.keys[ c.key ] = c
 	}
 	// This is a new parent node (no old), so no diffing
 	// we juste process and add every child node
@@ -244,6 +249,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		if ( oldChildNode && !oldChildNode.keep ) {
 			// TODO : Remove component -> bubble deletion + remove parent from dom only
 			parentDom.removeChild( oldChildNode.dom )
+			oldChildNode.dom = null;
 		}
 	})
 }
@@ -289,7 +295,6 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 	// Virtual node is a dom element
 	if ( !component )
 		dom = diffElement( newNode, oldNode )
-
 	// Virtual node is a component
 	else {
 		// If pure functional component has not already been rendered
@@ -298,11 +303,15 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 			// 			-> It seems to be faster than preact + memo with this 👀, check other cases
 			// TODO : Maybe do not shallow by default but check if component got an "optimize" function
 			//			which can be implemented with hooks. We can skip a lot with this !
+			// FIXME : Does not work if props contain dynamic arrow functions :(
+			//			<Sub onEvent={ e => handler(e, i) } />
+			//			Here the handler is a different ref at each render
 			// If props did not changed between old and new
 			// Only shallow pure components, factory have state so are not 100% pure
 			if (
-				!component.isFactory && !component.isDirty
-				&& oldNode && shallowPropsCompare(newNode.props, oldNode.props)
+				oldNode && !component.isFactory && !component.isDirty
+				// TODO : Should compare props
+				&& shallowPropsCompare(newNode.props, oldNode.props)
 			) {
 				// Do not re-render, just get children and dom from old node
 				newNode.props.children = [ ...oldNode.props.children ]

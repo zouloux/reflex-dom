@@ -1,5 +1,5 @@
 import { h } from "../vdom";
-import { createState } from "../vdom/hooks";
+import { createBasicStore, state } from "../vdom/hooks";
 
 // ----------------------------------------------------------------------------- HELPERS
 
@@ -16,6 +16,48 @@ interface IListItem {
 	id		:string
 }
 
+// ----------------------------------------------------------------------------- STORE
+
+const listStore = createBasicStore({
+	list: [] as IListItem[]
+}, {
+	clearList () {
+		return []
+	},
+	addItem ( position:"top"|"bottom", item:IListItem ) {
+		if ( position === "bottom" )
+			list.set([...list.value, item])
+		else
+			list.set([item, ...list.value])
+	},
+	removeItem ( item:IListItem ) {
+		list.set( list.value.filter( currentItem => currentItem != item ) )
+	},
+	moveItem ( item:IListItem, offset:number ) {
+		const index = list.value.indexOf( item ) + offset
+		if ( index < 0 || index >= list.value.length ) return;
+		removeItem( item )
+		list.value.splice( index, 0, item )
+		list.set( list.value );
+	},
+	addRandomItems ( total:number = 0 ) {
+		total ||= rand( 5 + list.value.length ) + 1
+		for ( let i = 0; i < total; i++ ) {
+			addItem("bottom", {
+				id: createUID(),
+				name: pickRandom(colorList) + " " + pickRandom(foodList)
+			})
+		}
+	},
+	removeRandomItems () {
+		const total = rand( list.value.length ) + 1
+		for ( let i = 0; i < total; i++ ) {
+			const item = pickRandom( list.value )
+			removeItem( item )
+		}
+	}
+})
+
 // ----------------------------------------------------------------------------- LIST ITEM
 
 const listItemStyle = {
@@ -31,7 +73,6 @@ interface IListItemProps {
 }
 
 function ListItem ( props:IListItemProps ) {
-	console.log( "ListItem" );
 	return <tr class="ListItem" data-id={ props.item.id } style={ listItemStyle }>
 		<td>{ props.item.name }</td>
 		<td><button onClick={ props.moveUpClicked }>⬆</button></td>
@@ -48,46 +89,9 @@ export function StatefulDemoApp ( props ) {
 	 * List state and reducers
 	 */
 
-	const list = createState<IListItem[]>([])
+	const list = state<IListItem[]>([])
 
-	const clearList = () => {
-		list.set([])
-	}
-	const addItem = ( position:"top"|"bottom", item:IListItem ) => {
-		if ( position === "bottom" )
-			list.set([...list.value, item])
-		else
-			list.set([item, ...list.value])
-	}
-	const removeItem = ( item:IListItem ) => {
-		list.set( list.value.filter( currentItem => currentItem != item ) )
-	}
-	const moveItem = ( item:IListItem, offset:number ) => {
-		const index = list.value.indexOf( item ) + offset
-		if ( index < 0 || index >= list.value.length ) return;
-		removeItem( item )
-		const newArray = [...list.value].splice( index, 0, item )
-		// FIXME : ERROR Here ?
-		list.set( newArray );
-	}
 
-	function addRandomItems ( total:number = 0 ) {
-		total ||= rand( 5 + list.value.length ) + 1
-		for ( let i = 0; i < total; i++ ) {
-			addItem("bottom", {
-				id: createUID(),
-				name: pickRandom(colorList) + " " + pickRandom(foodList)
-			})
-		}
-	}
-
-	function removeRandomItems () {
-		const total = rand( list.value.length ) + 1
-		for ( let i = 0; i < total; i++ ) {
-			const item = pickRandom( list.value )
-			removeItem( item )
-		}
-	}
 
 	/**
 	 * Handlers

@@ -1,10 +1,21 @@
 
+// ----------------------------------------------------------------------------- ENABLE / DISABLE
 
-export let ENABLE_REFLEX_DEBUG = false
+let _enableReflexDebug = false;
 
+export function getReflexDebug () { return _enableReflexDebug }
+export function setReflexDebug (value:boolean) {
+	_enableReflexDebug = value
+}
+
+
+// ----------------------------------------------------------------------------- TRACK PERFORMANCES
+
+function noop () {}
 
 export function trackPerformances ( subject:string ) {
-	if ( !ENABLE_REFLEX_DEBUG && process.env.NODE_ENV !== "production" ) return;
+	if ( !_enableReflexDebug && process.env.NODE_ENV !== "production" )
+		return noop;
 	const start = performance.now()
 	return () => {
 		const r = ~~( performance.now() - start )
