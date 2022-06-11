@@ -69,8 +69,8 @@ import { LifecycleDemoApp } from "./demos/LifecycleDemoApp";
  * - Reactive
  *   - Dom refs / component ref
  *   - Factory helpers (like hooks), find name and prefix
- *   - Factory Errors
- *   - Var in ref as let ! Yeah
+ *   - Factory Errors / Component errors ( try catch on instance + render etc )
+ *   ✔ Var in ref as let ! Yeah
  *   ✔ States / observers
  *   - Async states
  *   ✔ Stores

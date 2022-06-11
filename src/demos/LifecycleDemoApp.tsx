@@ -2,13 +2,14 @@ import { h } from "../reflex";
 import { mounted } from "../reflex/lifecycle";
 import { state } from "../reflex/state";
 import { colorList, createUID, foodList, pickRandom } from "./demoHelpers";
-import { refs } from "../reflex/ref";
+import { ref, refs } from "../reflex/ref";
 
 function SubChild ( props ) {
+	const titleRef = ref()
 	// Local stateless variable without ref 👀
 	let clicked = 0
 	mounted(() => {
-		console.log("SubChild mounted")
+		console.log(`SubChild mounted ${titleRef.dom.innerHTML}`)
 		return () => {
 			console.log(`SubChild unmounted ${clicked}`)
 		}
@@ -24,14 +25,17 @@ function SubChild ( props ) {
 			</tr>
 			<tr>
 				<td>Name :</td>
-				<td>{ props.item.title }</td>
+				<td ref={ titleRef }>{ props.item.title }</td>
 			</tr>
 		</table>
 	</div>
 }
 
 function ListItem ( props ) {
-	return <div style={{ border: `1px solid black` }}>
+	mounted(() => {
+		console.log("List item mounted")
+	})
+	return () => <div style={{ border: `1px solid white` }}>
 		<span>ListItem</span>
 		<SubChild item={ props.item }/>
 		<button onClick={ e => props.removeClicked( props.item ) }>Remove</button>
@@ -53,7 +57,6 @@ export function LifecycleDemoApp () {
 			title: `${pickRandom(colorList)} ${pickRandom(foodList)}`,
 		}
 		list.set( [...list.value, item ] );
-		console.log( list.value );
 	}
 
 	function removeListItem ( item ) {

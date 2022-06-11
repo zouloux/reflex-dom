@@ -63,7 +63,7 @@ export interface ComponentInstance {
 	isFactory	?:boolean
 	render		?:RenderFunction
 	isDirty		?:boolean
-
+	isMounted		:boolean;
 	mountHandlers	:MountHandler[]
 	unmountHandlers	:LifecycleHandler[]
 }

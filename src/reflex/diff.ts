@@ -64,6 +64,7 @@ function createComponentInstance ( vnode:VNode<null, ComponentFunction> ):Compon
 	return {
 		vnode,
 		isDirty: false,
+		isMounted: false,
 		name: vnode.type.name,
 		mountHandlers: [],
 		unmountHandlers: [],
@@ -108,8 +109,9 @@ export function diffElement ( newNode:VNode, oldNode:VNode ) {
 			dom.removeEventListener( eventName, dom[ DOM_PRIVATE_LISTENERS_KEY ][ eventKey ], useCapture )
 		}
 		// Other attributes
-		else
+		else {
 			( dom as Element ).removeAttribute( name )
+		}
 	})
 	// Update props
 	Object.keys( newNode.props ).map( name => {
@@ -288,6 +290,19 @@ function renderNode <GReturn = ComponentReturn> ( node:VNode<null, ComponentFunc
 	return result as GReturn
 }
 
+function updateNodeRef ( node:VNode, dom:RenderDom ) {
+	if ( !node.ref ) return;
+	// Ref as refs
+	if ( 'list' in node.ref ) {
+		// FIXME : Type
+		// FIXME : Keep track of index ? Do it from diffChildren maybe ?
+		( node.ref as IInternalRefs ).setFromVNode( 0, node as any )
+	} else {
+		// FIXME : Type
+		( node.ref as IInternalRef ).setFromVNode( node as any )
+	}
+}
+
 export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 	// IMPORTANT : Here we clone node if we got the same instance
 	// 			   Otherwise, altering props.children after render will fuck everything up
@@ -317,8 +332,9 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 	}
 	let dom:RenderDom
 	// Virtual node is a dom element
-	if ( !component )
-		dom = diffElement( newNode, oldNode )
+	if ( !component ) {
+		newNode.dom = dom = diffElement( newNode, oldNode )
+	}
 	// Virtual node is a component
 	else {
 		// FIXME : Is it a good idea to shallow compare props on every changes by component ?
@@ -331,16 +347,15 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 		// If props did not changed between old and new
 		// Only optimize pure components, factory components mau have state so are not pure
 		if (
-			// false &&
 			// If pure functional component has not already been rendered
 			!renderResult
 			// Need to be a component update, on a pure functional component,
 			&& oldNode && !component.isFactory // && !component.isDirty
+			// New component isn't marked as not pure
+			&& newNode.props.pure !== false // FIXME : Rename it forceRefresh={ true } ?
 			// Cannot optimize components which have children properties
 			// Because parent component may have altered rendering of injected children
 			&& newNode.props.children.length === 0
-			// New component isn't marked as not pure
-			&& newNode.props.pure !== false
 			// Do shallow compare
 			&& shallowPropsCompare(newNode.props, oldNode.props)
 		) {
@@ -350,36 +365,36 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 			// Do not re-render, just get children and dom from old node
 			// newNode.props.children = [ ...oldNode.props.children ]
 			newNode.props.children = oldNode.props.children
-			dom = oldNode.dom
+			newNode.dom = dom = oldNode.dom
 		}
 		// Not already rendered, and not optimization possible. Render now.
-		else if ( !renderResult )
+		else if ( !renderResult ) {
 			renderResult = renderNode<VNode>( newNode as VNode<null, ComponentFunction>, component )
+		}
 		// We rendered something (not reusing old component)
 		if ( renderResult ) {
 			// Apply new children list to the parent component node
 			newNode.props.children = flattenChildren( renderResult )
 			// Diff rendered element
-			dom = diffElement( renderResult, oldNode )
+			newNode.dom = dom = diffElement( renderResult, oldNode )
 		}
 		component.isDirty = false
 	}
-	// Assign dom and ref
-	// FIXME : Do it here ?
-	// TODO : Assign null when removing !
-	newNode.dom = dom
-	if ( newNode.ref ) {
-		// Ref as refs
-		if ( 'list' in newNode.ref ) {
-			// FIXME : Type
-			// FIXME : Keep track of index ? Do it from diffChildren maybe ?
-			( newNode.ref as IInternalRefs ).setFromVNode( 0, newNode as any )
-		} else {
-			// FIXME : Type
-			( newNode.ref as IInternalRef ).setFromVNode( newNode as any )
-		}
-	}
+	// Update ref on node
+	updateNodeRef( newNode, dom )
 	// Diff children of this element (do not process text nodes)
 	if ( dom instanceof Element )
 		diffChildren( newNode, oldNode )
+	// If component is not mounted yet, mount it
+	if ( component && !component.isMounted ) {
+		// Call every mount handler and store returned unmount handlers
+		component.mountHandlers.map( handler => {
+			const mountedReturn = handler.apply( component, [] );
+			if ( typeof mountedReturn === "function" )
+				component.unmountHandlers.push( mountedReturn )
+		})
+		// Reset mount handlers, no need to keep them
+		component.mountHandlers = []
+		component.isMounted = true;
+	}
 }
