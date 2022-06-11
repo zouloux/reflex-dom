@@ -1,5 +1,5 @@
 import { h } from "../reflex";
-import { state } from "../reflex/hooks";
+import { state } from "../reflex/state";
 
 // ----------------------------------------------------------------------------- HELPERS
 

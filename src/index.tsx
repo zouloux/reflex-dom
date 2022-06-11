@@ -2,6 +2,39 @@ import { h, render } from "./reflex";
 import { ListDemoApp } from "./demos/ListDemoApp";
 import { StoreListDemoApp } from "./demos/StoreListDemoApp";
 import { setReflexDebug, trackPerformances } from "./reflex/debug";
+import { LifecycleDemoApp } from "./demos/LifecycleDemoApp";
+
+
+/**
+ * REFLEX JS
+ *
+ * - Reflex Core
+ * 		- Core
+ * 		- Polyfills
+ * 		- Signal + Observer
+ * 		- YADL
+ * 		- Utils
+ * - Reflex Components
+ * 		- Reflex View (vdom + web components)
+ * 		- Reflex Store
+ * 			- Regular store / Async store or one big store well-made
+ * 		- Reflex Router
+ * 			- Based on Reflex Store
+ * 		- Reflex Tween ?
+ *		- Reflex Toolkit
+ *			- Hooks
+ *			- Responsive
+ *			- Inputs
+ *			- Cursor
+ *			- Sound
+ *			- Viewport
+ *		- Reflex UI Kit
+ *			- mixins
+ *			- UI Kit
+ *			- Components ( Slideshow / Menu / Player ... )
+ * - Reflex Server
+ *
+ */
 
 /**
  * FEATURES :
@@ -36,6 +69,7 @@ import { setReflexDebug, trackPerformances } from "./reflex/debug";
  * - Reactive
  *   - Dom refs / component ref
  *   - Factory helpers (like hooks), find name and prefix
+ *   - Factory Errors
  *   - Var in ref as let ! Yeah
  *   ✔ States / observers
  *   - Async states
@@ -65,7 +99,8 @@ let renderIndex = 0
 export function init () {
 	const p = trackPerformances("Root rendering")
 	// render( <ListDemoApp render={ init } renderIndex={ renderIndex ++ } />, document.body );
-	render( <StoreListDemoApp render={ init } renderIndex={ renderIndex ++ } /> , document.body );
+	// render( <StoreListDemoApp render={ init } renderIndex={ renderIndex ++ } /> , document.body );
+	render( <LifecycleDemoApp />, document.body )
 	p();
 }
 

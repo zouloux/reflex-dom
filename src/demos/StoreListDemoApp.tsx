@@ -1,17 +1,8 @@
 import { h } from "../reflex";
 import { createStore } from "../store/store";
 import { storeState } from "../store/reflexStoreState";
-
-// ----------------------------------------------------------------------------- HELPERS
-
-const toHex = (n:number) => (~~n).toString(16)
-const createUID = () => `${toHex(Date.now())}-${toHex(Math.random() * 999999999)}`;
-const pickRandom = (array:any[]) => array[ ~~(Math.random() * array.length) ]
-const rand = (max:number) => ~~(Math.random() * max)
-
-const foodList = ["Cheese", "Carrots", "Pastas", "Pizza", "Burgers", "Ham", "Salad", "Mustard"]
-const colorList = ["Red", "Blue", "Yellow", "Purple", "Orange", "Black"]
-
+import { ref } from "../reflex/ref";
+import { colorList, createUID, foodList, pickRandom, rand } from "./demoHelpers";
 
 // ----------------------------------------------------------------------------- STORE
 
@@ -27,11 +18,7 @@ const listStore = createStore( getInitialListState(), {
 		return getInitialListState()
 	},
 	addItem ( state, position:"top"|"bottom", item:IListItem ) {
-		return (
-			position === "bottom"
-			? [ ...state, item ]
-			: [ item, ...state ]
-		)
+		return position === "bottom" ? [ ...state, item ] : [ item, ...state ]
 	},
 	removeItem ( state, item:IListItem ) {
 		return state.filter( currentItem => currentItem != item )
@@ -45,7 +32,7 @@ const listStore = createStore( getInitialListState(), {
 	},
 	addRandomItems ( state, total:number = 0 ) {
 		total ||= rand( 5 + state.length ) + 1
-		for ( let i = 0; i < total; i++ ) {
+		for ( let i = 0; i < total; ++i ) {
 			state = this.addItem(state, "bottom", {
 				id: createUID(),
 				name: pickRandom(colorList) + " " + pickRandom(foodList)
@@ -55,7 +42,7 @@ const listStore = createStore( getInitialListState(), {
 	},
 	removeRandomItems ( state ) {
 		const total = rand( state.length ) + 1
-		for ( let i = 0; i < total; i++ ) {
+		for ( let i = 0; i < total; ++i ) {
 			const item = pickRandom( state )
 			state = this.removeItem( state, item )
 		}
@@ -66,12 +53,12 @@ const listStore = createStore( getInitialListState(), {
 // ----------------------------------------------------------------------------- LIST ITEM
 
 const listItemStyle = {
-	border: `1px solid black`
+	border	: `1px solid black`
 }
 
 interface IListItemProps {
-	item			: IListItem
-	key				?
+	item	: IListItem
+	key		?
 }
 
 function ListItem ( props:IListItemProps ) {
@@ -90,17 +77,16 @@ function ListItem ( props:IListItemProps ) {
 export function StoreListDemoApp ( props ) {
 
 	const list = storeState( listStore )
+	const nameInput = ref<HTMLInputElement>()
 
 	function controlSubmitted ( event:Event ) {
 		event.preventDefault()
-		// TODO : Implement refs
-		const nameInput = document.getElementById("StatefulDemoApp_nameInput") as HTMLInputElement
-		if ( !nameInput.value ) return;
+		if ( !nameInput.dom.value ) return;
 		listStore.dispatch("addItem", "top", {
-			name: nameInput.value,
+			name: nameInput.dom.value,
 			id: createUID()
 		})
-		nameInput.value = ""
+		nameInput.dom.value = ""
 	}
 
 	function Controls () {
@@ -115,7 +101,7 @@ export function StoreListDemoApp ( props ) {
 			<form onSubmit={ controlSubmitted }>
 				<table>
 					<input
-						id="StatefulDemoApp_nameInput"
+						id="StatefulDemoApp_nameInput" ref={ nameInput }
 						type="text" name="name" placeholder="Name ..."
 					/>
 					<button type="submit">Add to top</button>

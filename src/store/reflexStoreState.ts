@@ -1,5 +1,5 @@
 import { IStore } from "./store";
-import { state } from "../reflex/hooks";
+import { state } from "../reflex/state";
 import { IStateObservable } from "../signal/observable";
 
 

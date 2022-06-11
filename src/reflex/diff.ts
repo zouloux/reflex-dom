@@ -4,6 +4,12 @@ import {
 	ComponentReturn, ReflexError
 } from "./index";
 import { cloneVNode } from "./jsx";
+import { IInternalRef, IInternalRefs } from "./ref";
+
+/**
+ * TODO : Disallow a component render function to return a component as main node !
+ * 			() => <OtherComponent /> <- Forbidden
+ */
 
 // ----------------------------------------------------------------------------- CONSTANTS
 
@@ -54,11 +60,13 @@ function setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) {
 }
 
 // Optimize it in a function @see jsx.ts/createVNode()
-function createComponentInstance ( vnode:VNode ):ComponentInstance {
+function createComponentInstance ( vnode:VNode<null, ComponentFunction> ):ComponentInstance {
 	return {
 		vnode,
 		isDirty: false,
-		name: (vnode.type as ComponentFunction).name
+		name: vnode.type.name,
+		mountHandlers: [],
+		unmountHandlers: [],
 	}
 }
 
@@ -175,6 +183,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// we juste process and add every child node
 	if ( !oldChildren ) {
 		newChildren.map( newChildNode => {
+			if (!newChildNode) return;
 			diffNode( newChildNode )
 			parentDom.appendChild( newChildNode.dom )
 			// Register this child with its key on its parent
@@ -189,7 +198,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// Check if an old keyed node has been removed and get which index are offset after removal
 	// NOTE : About performances : 2nd non-nested loop
 	const lostIndexes = oldChildren.map(
-		oldChild => !!(oldChild.key && !newParentNode.keys[oldChild.key] )
+		oldChild => !!(oldChild?.key && !newParentNode.keys[oldChild.key] )
 	)
 	// Otherwise we need to compare between old and new tree
 	const oldParentKeys = oldParentNode.keys
@@ -265,7 +274,7 @@ export function flattenChildren ( vnode:VNode ) {
 	return vnode.props.children = (vnode.props.children?.flat() ?? [])
 }
 
-function renderNode <GReturn = ComponentReturn> ( node:VNode, component:ComponentInstance ) :GReturn {
+function renderNode <GReturn = ComponentReturn> ( node:VNode<null, ComponentFunction>, component:ComponentInstance ) :GReturn {
 	// Tie component and virtual node
 	component.vnode = node
 	node.component = component
@@ -291,9 +300,9 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 	let renderResult:VNode
 	if ( !component && typeof newNode.type === "function" ) {
 		// Create component instance (without new keyword for better performances)
-		component = createComponentInstance( newNode )
+		component = createComponentInstance( newNode as VNode<null, ComponentFunction> )
 		// Execute component's function and check what is returned
-		const result = renderNode( newNode, component )
+		const result = renderNode( newNode as VNode<null, ComponentFunction>, component )
 		// This is a factory component which return a render function
 		if ( typeof result === "function" ) {
 			component.render = result as RenderFunction
@@ -330,6 +339,8 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 			// Cannot optimize components which have children properties
 			// Because parent component may have altered rendering of injected children
 			&& newNode.props.children.length === 0
+			// New component isn't marked as not pure
+			&& newNode.props.pure !== false
 			// Do shallow compare
 			&& shallowPropsCompare(newNode.props, oldNode.props)
 		) {
@@ -343,7 +354,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 		}
 		// Not already rendered, and not optimization possible. Render now.
 		else if ( !renderResult )
-			renderResult = renderNode<VNode>( newNode, component )
+			renderResult = renderNode<VNode>( newNode as VNode<null, ComponentFunction>, component )
 		// We rendered something (not reusing old component)
 		if ( renderResult ) {
 			// Apply new children list to the parent component node
@@ -353,8 +364,21 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 		}
 		component.isDirty = false
 	}
-	// FIXME : Assign ref here ?
+	// Assign dom and ref
+	// FIXME : Do it here ?
+	// TODO : Assign null when removing !
 	newNode.dom = dom
+	if ( newNode.ref ) {
+		// Ref as refs
+		if ( 'list' in newNode.ref ) {
+			// FIXME : Type
+			// FIXME : Keep track of index ? Do it from diffChildren maybe ?
+			( newNode.ref as IInternalRefs ).setFromVNode( 0, newNode as any )
+		} else {
+			// FIXME : Type
+			( newNode.ref as IInternalRef ).setFromVNode( newNode as any )
+		}
+	}
 	// Diff children of this element (do not process text nodes)
 	if ( dom instanceof Element )
 		diffChildren( newNode, oldNode )

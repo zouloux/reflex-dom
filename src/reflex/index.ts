@@ -12,12 +12,15 @@
 // ----------------------------------------------------------------------------- CONSTANTS
 
 // Name of private node types which should not be created with JSX
+import { IRef, IRefs } from "./ref";
+
 export const TEXT_NODE_TYPE_NAME = "#Text"
 export const ROOT_NODE_TYPE_NAME = "#Root"
 
 // ----------------------------------------------------------------------------- ERRORS
 
 export class ReflexError extends Error {}
+
 // ----------------------------------------------------------------------------- POLYFILLS
 
 export const microtask = ( window.queueMicrotask ?? (h => window.setTimeout( h, 0 )) )
@@ -50,12 +53,19 @@ export type ComponentReturn = RenderFunction|VNode
 export type FactoryComponent = () => RenderFunction
 export type ComponentFunction = FunctionalComponent|FactoryComponent
 
+
+export type LifecycleHandler <GReturn = void> = (...rest) => GReturn
+export type MountHandler = LifecycleHandler<void>|LifecycleHandler<LifecycleHandler>
+
 export interface ComponentInstance {
-	vnode		:VNode
+	vnode		:VNode<null, ComponentFunction>
 	name		:string
 	isFactory	?:boolean
 	render		?:RenderFunction
 	isDirty		?:boolean
+
+	mountHandlers	:MountHandler[]
+	unmountHandlers	:LifecycleHandler[]
 }
 
 // ----------------------------------------------------------------------------- JSX H / CREATE ELEMENT
@@ -64,16 +74,21 @@ export type VNodeDomType = keyof (HTMLElementTagNameMap|SVGElementTagNameMap)
 export type InternalVNodeTypes = typeof ROOT_NODE_TYPE_NAME | typeof TEXT_NODE_TYPE_NAME
 
 export interface VNodeBaseProps {
-	children	?:VNode[]
+	children	?:VNode[],
+	key			?:string
+	ref			?:IRef|IRefs
+	pure		?:boolean
 }
 
-// FIXME
-export interface VNode <GProps = VNodeBaseProps> {
-	type			:VNodeDomType|InternalVNodeTypes|ComponentFunction // TODO 	: Generics
+export interface VNode <
+	GProps 	= VNodeBaseProps,
+	GType 	= ( VNodeDomType | InternalVNodeTypes | ComponentFunction ),
+> {
+	type			:GType
 	props			:GProps
-	key				:string
+	key				:string	// Allow numbers ?
 	keys			?:Map<string, VNode>
-	ref				// TODO
+	ref				?:IRef | IRefs
 	dom				?:RenderDom
 	component		?:ComponentInstance
 	keep			?:boolean
