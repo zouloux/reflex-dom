@@ -262,10 +262,42 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// NOTE : About performances : 4th non-nested loop
 	oldChildren.map( oldChildNode => {
 		if ( oldChildNode && !oldChildNode.keep ) {
+			// Call unmount handlers
 			// TODO : Remove component -> bubble deletion + remove parent from dom only
-			parentDom.removeChild( oldChildNode.dom )
+			//recursivelyUnmountNode();
+			unmountComponent( oldChildNode.component )
+			// Remove ref
+			const { dom } = oldChildNode
 			oldChildNode.dom = null;
+			updateNodeRef( oldChildNode )
+			parentDom.removeChild( dom )
 		}
+	})
+}
+
+function mountComponent ( component:ComponentInstance ) {
+	// Call every mount handler and store returned unmount handlers
+	component.mountHandlers.map( handler => {
+		const mountedReturn = handler.apply( component, [] );
+		if ( typeof mountedReturn === "function" )
+			component.unmountHandlers.push( mountedReturn )
+	})
+	// Reset mount handlers, no need to keep them
+	component.mountHandlers = []
+	component.isMounted = true;
+}
+
+function unmountComponent ( component:ComponentInstance ) {
+	component.unmountHandlers.map( h => h.apply( component, [] ) )
+	component.unmountHandlers = []
+	component.isMounted = false;
+}
+
+function recursivelyUnmountNode ( node:VNode, depth:number = 0 ) {
+	// TODO : Get depth of each child
+	//			Then unmount child with higher depth in first
+	node.props.children.map( child => {
+
 	})
 }
 
@@ -290,7 +322,7 @@ function renderNode <GReturn = ComponentReturn> ( node:VNode<null, ComponentFunc
 	return result as GReturn
 }
 
-function updateNodeRef ( node:VNode, dom:RenderDom ) {
+function updateNodeRef ( node:VNode ) {
 	if ( !node.ref ) return;
 	// Ref as refs
 	if ( 'list' in node.ref ) {
@@ -381,20 +413,11 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 		component.isDirty = false
 	}
 	// Update ref on node
-	updateNodeRef( newNode, dom )
+	updateNodeRef( newNode )
 	// Diff children of this element (do not process text nodes)
 	if ( dom instanceof Element )
 		diffChildren( newNode, oldNode )
 	// If component is not mounted yet, mount it
-	if ( component && !component.isMounted ) {
-		// Call every mount handler and store returned unmount handlers
-		component.mountHandlers.map( handler => {
-			const mountedReturn = handler.apply( component, [] );
-			if ( typeof mountedReturn === "function" )
-				component.unmountHandlers.push( mountedReturn )
-		})
-		// Reset mount handlers, no need to keep them
-		component.mountHandlers = []
-		component.isMounted = true;
-	}
+	if ( component && !component.isMounted )
+		mountComponent( component )
 }

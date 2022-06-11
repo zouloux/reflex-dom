@@ -1,5 +1,5 @@
 import { h } from "../reflex";
-import { mounted } from "../reflex/lifecycle";
+import { mounted, unmounted } from "../reflex/lifecycle";
 import { state } from "../reflex/state";
 import { colorList, createUID, foodList, pickRandom } from "./demoHelpers";
 import { ref, refs } from "../reflex/ref";
@@ -35,6 +35,9 @@ function ListItem ( props ) {
 	mounted(() => {
 		console.log("List item mounted")
 	})
+	unmounted(() => {
+		console.log("List item unmounted")
+	});
 	return () => <div style={{ border: `1px solid white` }}>
 		<span>ListItem</span>
 		<SubChild item={ props.item }/>
