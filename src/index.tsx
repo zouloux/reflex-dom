@@ -62,19 +62,20 @@ import { LifecycleDemoApp } from "./demos/LifecycleDemoApp";
  *  	X Optimized Swap
  *  		- Do 2 operations, should do only one
  *   ✔ Keep track of component instances
- *   - Remove subtrees recursively
+ *   ✔ Remove subtrees recursively
  *   ✔ Sub tree rendering
  *   ✔ Rendering optimization (like memo and skip)
  *
  * - Reactive
- *   - Dom refs / component ref
+ *   ✔ Dom refs / component ref
  *   - Factory helpers (like hooks), find name and prefix
  *   - Factory Errors / Component errors ( try catch on instance + render etc )
  *   ✔ Var in ref as let ! Yeah
  *   ✔ States / observers
  *   - Async states
  *   ✔ Stores
- *   - Mount / Unmount / Updated
+ *   ✔ Mount / Unmount
+ *   - Updated + Props
  *
  * - Types
  * 	 - Basic JSX Type

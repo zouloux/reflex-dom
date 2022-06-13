@@ -263,9 +263,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	oldChildren.map( oldChildNode => {
 		if ( oldChildNode && !oldChildNode.keep ) {
 			// Call unmount handlers
-			// TODO : Remove component -> bubble deletion + remove parent from dom only
-			//recursivelyUnmountNode();
-			unmountComponent( oldChildNode.component )
+			recursivelyUpdateMountState( oldChildNode, false );
 			// Remove ref
 			const { dom } = oldChildNode
 			oldChildNode.dom = null;
@@ -274,6 +272,8 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		}
 	})
 }
+
+// ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 
 function mountComponent ( component:ComponentInstance ) {
 	// Call every mount handler and store returned unmount handlers
@@ -293,12 +293,10 @@ function unmountComponent ( component:ComponentInstance ) {
 	component.isMounted = false;
 }
 
-function recursivelyUnmountNode ( node:VNode, depth:number = 0 ) {
-	// TODO : Get depth of each child
-	//			Then unmount child with higher depth in first
-	node.props.children.map( child => {
-
-	})
+function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
+	if ( !node.component ) return
+	node.props.children.map( c => recursivelyUpdateMountState(c, doMount) )
+	doMount ? mountComponent( node.component ) : unmountComponent( node.component )
 }
 
 // ----------------------------------------------------------------------------- DIFF NODE
@@ -417,7 +415,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 	// Diff children of this element (do not process text nodes)
 	if ( dom instanceof Element )
 		diffChildren( newNode, oldNode )
-	// If component is not mounted yet, mount it
+	// If component is not mounted yet, mount it recursively
 	if ( component && !component.isMounted )
-		mountComponent( component )
+		recursivelyUpdateMountState( newNode, true )
 }
