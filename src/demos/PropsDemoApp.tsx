@@ -1,7 +1,8 @@
 import { h } from "../reflex";
 import { state } from "../reflex/state";
 import { createUID, firstnameList, lastnameList, pickRandom, randBoolean } from "./demoHelpers";
-import { trackChange } from "../reflex/lifecycle";
+import { changed } from "../reflex/lifecycle";
+import { ref } from "../reflex/ref";
 
 interface IUser {
 	firstname	:string
@@ -9,7 +10,6 @@ interface IUser {
 	isAdmin		?:boolean
 	id			:string
 }
-
 
 function getRandomUser ():IUser {
 	return {
@@ -22,50 +22,35 @@ function getRandomUser ():IUser {
 
 // -----------------------------------------------------------------------------
 
-interface ISubComponentProps {
+interface IUserComponentProps {
 	user		:IUser
 }
 
-function SubComponent ( props:ISubComponentProps ) {
-	/**
-	 * PRO :
-	 * - Will be typed
-	 * CON :
-	 * - Tied to something greater than the proxy. Maybe add a prop getter on the proxy itself ?
-	 * - Unable to track sub-prop (like props.user.isAdmin)
-	 * 		- Or maybe with a super-type with dot compatibility !
-	 */
-	/*props.onUpdate(() => {
-		// Props has been updated
-	})
-	props.onUpdate(["user", "user.isAdmin"], () => { // can we type that ?
-		// Props has been updated
-	})*/
+function UserComponent ( props:IUserComponentProps ) {
 
-	/**
-	 * PRO :
-	 * - Typed
-	 * - Can track anything, not only props
-	 * - Using raw objects and not strings, so can be compiled
-	 * CON :
-	 * - Need to create a function which detect changes
-	 */
-
-	trackChange( () => props.user.id, newId => {
+	// Will disconnect previous user from chat, and connect new user
+	changed( () => props.user.id, newId => {
 		console.log(`Connect user ${newId} to chat panel`)
 		return oldId => {
 			console.log(`Disconnect user ${oldId} from chat`)
 		}
 	})
 
-
-	trackChange( () => props.user.isAdmin, isAdmin => {
+	// Will show a log if isAdmin is changing on props.user
+	changed( () => props.user.isAdmin, isAdmin => {
 		console.log(`User ${props.user.firstname} ${isAdmin ? 'is' : 'is not'} admin`)
 	})
 
-	return () => <div>
+	// This proves that after render, refs are updated correctly and available right after
+	const root = ref()
+	const image = ref()
+	changed(() => {
+		console.log("UserComponent just rendered", root.dom, image.dom.getAttribute('src'))
+	})
+
+	return () => <div ref={ root } class="UserComponent">
 		Hello { props.user.firstname } { props.user.lastname }
-		<img src={`https://i.pravatar.cc/150?u=${props.user.id}`} />
+		<img src={`https://i.pravatar.cc/150?u=${props.user.id}`} ref={ image } />
 	</div>
 }
 
@@ -73,6 +58,6 @@ export function PropsDemoApp () {
 	const currentUser = state<IUser>( getRandomUser )
 	return () => <div>
 		<button onClick={ e => currentUser.set( getRandomUser ) }>Change user</button>
-		<SubComponent user={ currentUser.value } />
+		<UserComponent user={ currentUser.value } />
 	</div>
 }

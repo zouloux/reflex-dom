@@ -70,14 +70,14 @@ import { PropsDemoApp } from "./demos/PropsDemoApp";
  *
  * - Reactive
  *   ✔ Dom refs / component ref
- *   - Factory helpers (like hooks), find name and prefix
+ *   ✔ Factory helpers (like hooks), find name and prefix
  *   - Factory Errors / Component errors ( try catch on instance + render etc )
  *   ✔ Var in ref as let ! Yeah
  *   ✔ States / observers
  *   - Async states
  *   ✔ Stores
  *   ✔ Mount / Unmount
- *   - Updated + Props
+ *   ✔ Updated + Props
  *
  * - Types
  * 	 - Basic JSX Type

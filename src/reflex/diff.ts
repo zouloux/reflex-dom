@@ -74,6 +74,11 @@ function createComponentInstance ( vnode:VNode<null, ComponentFunction> ):Compon
 	}
 }
 
+export function flattenChildren ( vnode:VNode ) {
+	// Re-assign flattened array to the original virtual node, and return it
+	return vnode.props.children = (vnode.props?.children?.flat() ?? [])
+}
+
 // ----------------------------------------------------------------------------- DIFF ELEMENT
 
 export function diffElement ( newNode:VNode, oldNode:VNode ) {
@@ -165,8 +170,6 @@ export function diffElement ( newNode:VNode, oldNode:VNode ) {
  * Note about performances
  * - Very important, avoid loops in loops ! Prefer 4 static loops at top level
  *   rather than 2 nested loops. n*4 is lower than n^n !
- * @param newParentNode
- * @param oldParentNode
  */
 export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// console.log("Diff children", newParentNode, oldParentNode)
@@ -304,12 +307,7 @@ function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 
 // ----------------------------------------------------------------------------- DIFF NODE
 
-export function flattenChildren ( vnode:VNode ) {
-	// Re-assign flattened array to the original virtual node, and return it
-	return vnode.props.children = (vnode.props?.children?.flat() ?? [])
-}
-
-function renderNode <GReturn = ComponentReturn> ( node:VNode<null, ComponentFunction>, component:ComponentInstance, callRenderHandlers = true ) :GReturn {
+function renderNode <GReturn = ComponentReturn> ( node:VNode<null, ComponentFunction>, component:ComponentInstance ) :GReturn {
 	// Tie component and virtual node
 	component.vnode = node
 	node.component = component
@@ -319,8 +317,6 @@ function renderNode <GReturn = ComponentReturn> ( node:VNode<null, ComponentFunc
 	// Execute rendering
 	const result = (component.render ?? node.type as RenderFunction)
 		.apply( component, [ component.propsProxy.value ])
-	// Execute after render handlers
-	callRenderHandlers && component.renderHandlers.map( h => h() )
 	// Unselect hooked component
 	_hookedComponent = null
 	return result as GReturn
@@ -353,7 +349,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 		// Create component instance (without new keyword for better performances)
 		component = createComponentInstance( newNode as VNode<null, ComponentFunction> )
 		// Execute component's function and check what is returned
-		const result = renderNode( newNode as VNode<null, ComponentFunction>, component, false )
+		const result = renderNode( newNode as VNode<null, ComponentFunction>, component )
 		// This is a factory component which return a render function
 		if ( typeof result === "function" ) {
 			component.render = result as RenderFunction
@@ -414,6 +410,8 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 			newNode.props.children = flattenChildren( renderResult )
 			// Diff rendered element
 			newNode.dom = dom = diffElement( renderResult, oldNode )
+			// Assign ref of first virtual node to the component's virtual node
+			newNode.ref = renderResult.ref
 		}
 		// Tie up node and component
 		newNode.component = component
@@ -429,4 +427,6 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 	// If component is not mounted yet, mount it recursively
 	if ( component && !component.isMounted )
 		recursivelyUpdateMountState( newNode, true )
+	// Execute after render handlers
+	component?.renderHandlers.map( h => h() )
 }

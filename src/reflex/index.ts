@@ -54,7 +54,6 @@ export type ComponentReturn = RenderFunction|VNode
 export type FactoryComponent = () => RenderFunction
 export type ComponentFunction = FunctionalComponent|FactoryComponent
 
-
 export type LifecycleHandler <GReturn = void> = (...rest) => GReturn
 export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler>
 
