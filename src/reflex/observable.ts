@@ -1,4 +1,4 @@
-import { ISignal, Signal } from "./signal";
+import { ISignal, Signal } from "../signal/signal";
 
 // ----------------------------------------------------------------------------- COMMON TYPES
 

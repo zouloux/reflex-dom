@@ -1,15 +1,18 @@
 import {
-	TEXT_NODE_TYPE_NAME, ComponentInstance, RenderDom, RenderFunction,
-	shallowPropsCompare, VNode, VNodeDomType, VTextNode, ComponentFunction,
+	TEXT_NODE_TYPE_NAME, RenderDom, RenderFunction,
+	VNode, VNodeDomType, VTextNode, ComponentFunction,
 	ComponentReturn, ReflexError
 } from "./index";
 import { cloneVNode } from "./jsx";
 import { IInternalRef, IInternalRefs } from "./ref";
-import { createPropsProxy } from "./props";
+import { ComponentInstance, createComponentInstance, recursivelyUpdateMountState } from "./component";
 
 /**
- * TODO : Disallow a component render function to return a component as main node !
+ * TODO : Errors
+ * - Disallow a component render function to return a component as main node !
  * 			() => <OtherComponent /> <- Forbidden
+ * - Disallow a component which render an array
+ * 			() => [<div />, <div />] <- Forbidden
  */
 
 // ----------------------------------------------------------------------------- CONSTANTS
@@ -54,30 +57,41 @@ function setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) {
 		style.setProperty(key, value);
 	else if (value == null)
 		style[key] = '';
+	// FIXME : IS_NON_DIMENSIONAL_REGEX -> Is it really necessary ?
 	else if (typeof value != 'number' || IS_NON_DIMENSIONAL_REGEX.test(key))
 		style[key] = value;
 	else
 		style[key] = value + 'px';
 }
 
-// Optimize it in a function @see jsx.ts/createVNode()
-function createComponentInstance ( vnode:VNode<null, ComponentFunction> ):ComponentInstance {
-	return {
-		vnode,
-		propsProxy: createPropsProxy( vnode.props ),
-		isDirty: false,
-		isMounted: false,
-		name: vnode.type.name,
-		mountHandlers: [],
-		renderHandlers: [],
-		unmountHandlers: [],
-	}
-}
-
 export function flattenChildren ( vnode:VNode ) {
 	// Re-assign flattened array to the original virtual node, and return it
 	return vnode.props.children = (vnode.props?.children?.flat() ?? [])
 }
+
+function updateNodeRef ( node:VNode ) {
+	if ( !node.ref ) return;
+	// Ref as refs
+	if ( 'list' in node.ref ) {
+		// FIXME : Type
+		// FIXME : Keep track of index ? Do it from diffChildren maybe ?
+		( node.ref as IInternalRefs ).setFromVNode( 0, node as any )
+	} else {
+		// FIXME : Type
+		( node.ref as IInternalRef ).setFromVNode( node as any )
+	}
+}
+
+// Shallow compare two objects, applied only for props between new and old virtual nodes.
+// Will not compare "children" which is always different
+// https://esbench.com/bench/62a138846c89f600a5701904
+export const shallowPropsCompare = ( a:object, b:object ) => (
+	// Same amount of properties ?
+	Object.keys(a).length === Object.keys(b).length
+	// Every property exists in other object ?
+	// Never test "children" property which is always different
+	&& Object.keys(a).every( key => key === "children" || (b.hasOwnProperty(key) && a[key] === b[key]) )
+)
 
 // ----------------------------------------------------------------------------- DIFF ELEMENT
 
@@ -184,8 +198,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// having to search for it
 	newParentNode.keys = new Map()
 	const registerKey = c => {
-		if ( c?.key )
-			newParentNode.keys[ c.key ] = c
+		if ( c?.key ) newParentNode.keys[ c.key ] = c
 	}
 	// This is a new parent node (no old), so no diffing
 	// we juste process and add every child node
@@ -250,7 +263,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		// Found at same index, with same type.
 		// Old node does not have a key.
 		/** UPDATE IN PLACE **/
-		else if ( i in oldChildren && oldChildren[ i ].type == newChildNode.type ) {
+		else if ( i in oldChildren && oldChildren[ i ] && oldChildren[ i ].type == newChildNode.type ) {
 			const oldNode = oldChildren[ i ]
 			diffNode( newChildNode, oldNode )
 			oldNode.keep = true;
@@ -278,61 +291,22 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	})
 }
 
-// ----------------------------------------------------------------------------- MOUNT / UNMOUNT
-
-function mountComponent ( component:ComponentInstance ) {
-	// Call every mount handler and store returned unmount handlers
-	component.mountHandlers.map( handler => {
-		const mountedReturn = handler.apply( component, [] );
-		if ( typeof mountedReturn === "function" )
-			component.unmountHandlers.push( mountedReturn )
-	})
-	// Reset mount handlers, no need to keep them
-	component.mountHandlers = []
-	component.isMounted = true;
-}
-
-function unmountComponent ( component:ComponentInstance ) {
-	component.unmountHandlers.map( h => h.apply( component, [] ) )
-	component.unmountHandlers = []
-	component.isMounted = false;
-}
-
-function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
-	if ( node.type == TEXT_NODE_TYPE_NAME ) return
-	flattenChildren( node ).map( c => c && recursivelyUpdateMountState(c, doMount) )
-	if ( node.component )
-		doMount ? mountComponent( node.component ) : unmountComponent( node.component )
-}
-
 // ----------------------------------------------------------------------------- DIFF NODE
 
-function renderNode <GReturn = ComponentReturn> ( node:VNode<null, ComponentFunction>, component:ComponentInstance ) :GReturn {
+function renderComponentNode <GReturn = ComponentReturn> ( node:VNode<null, ComponentFunction>, component:ComponentInstance ) :GReturn {
 	// Tie component and virtual node
 	component.vnode = node
 	node.component = component
 	// Select hooked component
 	_hookedComponent = component;
 	// FIXME: Before render handlers ?
+	// FIXME: Optimize rendering with a hook ?
 	// Execute rendering
 	const result = (component.render ?? node.type as RenderFunction)
 		.apply( component, [ component.propsProxy.value ])
 	// Unselect hooked component
 	_hookedComponent = null
 	return result as GReturn
-}
-
-function updateNodeRef ( node:VNode ) {
-	if ( !node.ref ) return;
-	// Ref as refs
-	if ( 'list' in node.ref ) {
-		// FIXME : Type
-		// FIXME : Keep track of index ? Do it from diffChildren maybe ?
-		( node.ref as IInternalRefs ).setFromVNode( 0, node as any )
-	} else {
-		// FIXME : Type
-		( node.ref as IInternalRef ).setFromVNode( node as any )
-	}
 }
 
 export function diffNode ( newNode:VNode, oldNode?:VNode ) {
@@ -349,7 +323,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 		// Create component instance (without new keyword for better performances)
 		component = createComponentInstance( newNode as VNode<null, ComponentFunction> )
 		// Execute component's function and check what is returned
-		const result = renderNode( newNode as VNode<null, ComponentFunction>, component )
+		const result = renderComponentNode( newNode as VNode<null, ComponentFunction>, component )
 		// This is a factory component which return a render function
 		if ( typeof result === "function" ) {
 			component.render = result as RenderFunction
@@ -402,7 +376,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 		// Not already rendered, and not optimization possible. Render now.
 		else if ( !renderResult ) {
 			component.propsProxy.set( newNode.props )
-			renderResult = renderNode<VNode>( newNode as VNode<null, ComponentFunction>, component )
+			renderResult = renderComponentNode<VNode>( newNode as VNode<null, ComponentFunction>, component )
 		}
 		// We rendered something (not reusing old component)
 		if ( renderResult ) {

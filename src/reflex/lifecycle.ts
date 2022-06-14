@@ -4,10 +4,12 @@ import { LifecycleHandler, MountHandler } from "./index";
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 
 export function mounted ( handler:MountHandler ) {
+	// FIXME : In dev mode, maybe check if component is mounted ?
 	getHookedComponent().mountHandlers.push( handler )
 }
 
 export function unmounted ( handler:LifecycleHandler ) {
+	// FIXME : In dev mode, maybe check if component is mounted ?
 	getHookedComponent().unmountHandlers.push( handler )
 }
 

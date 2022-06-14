@@ -1,4 +1,5 @@
-import { ComponentInstance, VNode, VNodeBaseProps } from "./index";
+import { VNode, VNodeBaseProps } from "./index";
+import { ComponentInstance } from "./component";
 
 // ----------------------------------------------------------------------------- REF
 

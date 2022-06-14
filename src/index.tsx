@@ -47,9 +47,9 @@ import { PropsDemoApp } from "./demos/PropsDemoApp";
  * 	 ✔ Set / remove event listeners
  * 	 ✔ Reuse previous components, do not trash everything everytime
  * 	 ✔ innerHTML
- *   ✔ class as string or array filtered with booleans
- *   	- Optimize style when does not changes, is it possible ?
- *   ✔ style as object only
+ *   ✔ Class as string or array filtered with booleans
+ *   	- Optimize class when does not changes, is it possible ?
+ *   ✔ Style as object only
  *   	- Optimize style when does not changes, is it possible ?
  *
  * - Advanced v-dom
@@ -69,15 +69,20 @@ import { PropsDemoApp } from "./demos/PropsDemoApp";
  *   ✔ Rendering optimization (like memo and skip)
  *
  * - Reactive
- *   ✔ Dom refs / component ref
+ *   ✔ Dom ref / component ref
  *   ✔ Factory helpers (like hooks), find name and prefix
- *   - Factory Errors / Component errors ( try catch on instance + render etc )
  *   ✔ Var in ref as let ! Yeah
  *   ✔ States / observers
- *   - Async states
  *   ✔ Stores
  *   ✔ Mount / Unmount
  *   ✔ Updated + Props
+ *
+ * - Advanced Reactive
+ *   - Multi refs in for loops and stuff, need to keep correct indexes even when moving
+ *   - Factory Errors / Component errors ( try catch on instance + render etc )
+ *   - Async states ! With cancellation
+ *   - Fetch hook with race condition management + states + cache + cancellable
+ *   - Imperative handles
  *
  * - Types
  * 	 - Basic JSX Type
@@ -104,8 +109,8 @@ export function init () {
 	// render( <ListDemoApp render={ init } renderIndex={ renderIndex ++ } />, document.body );
 	// render( <StatefulDemoApp render={ init } renderIndex={ renderIndex ++ } /> , document.body );
 	// render( <StoreListDemoApp render={ init } renderIndex={ renderIndex ++ } /> , document.body );
-	// render( <LifecycleDemoApp />, document.body )
-	render( <PropsDemoApp />, document.body )
+	render( <LifecycleDemoApp />, document.body )
+	// render( <PropsDemoApp />, document.body )
 	p();
 }
 

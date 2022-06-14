@@ -8,14 +8,11 @@ export function setReflexDebug (value:boolean) {
 	_enableReflexDebug = value
 }
 
-
 // ----------------------------------------------------------------------------- TRACK PERFORMANCES
-
-function noop () {}
 
 export function trackPerformances ( subject:string ) {
 	if ( !_enableReflexDebug && process.env.NODE_ENV !== "production" )
-		return noop;
+		return () => {};
 	const start = performance.now()
 	return () => {
 		const r = ~~( performance.now() - start )

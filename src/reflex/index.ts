@@ -1,4 +1,6 @@
 /// <reference lib="dom" />
+import { IRef, IRefs } from "./ref";
+import { ComponentInstance } from "./component";
 
 // ----------------------------------------------------------------------------- TYPES
 
@@ -12,9 +14,6 @@
 // ----------------------------------------------------------------------------- CONSTANTS
 
 // Name of private node types which should not be created with JSX
-import { IRef, IRefs } from "./ref";
-import { IPropsProxy } from "./props";
-
 export const TEXT_NODE_TYPE_NAME = "#Text"
 export const ROOT_NODE_TYPE_NAME = "#Root"
 
@@ -31,17 +30,6 @@ export const microtask = ( window.queueMicrotask ?? (h => window.setTimeout( h, 
 // Force a list or a lonely item to be an array with the same type
 export const forceArray = <G>( item:G|G[] ):G[] => Array.isArray( item ) ? item : [ item ]
 
-// Shallow compare two objects, applied only for props between new and old virtual nodes.
-// Will not compare "children" which is always different
-// https://esbench.com/bench/62a138846c89f600a5701904
-export const shallowPropsCompare = ( a:object, b:object ) => (
-	// Same amount of properties ?
-	Object.keys(a).length === Object.keys(b).length
-	// Every property exists in other object ?
-	// Never test "children" property which is always different
-	&& Object.keys(a).every( key => key === "children" || (b.hasOwnProperty(key) && a[key] === b[key]) )
-)
-
 // ----------------------------------------------------------------------------- INTERNAL - CREATE COMPONENT
 
 export type RenderDom = Element|Text
@@ -56,19 +44,6 @@ export type ComponentFunction = FunctionalComponent|FactoryComponent
 
 export type LifecycleHandler <GReturn = void> = (...rest) => GReturn
 export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler>
-
-export interface ComponentInstance {
-	vnode			:VNode<null, ComponentFunction>
-	name			:string
-	isFactory		?:boolean
-	render			?:RenderFunction
-	propsProxy		?:IPropsProxy<any>
-	isDirty			?:boolean
-	isMounted		:boolean;
-	mountHandlers	:MountHandler[]
-	renderHandlers	:LifecycleHandler[]
-	unmountHandlers	:LifecycleHandler[]
-}
 
 // ----------------------------------------------------------------------------- JSX H / CREATE ELEMENT
 

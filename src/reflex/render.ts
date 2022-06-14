@@ -1,7 +1,8 @@
-import { ROOT_NODE_TYPE_NAME, forceArray, VNodeOrVNodes, ComponentInstance, microtask } from "./index";
+import { ROOT_NODE_TYPE_NAME, forceArray, VNodeOrVNodes, microtask } from "./index";
 import { diffChildren, diffNode, DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
 import { createVNode } from "./jsx";
 import { trackPerformances } from "./debug";
+import { ComponentInstance } from "./component";
 
 // ----------------------------------------------------------------------------- RENDER
 
@@ -40,14 +41,17 @@ export function invalidateComponent ( component:ComponentInstance ) {
 
 // ----------------------------------------------------------------------------- REGISTER WEB-COMPONENTS
 
-
+// TODO : Web components ! Check how lit and preact webcomponents works
+//			- Register web-components with ComponentName to <component-name />
+//  		- Update properties when changed in DOM
+//  			- Need translation (detect numbers, maybe json for array and objects ?)
+//				- Maybe an API to set props with JS and with advanced type (like functions)
+//			- Children
+//			- DOM Find
+//			- Mount / Unmount
 
 // ----------------------------------------------------------------------------- HYDRATE
 
-
-
-
 // TODO : Hydrate
-// TODO : Web components ! Check how lit and preact webcomponents works
-// TODO : Render to string or render to web components to avoid expensive hydratation !
+// TODO : Render to string or render to web components to avoid expensive hydratation ?
 
