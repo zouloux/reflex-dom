@@ -13,6 +13,7 @@
 
 // Name of private node types which should not be created with JSX
 import { IRef, IRefs } from "./ref";
+import { IPropsProxy } from "./props";
 
 export const TEXT_NODE_TYPE_NAME = "#Text"
 export const ROOT_NODE_TYPE_NAME = "#Root"
@@ -55,16 +56,18 @@ export type ComponentFunction = FunctionalComponent|FactoryComponent
 
 
 export type LifecycleHandler <GReturn = void> = (...rest) => GReturn
-export type MountHandler = LifecycleHandler<void>|LifecycleHandler<LifecycleHandler>
+export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler>
 
 export interface ComponentInstance {
-	vnode		:VNode<null, ComponentFunction>
-	name		:string
-	isFactory	?:boolean
-	render		?:RenderFunction
-	isDirty		?:boolean
+	vnode			:VNode<null, ComponentFunction>
+	name			:string
+	isFactory		?:boolean
+	render			?:RenderFunction
+	propsProxy		?:IPropsProxy<any>
+	isDirty			?:boolean
 	isMounted		:boolean;
 	mountHandlers	:MountHandler[]
+	renderHandlers	:LifecycleHandler[]
 	unmountHandlers	:LifecycleHandler[]
 }
 

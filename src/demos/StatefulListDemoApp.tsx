@@ -1,15 +1,8 @@
 import { h } from "../reflex";
 import { state } from "../reflex/state";
+import { colorList, createUID, foodList, pickRandom, rand } from "./demoHelpers";
 
 // ----------------------------------------------------------------------------- HELPERS
-
-const toHex = (n:number) => (~~n).toString(16)
-const createUID = () => `${toHex(Date.now())}-${toHex(Math.random() * 999999999)}`;
-const pickRandom = (array:any[]) => array[ ~~(Math.random() * array.length) ]
-const rand = (max:number) => ~~(Math.random() * max)
-
-const foodList = ["Cheese", "Carrots", "Pastas", "Pizza", "Burgers", "Ham", "Salad", "Mustard"]
-const colorList = ["Red", "Blue", "Yellow", "Purple", "Orange", "Black"]
 
 interface IListItem {
 	name	:string
@@ -31,7 +24,7 @@ interface IListItemProps {
 }
 
 function ListItem ( props:IListItemProps ) {
-	console.log( "ListItem" );
+	// console.log( "ListItem" );
 	return <tr class="ListItem" data-id={ props.item.id } style={ listItemStyle }>
 		<td>{ props.item.name }</td>
 		<td><button onClick={ props.moveUpClicked }>⬆</button></td>
@@ -42,7 +35,7 @@ function ListItem ( props:IListItemProps ) {
 
 // ----------------------------------------------------------------------------- LIST APP
 
-function InnerStatefulDemoApp () {
+export function StatefulDemoApp () {
 
 	/**
 	 * List state and reducers

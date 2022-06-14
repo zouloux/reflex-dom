@@ -1,14 +1,5 @@
 import { h } from "../reflex";
-
-// ----------------------------------------------------------------------------- HELPERS
-
-const toHex = (n:number) => (~~n).toString(16)
-const createUID = () => `${toHex(Date.now())}-${toHex(Math.random() * 999999999)}`;
-const pickRandom = (array:any[]) => array[ ~~(Math.random() * array.length) ]
-const rand = (max:number) => ~~(Math.random() * max)
-
-const foodList = ["Cheese", "Carrots", "Pastas", "Pizza", "Burgers", "Ham", "Salad", "Mustard"]
-const colorList = ["Red", "Blue", "Yellow", "Purple", "Orange", "Black"]
+import { colorList, createUID, foodList, pickRandom, rand } from "./demoHelpers";
 
 // ----------------------------------------------------------------------------- DATA MODEL
 // TODO : Convert to state then store

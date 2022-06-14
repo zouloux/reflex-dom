@@ -5,6 +5,7 @@ import {
 } from "./index";
 import { cloneVNode } from "./jsx";
 import { IInternalRef, IInternalRefs } from "./ref";
+import { createPropsProxy } from "./props";
 
 /**
  * TODO : Disallow a component render function to return a component as main node !
@@ -63,10 +64,12 @@ function setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) {
 function createComponentInstance ( vnode:VNode<null, ComponentFunction> ):ComponentInstance {
 	return {
 		vnode,
+		propsProxy: createPropsProxy( vnode.props ),
 		isDirty: false,
 		isMounted: false,
 		name: vnode.type.name,
 		mountHandlers: [],
+		renderHandlers: [],
 		unmountHandlers: [],
 	}
 }
@@ -101,7 +104,7 @@ export function diffElement ( newNode:VNode, oldNode:VNode ) {
 			return
 		// Insert HTML directly without warning
 		if ( name === "innerHTML" )
-			( dom as Element ).innerHTML = "" // FIXME : Maybe use delete ?
+			( dom as Element ).innerHTML = "" // FIXME : Maybe use delete or null ?
 			// Events starts with "on". On preact this is optimized with [0] == "o"
 		// But recent benchmarks are pointing to startsWith usage as faster
 		else if ( name.startsWith("on") ) {
@@ -160,8 +163,8 @@ export function diffElement ( newNode:VNode, oldNode:VNode ) {
 
 /**
  * Note about performances
- * - Very important, avoid loops in loops ! Prefer 3 static loops at top level
- *   rather than 2 nested loops. n*3 is lower than n^n !
+ * - Very important, avoid loops in loops ! Prefer 4 static loops at top level
+ *   rather than 2 nested loops. n*4 is lower than n^n !
  * @param newParentNode
  * @param oldParentNode
  */
@@ -231,9 +234,8 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 			const collapsedIndex = i + collapseCount
 			// FIXME : Should do 1 operation when swapping positions, not 2
 			// FIXME : Perf, is indexOf quick ? Maybe store every indexes in an array ?
-			if ( oldChildren.indexOf( oldNode ) != collapsedIndex ) {
+			if ( oldChildren.indexOf( oldNode ) != collapsedIndex )
 				parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
-			}
 		}
 		// Has key, but not found in old
 		/** CREATE **/
@@ -294,27 +296,31 @@ function unmountComponent ( component:ComponentInstance ) {
 }
 
 function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
-	if ( !node.component ) return
-	node.props.children.map( c => recursivelyUpdateMountState(c, doMount) )
-	doMount ? mountComponent( node.component ) : unmountComponent( node.component )
+	if ( node.type == TEXT_NODE_TYPE_NAME ) return
+	flattenChildren( node ).map( c => c && recursivelyUpdateMountState(c, doMount) )
+	if ( node.component )
+		doMount ? mountComponent( node.component ) : unmountComponent( node.component )
 }
 
 // ----------------------------------------------------------------------------- DIFF NODE
 
 export function flattenChildren ( vnode:VNode ) {
 	// Re-assign flattened array to the original virtual node, and return it
-	return vnode.props.children = (vnode.props.children?.flat() ?? [])
+	return vnode.props.children = (vnode.props?.children?.flat() ?? [])
 }
 
-function renderNode <GReturn = ComponentReturn> ( node:VNode<null, ComponentFunction>, component:ComponentInstance ) :GReturn {
+function renderNode <GReturn = ComponentReturn> ( node:VNode<null, ComponentFunction>, component:ComponentInstance, callRenderHandlers = true ) :GReturn {
 	// Tie component and virtual node
 	component.vnode = node
 	node.component = component
 	// Select hooked component
 	_hookedComponent = component;
-	// TODO : props proxy
+	// FIXME: Before render handlers ?
 	// Execute rendering
-	const result = (component.render ?? node.type as RenderFunction).apply( component, [ node.props ])
+	const result = (component.render ?? node.type as RenderFunction)
+		.apply( component, [ component.propsProxy.value ])
+	// Execute after render handlers
+	callRenderHandlers && component.renderHandlers.map( h => h() )
 	// Unselect hooked component
 	_hookedComponent = null
 	return result as GReturn
@@ -347,7 +353,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 		// Create component instance (without new keyword for better performances)
 		component = createComponentInstance( newNode as VNode<null, ComponentFunction> )
 		// Execute component's function and check what is returned
-		const result = renderNode( newNode as VNode<null, ComponentFunction>, component )
+		const result = renderNode( newNode as VNode<null, ComponentFunction>, component, false )
 		// This is a factory component which return a render function
 		if ( typeof result === "function" ) {
 			component.render = result as RenderFunction
@@ -399,6 +405,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 		}
 		// Not already rendered, and not optimization possible. Render now.
 		else if ( !renderResult ) {
+			component.propsProxy.set( newNode.props )
 			renderResult = renderNode<VNode>( newNode as VNode<null, ComponentFunction>, component )
 		}
 		// We rendered something (not reusing old component)
@@ -408,6 +415,10 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 			// Diff rendered element
 			newNode.dom = dom = diffElement( renderResult, oldNode )
 		}
+		// Tie up node and component
+		newNode.component = component
+		component.vnode = newNode as any
+		// Component is clean and rendered now
 		component.isDirty = false
 	}
 	// Update ref on node

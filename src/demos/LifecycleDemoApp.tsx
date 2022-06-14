@@ -38,6 +38,7 @@ function ListItem ( props ) {
 	unmounted(() => {
 		console.log("List item unmounted")
 	});
+
 	return () => <div style={{ border: `1px solid white` }}>
 		<span>ListItem</span>
 		<SubChild item={ props.item }/>
@@ -83,13 +84,10 @@ export function LifecycleDemoApp () {
 	}
 
 	return () => <div>
-
 		<button onClick={ e => toggleListVisibility() }>
 			{ isListVisible.value ? "Hide list" : "Show list" }
 		</button>
 		<br/><br/>
-
 		{ isListVisible.value && <List pure={ false } /> }
-
 	</div>
 }

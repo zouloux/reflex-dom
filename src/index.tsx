@@ -3,6 +3,8 @@ import { ListDemoApp } from "./demos/ListDemoApp";
 import { StoreListDemoApp } from "./demos/StoreListDemoApp";
 import { setReflexDebug, trackPerformances } from "./reflex/debug";
 import { LifecycleDemoApp } from "./demos/LifecycleDemoApp";
+import { StatefulDemoApp } from "./demos/StatefulListDemoApp";
+import { PropsDemoApp } from "./demos/PropsDemoApp";
 
 
 /**
@@ -100,8 +102,10 @@ let renderIndex = 0
 export function init () {
 	const p = trackPerformances("Root rendering")
 	// render( <ListDemoApp render={ init } renderIndex={ renderIndex ++ } />, document.body );
+	// render( <StatefulDemoApp render={ init } renderIndex={ renderIndex ++ } /> , document.body );
 	// render( <StoreListDemoApp render={ init } renderIndex={ renderIndex ++ } /> , document.body );
-	render( <LifecycleDemoApp />, document.body )
+	// render( <LifecycleDemoApp />, document.body )
+	render( <PropsDemoApp />, document.body )
 	p();
 }
 

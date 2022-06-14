@@ -23,7 +23,7 @@ export function prepareInitialValue <GType> ( initialValue:TInitialValue<GType> 
 
 export interface IPublicBit <GType> {
 	onChanged		:TSignalWithoutDispatch<[GType, GType]>
-	dispose () : void
+	dispose 		() : void
 }
 
 export interface IBit <GType> extends IPublicBit <GType> {
@@ -38,7 +38,7 @@ export interface IBit <GType> extends IPublicBit <GType> {
  * used by an upper function which holds dispatch as a private member.
  * @param initialValue Initial value or initial value generator.
  */
-function createBit <GType> ( initialValue?:TInitialValue<GType> ):IBit<GType> {
+export function createBit <GType> ( initialValue?:TInitialValue<GType> ):IBit<GType> {
 	// Init and store the value in this scope
 	let value:GType = prepareInitialValue( initialValue )
 	// Create signal and extract dispatch method from it
@@ -63,7 +63,7 @@ function createBit <GType> ( initialValue?:TInitialValue<GType> ):IBit<GType> {
 
 export interface IBasicObservable <GType> extends IPublicBit <GType> {
 	readonly value:GType
-	set ( newValue:GType ) : void
+	set ( newValue:TInitialValue<GType> ) : void
 }
 
 /**
@@ -80,6 +80,7 @@ export function createBasicObservable <GType> ( initialValue?:TInitialValue<GTyp
 		...bit,
 		get value () { return get() },
 		set ( newValue:GType) {
+			newValue = prepareInitialValue( newValue )
 			const oldValue = get();
 			set( newValue );
 			dispatch( newValue, oldValue )
@@ -90,7 +91,7 @@ export function createBasicObservable <GType> ( initialValue?:TInitialValue<GTyp
 // ----------------------------------------------------------------------------- STATE OBSERVABLE
 
 export interface IStateObservable <GType> extends IBasicObservable <GType> {
-	set ( newValue:GType ) : Promise<void>
+	set ( newValue:TInitialValue<GType> ) : Promise<void>
 }
 
 export function createStateObservable <GType> (
@@ -103,6 +104,7 @@ export function createStateObservable <GType> (
 		...bit,
 		get value () { return get() },
 		async set ( newValue:GType ) {
+			newValue = prepareInitialValue( newValue )
 			const oldValue = get();
 			set( newValue );
 			if ( beforeChanged ) {
@@ -141,6 +143,7 @@ export function createAsyncObservable <GType> (
 		get isChanging () { return isChanging },
 		get wasAlreadyChanging () { return wasAlreadyChanging },
 		async set ( newValue:GType ) {
+			newValue = prepareInitialValue( newValue )
 			// Keep old to check changes
 			const oldValue = get();
 			set( newValue )
