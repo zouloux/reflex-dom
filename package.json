@@ -1,7 +1,7 @@
 {
 	"name": "@zouloux/reflex",
 	"type": "module",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "Reflex is a tiny 3kb virtual-dom library with factory based functional components.",
 	"main": "./dist/index.es2017.cjs",
 	"module": "./dist/index.es2020.mjs",
@@ -12,7 +12,7 @@
 		"clean": "rm -rf .parcel-cache && rm -rf dist && rm -rf public",
 		"dev": "./parcel-demo.sh watch",
 		"build": "tsbundle build",
-		"publish": "./parcel-demo.sh build && tsbundle publish"
+		"publish": "npm run clean && ./parcel-demo.sh build && tsbundle publish"
 	},
 	"author": "Alexis Bouhet (ZoulouX)",
 	"license": "MIT",
