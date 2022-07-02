@@ -1,5 +1,6 @@
-node_modules
-.parcel-cache
-dist
 .idea
 .DS_Store
+node_modules
+.parcel-cache
+dist/
+public/

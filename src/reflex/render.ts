@@ -1,7 +1,6 @@
-import { ROOT_NODE_TYPE_NAME, forceArray, VNodeOrVNodes, microtask } from "./index";
-import { diffChildren, diffNode, DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
+import { _ROOT_NODE_TYPE_NAME, forceArray, VNodeOrVNodes, microtask } from "./common";
+import { diffChildren, diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
 import { createVNode } from "./jsx";
-import { trackPerformances } from "./debug";
 import { ComponentInstance } from "./component";
 
 // ----------------------------------------------------------------------------- RENDER
@@ -9,23 +8,25 @@ import { ComponentInstance } from "./component";
 export function render ( rootNode:VNodeOrVNodes, parentElement:HTMLElement ) {
 	// When using render, we create a new root node to detect new renders
 	// This node is never rendered, we just attach it to the parentElement and render its children
-	const root = createVNode( ROOT_NODE_TYPE_NAME, { children: forceArray( rootNode ) })
+	const root = createVNode( _ROOT_NODE_TYPE_NAME, { children: forceArray( rootNode ) })
 	root.dom = parentElement
-	diffChildren( root, parentElement[ DOM_PRIVATE_VIRTUAL_NODE_KEY ] )
-	parentElement[ DOM_PRIVATE_VIRTUAL_NODE_KEY ] = root
+	diffChildren( root, parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ] )
+	parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ] = root
 }
 
 // ----------------------------------------------------------------------------- INVALIDATION
 
 let componentsToUpdate:ComponentInstance[] = []
 function updateDirtyComponents () {
-	const p = trackPerformances("Update dirty components")
+	let p
+	if ( process.env.NODE_ENV !== "production" )
+		p = require("./debug").trackPerformances("Update dirty components")
 	// TODO : Update with depth ! Deepest first ? Or last ?
 	componentsToUpdate.map( component => {
 		diffNode( component.vnode, component.vnode )
 	})
 	componentsToUpdate = []
-	p();
+	p && p();
 }
 
 export function invalidateComponent ( component:ComponentInstance ) {
@@ -33,8 +34,8 @@ export function invalidateComponent ( component:ComponentInstance ) {
 	if ( componentsToUpdate.length === 0 )
 		microtask( updateDirtyComponents );
 	// Invalidate this component once
-	if ( component.isDirty ) return;
-	component.isDirty = true
+	if ( component._isDirty ) return;
+	component._isDirty = true
 	// Store it into the list of dirty components
 	componentsToUpdate.push( component )
 }

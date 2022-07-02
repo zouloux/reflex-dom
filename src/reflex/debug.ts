@@ -11,11 +11,11 @@ export function setReflexDebug (value:boolean) {
 // ----------------------------------------------------------------------------- TRACK PERFORMANCES
 
 export function trackPerformances ( subject:string ) {
-	if ( !_enableReflexDebug && process.env.NODE_ENV !== "production" )
+	if ( !_enableReflexDebug || process.env.NODE_ENV === "production" )
 		return () => {};
 	const start = performance.now()
 	return () => {
-		const r = ~~( performance.now() - start )
-		console.info( subject, r < 1000 ? `${r}ms` : `${r/1000}s`)
+		const delta = ~~( performance.now() - start )
+		console.info( subject, delta < 1000 ? `${delta}ms` : `${delta/1000}s`)
 	}
 }

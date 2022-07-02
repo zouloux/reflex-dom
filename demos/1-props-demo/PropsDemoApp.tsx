@@ -1,8 +1,5 @@
-import { h } from "../reflex";
-import { state } from "../reflex/state";
-import { createUID, firstnameList, lastnameList, pickRandom, randBoolean } from "./demoHelpers";
-import { changed } from "../reflex/lifecycle";
-import { ref } from "../reflex/ref";
+import { h, state, changed, ref } from "../../src/reflex";
+import { createUID, firstnameList, lastnameList, pickRandom, randBoolean } from "../demoHelpers";
 
 interface IUser {
 	firstname	:string

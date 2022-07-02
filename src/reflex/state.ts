@@ -10,7 +10,7 @@ import {
 export function state <GType> ( initialValue?:TInitialValue<GType> ):IStateObservable<GType> {
 	const component = getHookedComponent()
 	const observable = createStateObservable( initialValue, () => invalidateComponent( component ) )
-	component.observables.push( observable )
+	component._observables.push( observable )
 	return observable
 }
 
@@ -21,6 +21,6 @@ export function asyncState <GType> ( initialValue?:TInitialValue<GType> ):IAsync
 	// TODO : Implement this
 	const observable = createAsyncObservable( initialValue, () => invalidateComponent( component ) )
 	// TODO : We may need cancellable Promises. Maybe just use reject ? And throw errors in legacy mode.
-	component.observables.push( observable )
+	component._observables.push( observable )
 	return observable
 }

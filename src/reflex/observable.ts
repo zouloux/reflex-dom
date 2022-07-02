@@ -1,4 +1,4 @@
-import { ISignal, Signal } from "../signal/signal";
+import { Signal, ISignal } from "@zouloux/signal";
 
 // ----------------------------------------------------------------------------- COMMON TYPES
 
@@ -10,8 +10,7 @@ export type TSignalWithoutDispatch <GSignalArguments extends any[]> = Omit<ISign
 
 export type TInitialValue<GType> = GType | (() => GType)
 
-export function prepareInitialValue <GType> ( initialValue:TInitialValue<GType> ) {
-	if ( !initialValue ) return null;
+function prepareInitialValue <GType> ( initialValue:TInitialValue<GType> ) {
 	return (
 		typeof initialValue === "function"
 		? ( initialValue as () => GType )()
@@ -75,15 +74,17 @@ export interface IBasicObservable <GType> extends IPublicBit <GType> {
  */
 export function createBasicObservable <GType> ( initialValue?:TInitialValue<GType> ):IBasicObservable<GType> {
 	// Create the bit and extract private dispatch and setter
-	const { get, set, dispatch, ...bit } = createBit<GType>( initialValue );
+	// const { get, set, dispatch, ...bit } = createBit<GType>( initialValue );
+	const bit = createBit<GType>( initialValue );
 	return {
-		...bit,
-		get value () { return get() },
+		// ...bit,
+		onChanged: bit.onChanged,
+		dispose: bit.dispose,
+		get value () { return bit.get() },
 		set ( newValue:GType) {
-			newValue = prepareInitialValue( newValue )
-			const oldValue = get();
-			set( newValue );
-			dispatch( newValue, oldValue )
+			const oldValue = bit.get();
+			bit.set( newValue );
+			bit.dispatch( newValue, oldValue )
 		}
 	}
 }
@@ -99,25 +100,29 @@ export function createStateObservable <GType> (
 	beforeChanged	?:TChangedHandler<GType, boolean|void>
 ):IStateObservable<GType> {
 	// Create the bit and extract private dispatch and setter
-	const { get, set, dispatch, ...bit } = createBit<GType>( initialValue );
+	// TODO : IMPORTANT : Weirdly, we can destruct like this with tsc
+	// 	get value () { return get() } will not work and always return initial value
+	// const { get, set, dispatch, ...bit } = createBit<GType>( initialValue );
+	const bit = createBit<GType>( initialValue );
 	return {
-		...bit,
-		get value () { return get() },
+		// ...bit,
+		onChanged: bit.onChanged,
+		dispose: bit.dispose,
+		get value () { return bit.get() },
 		async set ( newValue:GType ) {
-			newValue = prepareInitialValue( newValue )
-			const oldValue = get();
-			set( newValue );
+			const oldValue = bit.get();
+			bit.set( newValue );
 			if ( beforeChanged ) {
 				// isLocked = true;
 				const haltChange = await beforeChanged( newValue, oldValue )
 				if ( haltChange === true ) {
-					set( oldValue );
+					bit.set( oldValue );
 					// isLocked = false;
 					return;
 				}
 			}
 			// isLocked = false;
-			dispatch( newValue, oldValue );
+			bit.dispatch( newValue, oldValue );
 		}
 	}
 }
@@ -134,19 +139,21 @@ export function createAsyncObservable <GType> (
 	beforeChanged	?:TChangedHandler<GType, boolean|void>
 ):IAsyncObservable<GType> {
 	// Create the bit and extract private dispatch and setter
-	const { get, set, dispatch, ...bit } = createBit<GType>( initialValue );
+	// const { get, set, dispatch, ...bit } = createBit<GType>( initialValue );
+	const bit = createBit<GType>( initialValue );
 	let isChanging = false
 	let wasAlreadyChanging = false
 	return {
-		...bit,
-		get value () { return get() },
+		// ...bit,
+		onChanged: bit.onChanged,
+		dispose: bit.dispose,
+		get value () { return bit.get() },
 		get isChanging () { return isChanging },
 		get wasAlreadyChanging () { return wasAlreadyChanging },
 		async set ( newValue:GType ) {
-			newValue = prepareInitialValue( newValue )
 			// Keep old to check changes
-			const oldValue = get();
-			set( newValue )
+			const oldValue = bit.get();
+			bit.set( newValue )
 			// Call private changed as async (may change state asynchronously)
 			if ( beforeChanged ) {
 				if ( isChanging )
@@ -154,7 +161,7 @@ export function createAsyncObservable <GType> (
 				isChanging = true;
 				const haltChange = await beforeChanged( newValue, oldValue )
 				if ( haltChange === true ) {
-					set( oldValue )
+					bit.set( oldValue )
 					isChanging = false
 					wasAlreadyChanging = false
 					return;
@@ -166,7 +173,7 @@ export function createAsyncObservable <GType> (
 				}
 			}
 			// Call public onChange signal with new and old values
-			dispatch( newValue, oldValue )
+			bit.dispatch( newValue, oldValue )
 		}
 	}
 }

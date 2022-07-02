@@ -1,4 +1,4 @@
-import { ISignal, Signal } from "../signal/signal";
+import { ISignal, Signal } from "@zouloux/signal";
 
 /**
  * TODO :

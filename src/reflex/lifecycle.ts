@@ -1,16 +1,16 @@
 import { getHookedComponent } from "./diff";
-import { LifecycleHandler, MountHandler } from "./index";
+import { LifecycleHandler, MountHandler } from "./common";
 
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 
 export function mounted ( handler:MountHandler ) {
 	// FIXME : In dev mode, maybe check if component is mounted ?
-	getHookedComponent().mountHandlers.push( handler )
+	getHookedComponent()._mountHandlers.push( handler )
 }
 
 export function unmounted ( handler:LifecycleHandler ) {
 	// FIXME : In dev mode, maybe check if component is mounted ?
-	getHookedComponent().unmountHandlers.push( handler )
+	getHookedComponent()._unmountHandlers.push( handler )
 }
 
 // ----------------------------------------------------------------------------- TRACK CHANGE AFTER RENDER
@@ -24,7 +24,7 @@ export function changed <GState> ( detectChanges:DetectChanges<GState>|TrackHand
 	// No executeHandler function means detectChanges has been omitted.
 	// Do not check any change, just call executeHandler after every render.
 	if ( !executeHandler ) {
-		component.renderHandlers.push( detectChanges );
+		component._renderHandlers.push( detectChanges );
 		return;
 	}
 	// Get first state
@@ -44,7 +44,7 @@ export function changed <GState> ( detectChanges:DetectChanges<GState>|TrackHand
 	}
 	// After component just rendered
 	let firstRender = true
-	component.renderHandlers.push( () => {
+	component._renderHandlers.push( () => {
 		// Always execute handler at first render
 		if ( firstRender ) {
 			updateState( null );

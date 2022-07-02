@@ -1,6 +1,5 @@
-import { h } from "../reflex";
-import { state } from "../reflex/state";
-import { colorList, createUID, foodList, pickRandom, rand } from "./demoHelpers";
+import { h, state } from "../../src/reflex";
+import { colorList, createUID, foodList, pickRandom, rand } from "../demoHelpers";
 
 // ----------------------------------------------------------------------------- HELPERS
 
@@ -79,7 +78,7 @@ export function StatefulDemoApp () {
 		const total = rand( list.value.length ) + 1
 		for ( let i = 0; i < total; i++ ) {
 			const item = pickRandom( list.value )
-			removeItem( item )
+			removeItem( item as any )
 		}
 	}
 

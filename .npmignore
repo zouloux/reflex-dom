@@ -1,0 +1,9 @@
+.idea
+.DS_Store
+public/
+.parcel-cache
+src/
+tests/
+.gitignore
+tsconfig.json
+demos/

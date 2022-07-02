@@ -1,8 +1,5 @@
-import { h } from "../reflex";
-import { mounted, unmounted } from "../reflex/lifecycle";
-import { state } from "../reflex/state";
-import { colorList, createUID, foodList, pickRandom } from "./demoHelpers";
-import { ref, refs } from "../reflex/ref";
+import { h, state, ref, refs, mounted, unmounted } from "../../src/reflex";
+import { colorList, createUID, foodList, pickRandom } from "../demoHelpers";
 
 function SubChild ( props ) {
 	const titleRef = ref()

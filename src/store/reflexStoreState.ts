@@ -1,6 +1,6 @@
 import { IStore } from "./store";
-import { state } from "../reflex/state";
-import { IStateObservable } from "../reflex/observable";
+import { state } from "../reflex";
+import { IStateObservable } from "@zouloux/signal";
 
 
 export function storeState <GType extends object> ( store:IStore<GType> ) : IStateObservable<GType>

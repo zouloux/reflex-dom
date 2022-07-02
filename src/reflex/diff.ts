@@ -1,8 +1,8 @@
 import {
-	TEXT_NODE_TYPE_NAME, RenderDom, RenderFunction,
+	_TEXT_NODE_TYPE_NAME, RenderDom, RenderFunction,
 	VNode, VNodeDomType, VTextNode, ComponentFunction,
-	ComponentReturn, ReflexError
-} from "./index";
+	ComponentReturn, ReflexError, flattenChildren
+} from "./common";
 import { cloneVNode } from "./jsx";
 import { IInternalRef, IInternalRefs } from "./ref";
 import { ComponentInstance, createComponentInstance, recursivelyUpdateMountState } from "./component";
@@ -18,16 +18,16 @@ import { ComponentInstance, createComponentInstance, recursivelyUpdateMountState
 // ----------------------------------------------------------------------------- CONSTANTS
 
 // Virtual node object is injected into associated dom elements with this name
-export const DOM_PRIVATE_VIRTUAL_NODE_KEY = "__v"
+export const _DOM_PRIVATE_VIRTUAL_NODE_KEY = "__v"
 
 // Attached listeners to a dom element are stored in this array
-export const DOM_PRIVATE_LISTENERS_KEY = "__l"
+export const _DOM_PRIVATE_LISTENERS_KEY = "__l"
 
 // Stolen from Preact, to check if a style props is non-dimensional (does not need to add a unit)
-const IS_NON_DIMENSIONAL_REGEX = /acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|itera/i;
+const _IS_NON_DIMENSIONAL_REGEX = /acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|itera/i;
 
 // Check if an event is a capture one
-const CAPTURE_REGEX = /Capture$/
+const _CAPTURE_REGEX = /Capture$/
 
 // ----------------------------------------------------------------------------- CURRENT SCOPED COMPONENT
 
@@ -43,7 +43,7 @@ export function getHookedComponent ():ComponentInstance {
 
 function getEventNameAndKey ( name:string, dom:Element ) {
 	// Note : Capture management stolen from Preact, thanks
-	const useCapture = name !== ( name = name.replace(CAPTURE_REGEX, '') );
+	const useCapture = name !== ( name = name.replace(_CAPTURE_REGEX, '') );
 	// Infer correct casing for DOM built-in events:
 	const eventName = ( name.toLowerCase() in dom ? name.toLowerCase() : name ).slice(2)
 	// Create unique key for this event
@@ -58,34 +58,29 @@ function setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) {
 	else if (value == null)
 		style[key] = '';
 	// FIXME : IS_NON_DIMENSIONAL_REGEX -> Is it really necessary ?
-	else if (typeof value != 'number' || IS_NON_DIMENSIONAL_REGEX.test(key))
+	else if (typeof value != 'number' || _IS_NON_DIMENSIONAL_REGEX.test(key))
 		style[key] = value;
 	else
 		style[key] = value + 'px';
 }
 
-export function flattenChildren ( vnode:VNode ) {
-	// Re-assign flattened array to the original virtual node, and return it
-	return vnode.props.children = (vnode.props?.children?.flat() ?? [])
-}
-
 function updateNodeRef ( node:VNode ) {
-	if ( !node.ref ) return;
+	if ( !node._ref ) return;
 	// Ref as refs
-	if ( 'list' in node.ref ) {
+	if ( 'list' in node._ref ) {
 		// FIXME : Type
 		// FIXME : Keep track of index ? Do it from diffChildren maybe ?
-		( node.ref as IInternalRefs ).setFromVNode( 0, node as any )
+		( node._ref as IInternalRefs ).setFromVNode( 0, node as any )
 	} else {
 		// FIXME : Type
-		( node.ref as IInternalRef ).setFromVNode( node as any )
+		( node._ref as IInternalRef ).setFromVNode( node as any )
 	}
 }
 
 // Shallow compare two objects, applied only for props between new and old virtual nodes.
 // Will not compare "children" which is always different
 // https://esbench.com/bench/62a138846c89f600a5701904
-export const shallowPropsCompare = ( a:object, b:object ) => (
+const shallowPropsCompare = ( a:object, b:object ) => (
 	// Same amount of properties ?
 	Object.keys(a).length === Object.keys(b).length
 	// Every property exists in other object ?
@@ -97,7 +92,7 @@ export const shallowPropsCompare = ( a:object, b:object ) => (
 
 export function diffElement ( newNode:VNode, oldNode:VNode ) {
 	// console.log("diffElement", newNode, oldNode)
-	const isTextNode = newNode.type == TEXT_NODE_TYPE_NAME
+	const isTextNode = newNode.type == _TEXT_NODE_TYPE_NAME
 	// Get dom element from oldNode or create it
 	const dom:RenderDom = (
 		oldNode ? oldNode.dom : (
@@ -128,7 +123,7 @@ export function diffElement ( newNode:VNode, oldNode:VNode ) {
 		// But recent benchmarks are pointing to startsWith usage as faster
 		else if ( name.startsWith("on") ) {
 			const { eventName, eventKey, useCapture } = getEventNameAndKey( name, dom as Element );
-			dom.removeEventListener( eventName, dom[ DOM_PRIVATE_LISTENERS_KEY ][ eventKey ], useCapture )
+			dom.removeEventListener( eventName, dom[ _DOM_PRIVATE_LISTENERS_KEY ][ eventKey ], useCapture )
 		}
 		// Other attributes
 		else {
@@ -150,14 +145,17 @@ export function diffElement ( newNode:VNode, oldNode:VNode ) {
 		else if ( name.startsWith("on") ) {
 			const { eventName, eventKey, useCapture } = getEventNameAndKey( name, dom as Element );
 			// Init a collection of handlers on the dom object as private property
-			dom[ DOM_PRIVATE_LISTENERS_KEY ] ??= new Map();
+			dom[ _DOM_PRIVATE_LISTENERS_KEY ] ??= new Map();
 			// Store original listener to be able to remove it later
-			dom[ DOM_PRIVATE_LISTENERS_KEY ][ eventKey ] = value;
+			dom[ _DOM_PRIVATE_LISTENERS_KEY ][ eventKey ] = value;
 			// And attach listener
 			dom.addEventListener( eventName, value, useCapture )
 		}
 		// Other attributes, just set right on the dom element
 		else {
+			// className as class for non jsx components
+			if ( name === "className" )
+				name = "class"
 			// Manage class as arrays
 			if ( name === "class" && Array.isArray( value ) )
 				value = value.filter( v => v !== true && !!v ).join(" ").trim()
@@ -196,9 +194,9 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// Create key array on parent node to register keyed children
 	// This will allow us to find any child by its key directly without
 	// having to search for it
-	newParentNode.keys = new Map()
+	newParentNode._keys = new Map()
 	const registerKey = c => {
-		if ( c?.key ) newParentNode.keys[ c.key ] = c
+		if ( c?.key ) newParentNode._keys[ c.key ] = c
 	}
 	// This is a new parent node (no old), so no diffing
 	// we juste process and add every child node
@@ -219,10 +217,10 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// Check if an old keyed node has been removed and get which index are offset after removal
 	// NOTE : About performances : 2nd non-nested loop
 	const lostIndexes = oldChildren.map(
-		oldChild => !!(oldChild?.key && !newParentNode.keys[oldChild.key] )
+		oldChild => !!(oldChild?.key && !newParentNode._keys[oldChild.key] )
 	)
 	// Otherwise we need to compare between old and new tree
-	const oldParentKeys = oldParentNode.keys
+	const oldParentKeys = oldParentNode._keys
 	let collapseCount = 0
 	// NOTE : About performances : 3rd non-nested loop
 	newChildren.map( (newChildNode, i) => {
@@ -266,7 +264,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		else if ( i in oldChildren && oldChildren[ i ] && oldChildren[ i ].type == newChildNode.type ) {
 			const oldNode = oldChildren[ i ]
 			diffNode( newChildNode, oldNode )
-			oldNode.keep = true;
+			oldNode._keep = true;
 		}
 		// Not found
 		/** CREATE **/
@@ -279,7 +277,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// Remove old children which are not reused
 	// NOTE : About performances : 4th non-nested loop
 	oldChildren.map( oldChildNode => {
-		if ( oldChildNode && !oldChildNode.keep ) {
+		if ( oldChildNode && !oldChildNode._keep ) {
 			// Call unmount handlers
 			recursivelyUpdateMountState( oldChildNode, false );
 			// Remove ref
@@ -296,14 +294,14 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 function renderComponentNode <GReturn = ComponentReturn> ( node:VNode<null, ComponentFunction>, component:ComponentInstance ) :GReturn {
 	// Tie component and virtual node
 	component.vnode = node
-	node.component = component
+	node._component = component
 	// Select hooked component
 	_hookedComponent = component;
 	// FIXME: Before render handlers ?
 	// FIXME: Optimize rendering with a hook ?
 	// Execute rendering
-	const result = (component.render ?? node.type as RenderFunction)
-		.apply( component, [ component.propsProxy.value ])
+	const result = (component._render ?? node.type as RenderFunction)
+		.apply( component, [ component._propsProxy.value ])
 	// Unselect hooked component
 	_hookedComponent = null
 	return result as GReturn
@@ -316,7 +314,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 	if ( oldNode && oldNode === newNode )
 		newNode = cloneVNode( oldNode )
 	// Transfer component instance from old node to new node
-	let component:ComponentInstance = oldNode?.component
+	let component:ComponentInstance = oldNode?._component
 	// We may need a new component instance
 	let renderResult:VNode
 	if ( !component && typeof newNode.type === "function" ) {
@@ -326,12 +324,12 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 		const result = renderComponentNode( newNode as VNode<null, ComponentFunction>, component )
 		// This is a factory component which return a render function
 		if ( typeof result === "function" ) {
-			component.render = result as RenderFunction
+			component._render = result as RenderFunction
 			component.isFactory = true
 		}
 		// This is pure functional component which returns a virtual node
 		else if ( typeof result == "object" && "type" in result ) {
-			component.render = newNode.type as RenderFunction
+			component._render = newNode.type as RenderFunction
 			component.isFactory = false
 			renderResult = result
 		}
@@ -375,7 +373,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 		}
 		// Not already rendered, and not optimization possible. Render now.
 		else if ( !renderResult ) {
-			component.propsProxy.set( newNode.props )
+			component._propsProxy.set( newNode.props )
 			renderResult = renderComponentNode<VNode>( newNode as VNode<null, ComponentFunction>, component )
 		}
 		// We rendered something (not reusing old component)
@@ -385,13 +383,13 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 			// Diff rendered element
 			newNode.dom = dom = diffElement( renderResult, oldNode )
 			// Assign ref of first virtual node to the component's virtual node
-			newNode.ref = renderResult.ref
+			newNode._ref = renderResult._ref
 		}
 		// Tie up node and component
-		newNode.component = component
+		newNode._component = component
 		component.vnode = newNode as any
 		// Component is clean and rendered now
-		component.isDirty = false
+		component._isDirty = false
 	}
 	// Update ref on node
 	updateNodeRef( newNode )
@@ -402,5 +400,5 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 	if ( component && !component.isMounted )
 		recursivelyUpdateMountState( newNode, true )
 	// Execute after render handlers
-	component?.renderHandlers.map( h => h() )
+	component?._renderHandlers.map( h => h() )
 }

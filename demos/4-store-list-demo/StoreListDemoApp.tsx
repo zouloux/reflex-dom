@@ -1,8 +1,7 @@
-import { h } from "../reflex";
-import { createStore } from "../store/store";
-import { storeState } from "../store/reflexStoreState";
-import { ref } from "../reflex/ref";
-import { colorList, createUID, foodList, pickRandom, rand } from "./demoHelpers";
+import { h, ref } from "../../src/reflex";
+import { createStore } from "../../src/store/store";
+import { storeState } from "../../src/store/reflexStoreState";
+import { colorList, createUID, foodList, pickRandom, rand } from "../demoHelpers";
 
 // ----------------------------------------------------------------------------- STORE
 

@@ -1,4 +1,4 @@
-import { VNode, VNodeBaseProps } from "./index";
+import { VNode, VNodeBaseProps } from "./common";
 import { ComponentInstance } from "./component";
 
 // ----------------------------------------------------------------------------- REF
@@ -27,7 +27,7 @@ export function ref <
 		dom: null,
 		setFromVNode ( vnode:VNode<VNodeBaseProps, GComponent> ) {
 			value.dom 		= vnode.dom as GDom;
-			value.component = vnode.component as GComponent;
+			value.component = vnode._component as GComponent;
 		}
 	}
 	return value as never as IRef<GDom, GComponent>;
@@ -62,13 +62,13 @@ export function refs <
 				value.list.length --
 			// Update
 			} else if ( index in value.list ) {
-				value.list[ index ].component	= vnode.component as GComponent;
+				value.list[ index ].component	= vnode._component as GComponent;
 				value.list[ index ].dom 	 	= vnode.dom as GDom;
 			// Create
 			} else {
 				value.list[ index ] = {
 					dom 		: vnode.dom as GDom,
-					component	: vnode.component as GComponent,
+					component	: vnode._component as GComponent,
 				}
 			}
 		}

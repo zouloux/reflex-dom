@@ -1,84 +1,102 @@
 /// <reference lib="dom" />
-import { IRef, IRefs } from "./ref";
-import { ComponentInstance } from "./component";
-
-// ----------------------------------------------------------------------------- TYPES
-
-// Declare global JSX override hack
-// declare global {
-// 	namespace JSX {
-//
-// 	}
-// }
-
-// ----------------------------------------------------------------------------- CONSTANTS
-
-// Name of private node types which should not be created with JSX
-export const TEXT_NODE_TYPE_NAME = "#Text"
-export const ROOT_NODE_TYPE_NAME = "#Root"
-
-// ----------------------------------------------------------------------------- ERRORS
-
-export class ReflexError extends Error {}
-
-// ----------------------------------------------------------------------------- POLYFILLS
-
-export const microtask = ( window.queueMicrotask ?? (h => window.setTimeout( h, 0 )) )
-
-// ----------------------------------------------------------------------------- UTILS
-
-// Force a list or a lonely item to be an array with the same type
-export const forceArray = <G>( item:G|G[] ):G[] => Array.isArray( item ) ? item : [ item ]
-
-// ----------------------------------------------------------------------------- INTERNAL - CREATE COMPONENT
-
-export type RenderDom = Element|Text
-
-// FIXME : Cannot be VNode[] in current implementation.
-// FIXME : Cannot be string in current implementation.
-export type RenderFunction = () => VNode
-export type FunctionalComponent = RenderFunction
-export type ComponentReturn = RenderFunction|VNode
-export type FactoryComponent = () => RenderFunction
-export type ComponentFunction = FunctionalComponent|FactoryComponent
-
-export type LifecycleHandler <GReturn = void> = (...rest) => GReturn
-export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler>
-
-// ----------------------------------------------------------------------------- JSX H / CREATE ELEMENT
-
-export type VNodeDomType = keyof (HTMLElementTagNameMap|SVGElementTagNameMap)
-export type InternalVNodeTypes = typeof ROOT_NODE_TYPE_NAME | typeof TEXT_NODE_TYPE_NAME
-
-export interface VNodeBaseProps {
-	children	?:VNode[],
-	key			?:string
-	ref			?:IRef|IRefs
-	pure		?:boolean
-}
-
-export interface VNode <
-	GProps 	= VNodeBaseProps,
-	GType 	= ( VNodeDomType | InternalVNodeTypes | ComponentFunction ),
-> {
-	type			:GType
-	props			:GProps
-	key				:string	// Allow numbers ?
-	keys			?:Map<string, VNode>
-	ref				?:IRef | IRefs
-	dom				?:RenderDom
-	component		?:ComponentInstance
-	keep			?:boolean
-}
-
-export interface VTextNode extends VNode<{value:string}> {
-	type		: typeof TEXT_NODE_TYPE_NAME
-}
-
-export type VNodeOrVNodes = VNode|VNode[]
-
 // ----------------------------------------------------------------------------- IMPORT / EXPORT
 
+/**
+ * REFLEX JS
+ *
+ * - Reflex Core
+ * 		- Core
+ * 		- Polyfills
+ * 		- Signal + Observer
+ * 		- YADL
+ * 		- Utils
+ * - Reflex Components
+ * 		- Reflex View (vdom + web components)
+ * 		- Reflex Store
+ * 			- Regular store / Async store or one big store well-made
+ * 		- Reflex Router
+ * 			- Based on Reflex Store
+ * 		- Reflex Tween ?
+ *		- Reflex Toolkit
+ *			- Hooks
+ *			- Responsive
+ *			- Inputs
+ *			- Cursor
+ *			- Sound
+ *			- Viewport
+ *		- Reflex UI Kit
+ *			- mixins
+ *			- UI Kit
+ *			- Components ( Slideshow / Menu / Player ... )
+ * - Reflex Server
+ *
+ */
+
+/**
+ * FEATURES :
+ *
+ * - Basic v-dom
+ * 	 ✔ Create / remove elements
+ * 	 ✔ Set / remove attributes
+ * 	 ✔ Set / remove event listeners
+ * 	 ✔ Reuse previous components, do not trash everything everytime
+ * 	 ✔ innerHTML
+ *   ✔ Class as string or array filtered with booleans
+ *   	- Optimize class when does not changes, is it possible ?
+ *   ✔ Style as object only
+ *   	- Optimize style when does not changes, is it possible ?
+ *
+ * - Advanced v-dom
+ *   ✔ Move elements and keep track of dom elements with keyed virtual nodes
+ *   	✔ Add to top
+ *   	✔ Add to bottom
+ *   	✔ Remove from top
+ *   	✔ Remove from bottom
+ *   	✔ Insert in the middle
+ *      ✔ Remove from the middle
+ *      ✔ Basic swap
+ *  	X Optimized Swap
+ *  		- Do 2 operations, should do only one
+ *   ✔ Keep track of component instances
+ *   ✔ Remove subtrees recursively
+ *   ✔ Sub tree rendering
+ *   ✔ Rendering optimization (like memo and skip)
+ *
+ * - Reactive
+ *   ✔ Dom ref / component ref
+ *   ✔ Factory helpers (like hooks), find name and prefix
+ *   ✔ Var in ref as let ! Yeah
+ *   ✔ States / observers
+ *   ✔ Stores
+ *   ✔ Mount / Unmount
+ *   ✔ Updated + Props
+ *
+ * - Advanced Reactive
+ *   - Multi refs in for loops and stuff, need to keep correct indexes even when moving
+ *   - Factory Errors / Component errors ( try catch on instance + render etc )
+ *   - Async states ! With cancellation
+ *   - Fetch hook with race condition management + states + cache + cancellable
+ *   - Imperative handles
+ *
+ * - Types
+ * 	 - Basic JSX Type
+ * 	 - Render and component return JSX Types
+ * 	 - Props types
+ *
+ * - Release
+ * 	 - Optimize
+ * 	 - Benchmark
+ * 	 - Docs
+ * 	 - Release
+ *
+ * V2 :
+ * - Advanced Hot Module reloading with state keeping automagically
+ */
+
+export * from "./common"
+export * from "./state"
+export * from "./ref"
+export * from "./lifecycle"
 export { render } from "./render"
 // Also export createElement for JSX pragma React
 export { h, h as createElement } from "./jsx"
