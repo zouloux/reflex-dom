@@ -12,7 +12,7 @@ export type TInitialValue<GType> = GType | (() => GType)
 
 function prepareInitialValue <GType> ( initialValue:TInitialValue<GType> ) {
 	return (
-		typeof initialValue === "function"
+		(typeof initialValue)[0] == "f"
 		? ( initialValue as () => GType )()
 		: initialValue as GType
 	)
@@ -44,7 +44,7 @@ export function createBit <GType> ( initialValue?:TInitialValue<GType> ):IBit<GT
 	// So code accessing signal externally would not be able to dispatch and mess
 	const onChanged = Signal<[GType, GType]>()
 	const { dispatch } = onChanged
-	onChanged.dispatch = null;
+	delete onChanged.dispatch;
 	// Return bit API
 	return {
 		onChanged,

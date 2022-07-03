@@ -58,7 +58,7 @@ function setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) {
 	else if (value == null)
 		style[key] = '';
 	// FIXME : IS_NON_DIMENSIONAL_REGEX -> Is it really necessary ?
-	else if (typeof value != 'number' || _IS_NON_DIMENSIONAL_REGEX.test(key))
+	else if ((typeof value)[0] != 'n' || _IS_NON_DIMENSIONAL_REGEX.test(key))
 		style[key] = value;
 	else
 		style[key] = value + 'px';
@@ -113,11 +113,11 @@ export function diffElement ( newNode:VNode, oldNode:VNode ) {
 	// Remove attributes which are removed from old node
 	oldNode && Object.keys( oldNode.props ).map( name => {
 		// Do not process children and remove only if not in new node
-		if ( name === "children" ) return
+		if ( name == "children" ) return
 		if ( name in newNode.props && newNode.props[ name ] === oldNode.props[ name ] )
 			return
 		// Insert HTML directly without warning
-		if ( name === "innerHTML" )
+		if ( name == "innerHTML" )
 			( dom as Element ).innerHTML = "" // FIXME : Maybe use delete or null ?
 			// Events starts with "on". On preact this is optimized with [0] == "o"
 		// But recent benchmarks are pointing to startsWith usage as faster
@@ -132,13 +132,13 @@ export function diffElement ( newNode:VNode, oldNode:VNode ) {
 	})
 	// Update props
 	Object.keys( newNode.props ).map( name => {
-		if ( name === "children" ) return
+		if ( name == "children" ) return
 		let value = newNode.props[ name ];
 		// Do not continue if attribute or event did not change
 		if ( oldNode && name in oldNode.props && oldNode.props[ name ] === value )
 			return;
 		// Insert HTML directly without warning
-		if ( name === "innerHTML" )
+		if ( name == "innerHTML" )
 			( dom as Element ).innerHTML = value
 		// Events starts with "on". On preact this is optimized with [0] == "o"
 		// But recent benchmarks are pointing to startsWith usage as faster
@@ -154,19 +154,19 @@ export function diffElement ( newNode:VNode, oldNode:VNode ) {
 		// Other attributes, just set right on the dom element
 		else {
 			// className as class for non jsx components
-			if ( name === "className" )
+			if ( name == "className" )
 				name = "class"
 			// Manage class as arrays
-			if ( name === "class" && Array.isArray( value ) )
+			if ( name == "class" && Array.isArray( value ) )
 				value = value.filter( v => v !== true && !!v ).join(" ").trim()
 			// Manage style as object only
-			else if ( name === "style" && typeof value === "object" )
+			else if ( name == "style" && (typeof value)[0] == "o" )
 				// FIXME : Can it be optimized ? Maybe only setStyle when needed ?
 				return Object.keys( value ).map(
 					k => setStyle( (dom as HTMLElement).style, k, value[k] )
 				);
 			// Remove falsy values
-			else if ( value === false )
+			else if ( value == false )
 				return;
 			// FIXME : What about checked / disabled / autoplay ...
 			// Set new attribute value
@@ -317,18 +317,18 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 	let component:ComponentInstance = oldNode?._component
 	// We may need a new component instance
 	let renderResult:VNode
-	if ( !component && typeof newNode.type === "function" ) {
+	if ( !component && (typeof newNode.type)[0] == "f" ) {
 		// Create component instance (without new keyword for better performances)
 		component = createComponentInstance( newNode as VNode<null, ComponentFunction> )
 		// Execute component's function and check what is returned
 		const result = renderComponentNode( newNode as VNode<null, ComponentFunction>, component )
 		// This is a factory component which return a render function
-		if ( typeof result === "function" ) {
+		if ( (typeof result)[0] == "f" ) {
 			component._render = result as RenderFunction
 			component.isFactory = true
 		}
 		// This is pure functional component which returns a virtual node
-		else if ( typeof result == "object" && "type" in result ) {
+		else if ( (typeof result)[0] == "o" && "type" in result ) {
 			component._render = newNode.type as RenderFunction
 			component.isFactory = false
 			renderResult = result

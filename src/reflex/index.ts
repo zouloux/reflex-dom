@@ -93,10 +93,15 @@
  * - Advanced Hot Module reloading with state keeping automagically
  */
 
-export * from "./common"
-export * from "./state"
-export * from "./ref"
-export * from "./lifecycle"
-export { render } from "./render"
+// NOTE : Avoid glob exports from which insert an helper
+// Unzipped is smaller with glob but bigger when zipped
+// export *  from "./state"
+// export *  from "./ref"
+// export * from "./lifecycle"
+// export * from "./render"
+export { state, asyncState }  from "./state"
+export { ref, refs, IRef, IRefs }  from "./ref"
+export { mounted, unmounted, changed } from "./lifecycle"
+export { render, invalidateComponent } from "./render"
 // Also export createElement for JSX pragma React
 export { h, h as createElement } from "./jsx"

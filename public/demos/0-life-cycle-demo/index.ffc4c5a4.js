@@ -148,17 +148,17 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "init", ()=>init);
 var _reflex = require("../../src/reflex");
 var _debug = require("../../src/reflex/debug");
-var _lifecycleDemoApp = require("./LifecycleDemoApp");
 // -----------------------------------------------------------------------------
 (0, _debug.setReflexDebug)(true);
 function init() {
     const p = (0, _debug.trackPerformances)("Root rendering");
-    (0, _reflex.render)(/*#__PURE__*/ (0, _reflex.h)((0, _lifecycleDemoApp.LifecycleDemoApp), null), document.body);
+    console.log(/*#__PURE__*/ (0, _reflex.h)("div", null, /*#__PURE__*/ (0, _reflex.h)("ul", null, /*#__PURE__*/ (0, _reflex.h)("li", null), /*#__PURE__*/ (0, _reflex.h)("li", null))));
+    // render( <LifecycleDemoApp />, document.body )
     p();
 }
 init();
 
-},{"../../src/reflex":"cuBJf","../../src/reflex/debug":"7uUcT","./LifecycleDemoApp":"8PsVL","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7uUcT":[function(require,module,exports) {
+},{"../../src/reflex":"cuBJf","../../src/reflex/debug":"7uUcT","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7uUcT":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "getReflexDebug", ()=>getReflexDebug);
@@ -176,133 +176,6 @@ function setReflexDebug(value) {
 function trackPerformances(subject) {
     return ()=>{};
 }
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"8PsVL":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "LifecycleDemoApp", ()=>LifecycleDemoApp);
-var _reflex = require("../../src/reflex");
-var _demoHelpers = require("../demoHelpers");
-function SubChild(props) {
-    const titleRef = (0, _reflex.ref)();
-    // Local stateless variable without ref 👀
-    let clicked = 0;
-    (0, _reflex.mounted)(()=>{
-        console.log(`SubChild mounted ${titleRef.dom.innerHTML}`);
-        return ()=>{
-            console.log(`SubChild unmounted ${clicked}`);
-        };
-    });
-    function onClick() {
-        console.log(`Clicked ${++clicked}`);
-    }
-    return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
-            onClick: onClick
-        }, /*#__PURE__*/ (0, _reflex.h)("table", null, /*#__PURE__*/ (0, _reflex.h)("tr", null, /*#__PURE__*/ (0, _reflex.h)("td", null, "Id :"), /*#__PURE__*/ (0, _reflex.h)("td", null, props.item.id)), /*#__PURE__*/ (0, _reflex.h)("tr", null, /*#__PURE__*/ (0, _reflex.h)("td", null, "Name :"), /*#__PURE__*/ (0, _reflex.h)("td", {
-            ref: titleRef
-        }, props.item.title))));
-}
-function ListItem(props) {
-    (0, _reflex.mounted)(()=>{
-        console.log("List item mounted");
-    });
-    (0, _reflex.unmounted)(()=>{
-        console.log("List item unmounted");
-    });
-    return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
-            style: {
-                border: `1px solid white`
-            }
-        }, /*#__PURE__*/ (0, _reflex.h)("span", null, "ListItem"), /*#__PURE__*/ (0, _reflex.h)(SubChild, {
-            item: props.item
-        }), /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: (e)=>props.removeClicked(props.item)
-        }, "Remove"));
-}
-function LifecycleDemoApp() {
-    const isListVisible = (0, _reflex.state)(true);
-    const toggleListVisibility = ()=>isListVisible.set(!isListVisible.value);
-    const list = (0, _reflex.state)([]);
-    const itemRefs = (0, _reflex.refs)();
-    function addListItem() {
-        const item = {
-            id: (0, _demoHelpers.createUID)(),
-            title: `${(0, _demoHelpers.pickRandom)((0, _demoHelpers.colorList))} ${(0, _demoHelpers.pickRandom)((0, _demoHelpers.foodList))}`
-        };
-        list.set([
-            ...list.value,
-            item
-        ]);
-    }
-    function removeListItem(item) {
-        list.set(list.value.filter((c)=>c != item));
-    }
-    function List() {
-        return /*#__PURE__*/ (0, _reflex.h)("div", null, /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: (e)=>addListItem()
-        }, "Add list item"), /*#__PURE__*/ (0, _reflex.h)("h3", null, "Items :"), /*#__PURE__*/ (0, _reflex.h)("div", null, list.value.map((item)=>/*#__PURE__*/ (0, _reflex.h)(ListItem, {
-                ref: itemRefs,
-                key: item.id,
-                item: item,
-                removeClicked: removeListItem
-            }))));
-    }
-    return ()=>/*#__PURE__*/ (0, _reflex.h)("div", null, /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: (e)=>toggleListVisibility()
-        }, isListVisible.value ? "Hide list" : "Show list"), /*#__PURE__*/ (0, _reflex.h)("br", null), /*#__PURE__*/ (0, _reflex.h)("br", null), isListVisible.value && /*#__PURE__*/ (0, _reflex.h)(List, {
-            pure: false
-        }));
-}
-
-},{"../../src/reflex":"cuBJf","../demoHelpers":"yZRLL","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"yZRLL":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "toHex", ()=>toHex);
-parcelHelpers.export(exports, "createUID", ()=>createUID);
-parcelHelpers.export(exports, "pickRandom", ()=>pickRandom);
-parcelHelpers.export(exports, "rand", ()=>rand);
-parcelHelpers.export(exports, "randBoolean", ()=>randBoolean);
-parcelHelpers.export(exports, "foodList", ()=>foodList);
-parcelHelpers.export(exports, "colorList", ()=>colorList);
-parcelHelpers.export(exports, "firstnameList", ()=>firstnameList);
-parcelHelpers.export(exports, "lastnameList", ()=>lastnameList);
-const toHex = (n)=>(~~n).toString(16);
-const createUID = ()=>`${toHex(Date.now())}-${toHex(Math.random() * 999999999)}`;
-const pickRandom = (array)=>array[~~(Math.random() * array.length)];
-const rand = (max)=>~~(Math.random() * max);
-const randBoolean = (threshold = .5)=>Math.random() > threshold;
-const foodList = [
-    "Cheese",
-    "Carrots",
-    "Pastas",
-    "Pizza",
-    "Burgers",
-    "Ham",
-    "Salad",
-    "Mustard"
-];
-const colorList = [
-    "Red",
-    "Blue",
-    "Yellow",
-    "Purple",
-    "Orange",
-    "Black",
-    "White",
-    "Green"
-];
-const firstnameList = [
-    "Alfred",
-    "Jessica",
-    "Gwen",
-    "Jeanne"
-];
-const lastnameList = [
-    "Dupont",
-    "Smith",
-    "Stevensen",
-    "Odea"
-];
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["7I45p"], "7I45p", "parcelRequirea1a1")
 

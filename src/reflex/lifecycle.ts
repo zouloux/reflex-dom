@@ -39,7 +39,8 @@ export function changed <GState> ( detectChanges:DetectChanges<GState>|TrackHand
 		const executeResult = executeHandler( state, oldState )
 		// Get previous unmount handler from return or cancel it
 		previousUnmountHandler = (
-			( typeof executeResult === "function" ) ? executeResult : null
+			( (typeof executeResult)[0] != "f" ) ? null
+			: executeResult as UnmountTrackHandler<GState>
 		)
 	}
 	// After component just rendered
@@ -53,7 +54,7 @@ export function changed <GState> ( detectChanges:DetectChanges<GState>|TrackHand
 			// Otherwise, detect changes
 			const oldState = state;
 			state = ( detectChanges as DetectChanges<GState> )()
-			if ( oldState != state )
+			if( oldState != state )
 				updateState( oldState )
 		}
 	})

@@ -145,10 +145,6 @@
 })({"cuBJf":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "render", ()=>(0, _render.render));
-// Also export createElement for JSX pragma React
-parcelHelpers.export(exports, "h", ()=>(0, _jsx.h));
-parcelHelpers.export(exports, "createElement", ()=>(0, _jsx.h));
 /// <reference lib="dom" />
 // ----------------------------------------------------------------------------- IMPORT / EXPORT
 /**
@@ -239,71 +235,33 @@ parcelHelpers.export(exports, "createElement", ()=>(0, _jsx.h));
  *
  * V2 :
  * - Advanced Hot Module reloading with state keeping automagically
- */ var _common = require("./common");
-parcelHelpers.exportAll(_common, exports);
+ */ // NOTE : Avoid glob exports from which insert an helper
+// Unzipped is smaller with glob but bigger when zipped
+// export *  from "./state"
+// export *  from "./ref"
+// export * from "./lifecycle"
+// export * from "./render"
+parcelHelpers.export(exports, "state", ()=>(0, _state.state));
+parcelHelpers.export(exports, "asyncState", ()=>(0, _state.asyncState));
+parcelHelpers.export(exports, "ref", ()=>(0, _ref.ref));
+parcelHelpers.export(exports, "refs", ()=>(0, _ref.refs));
+parcelHelpers.export(exports, "IRef", ()=>(0, _ref.IRef));
+parcelHelpers.export(exports, "IRefs", ()=>(0, _ref.IRefs));
+parcelHelpers.export(exports, "mounted", ()=>(0, _lifecycle.mounted));
+parcelHelpers.export(exports, "unmounted", ()=>(0, _lifecycle.unmounted));
+parcelHelpers.export(exports, "changed", ()=>(0, _lifecycle.changed));
+parcelHelpers.export(exports, "render", ()=>(0, _render.render));
+parcelHelpers.export(exports, "invalidateComponent", ()=>(0, _render.invalidateComponent));
+// Also export createElement for JSX pragma React
+parcelHelpers.export(exports, "h", ()=>(0, _jsx.h));
+parcelHelpers.export(exports, "createElement", ()=>(0, _jsx.h));
 var _state = require("./state");
-parcelHelpers.exportAll(_state, exports);
 var _ref = require("./ref");
-parcelHelpers.exportAll(_ref, exports);
 var _lifecycle = require("./lifecycle");
-parcelHelpers.exportAll(_lifecycle, exports);
 var _render = require("./render");
 var _jsx = require("./jsx");
 
-},{"./common":"8NUdO","./state":"5nTfq","./ref":"fdaPH","./lifecycle":"8Qw9Y","./render":"krTG7","./jsx":"beq5O","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"8NUdO":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "_TEXT_NODE_TYPE_NAME", ()=>_TEXT_NODE_TYPE_NAME);
-parcelHelpers.export(exports, "_ROOT_NODE_TYPE_NAME", ()=>_ROOT_NODE_TYPE_NAME);
-// ----------------------------------------------------------------------------- ERRORS
-parcelHelpers.export(exports, "ReflexError", ()=>ReflexError);
-parcelHelpers.export(exports, "microtask", ()=>microtask);
-parcelHelpers.export(exports, "forceArray", ()=>forceArray);
-parcelHelpers.export(exports, "flattenChildren", ()=>flattenChildren);
-const _TEXT_NODE_TYPE_NAME = "#Text";
-const _ROOT_NODE_TYPE_NAME = "#Root";
-class ReflexError extends Error {
-}
-const microtask = window.queueMicrotask ?? ((h)=>window.setTimeout(h, 0));
-const forceArray = (item)=>Array.isArray(item) ? item : [
-        item
-    ];
-function flattenChildren(vnode) {
-    // Re-assign flattened array to the original virtual node, and return it
-    return vnode.props.children = vnode.props?.children?.flat() ?? [];
-}
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"j7FRh":[function(require,module,exports) {
-exports.interopDefault = function(a) {
-    return a && a.__esModule ? a : {
-        default: a
-    };
-};
-exports.defineInteropFlag = function(a) {
-    Object.defineProperty(a, "__esModule", {
-        value: true
-    });
-};
-exports.exportAll = function(source, dest) {
-    Object.keys(source).forEach(function(key) {
-        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
-        Object.defineProperty(dest, key, {
-            enumerable: true,
-            get: function() {
-                return source[key];
-            }
-        });
-    });
-    return dest;
-};
-exports.export = function(dest, destName, get) {
-    Object.defineProperty(dest, destName, {
-        enumerable: true,
-        get: get
-    });
-};
-
-},{}],"5nTfq":[function(require,module,exports) {
+},{"./state":"5nTfq","./ref":"fdaPH","./lifecycle":"8Qw9Y","./render":"krTG7","./jsx":"beq5O","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"5nTfq":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // ----------------------------------------------------------------------------- STATE
@@ -376,7 +334,7 @@ function getEventNameAndKey(name, dom) {
 function setStyle(style, key, value) {
     if (key[0] === "-") style.setProperty(key, value);
     else if (value == null) style[key] = "";
-    else if (typeof value != "number" || _IS_NON_DIMENSIONAL_REGEX.test(key)) style[key] = value;
+    else if ((typeof value)[0] != "n" || _IS_NON_DIMENSIONAL_REGEX.test(key)) style[key] = value;
     else style[key] = value + "px";
 }
 function updateNodeRef(node) {
@@ -409,10 +367,10 @@ function diffElement(newNode, oldNode) {
     // Remove attributes which are removed from old node
     oldNode && Object.keys(oldNode.props).map((name)=>{
         // Do not process children and remove only if not in new node
-        if (name === "children") return;
+        if (name == "children") return;
         if (name in newNode.props && newNode.props[name] === oldNode.props[name]) return;
         // Insert HTML directly without warning
-        if (name === "innerHTML") dom.innerHTML = "" // FIXME : Maybe use delete or null ?
+        if (name == "innerHTML") dom.innerHTML = "" // FIXME : Maybe use delete or null ?
         ;
         else if (name.startsWith("on")) {
             const { eventName , eventKey , useCapture  } = getEventNameAndKey(name, dom);
@@ -421,12 +379,12 @@ function diffElement(newNode, oldNode) {
     });
     // Update props
     Object.keys(newNode.props).map((name)=>{
-        if (name === "children") return;
+        if (name == "children") return;
         let value = newNode.props[name];
         // Do not continue if attribute or event did not change
         if (oldNode && name in oldNode.props && oldNode.props[name] === value) return;
         // Insert HTML directly without warning
-        if (name === "innerHTML") dom.innerHTML = value;
+        if (name == "innerHTML") dom.innerHTML = value;
         else if (name.startsWith("on")) {
             const { eventName , eventKey , useCapture  } = getEventNameAndKey(name, dom);
             // Init a collection of handlers on the dom object as private property
@@ -437,12 +395,12 @@ function diffElement(newNode, oldNode) {
             dom.addEventListener(eventName, value, useCapture);
         } else {
             // className as class for non jsx components
-            if (name === "className") name = "class";
+            if (name == "className") name = "class";
             // Manage class as arrays
-            if (name === "class" && Array.isArray(value)) value = value.filter((v)=>v !== true && !!v).join(" ").trim();
-            else if (name === "style" && typeof value === "object") // FIXME : Can it be optimized ? Maybe only setStyle when needed ?
+            if (name == "class" && Array.isArray(value)) value = value.filter((v)=>v !== true && !!v).join(" ").trim();
+            else if (name == "style" && (typeof value)[0] == "o") // FIXME : Can it be optimized ? Maybe only setStyle when needed ?
             return Object.keys(value).map((k)=>setStyle(dom.style, k, value[k]));
-            else if (value === false) return;
+            else if (value == false) return;
             // FIXME : What about checked / disabled / autoplay ...
             // Set new attribute value
             dom.setAttribute(name, value);
@@ -560,16 +518,16 @@ function diffNode(newNode, oldNode) {
     let component = oldNode?._component;
     // We may need a new component instance
     let renderResult;
-    if (!component && typeof newNode.type === "function") {
+    if (!component && (typeof newNode.type)[0] == "f") {
         // Create component instance (without new keyword for better performances)
         component = (0, _component.createComponentInstance)(newNode);
         // Execute component's function and check what is returned
         const result = renderComponentNode(newNode, component);
         // This is a factory component which return a render function
-        if (typeof result === "function") {
+        if ((typeof result)[0] == "f") {
             component._render = result;
             component.isFactory = true;
-        } else if (typeof result == "object" && "type" in result) {
+        } else if ((typeof result)[0] == "o" && "type" in result) {
             component._render = newNode.type;
             component.isFactory = false;
             renderResult = result;
@@ -628,15 +586,84 @@ function diffNode(newNode, oldNode) {
     component?._renderHandlers.map((h)=>h());
 }
 
-},{"./common":"8NUdO","./jsx":"beq5O","./component":"jK9Qg","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"beq5O":[function(require,module,exports) {
+},{"./common":"8NUdO","./jsx":"beq5O","./component":"jK9Qg","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"8NUdO":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-// TODO : Move VNode type and VNode constants here (TEXT_NODE_TYPE_NAME)
+parcelHelpers.export(exports, "_TEXT_NODE_TYPE_NAME", ()=>_TEXT_NODE_TYPE_NAME);
+parcelHelpers.export(exports, "_ROOT_NODE_TYPE_NAME", ()=>_ROOT_NODE_TYPE_NAME);
+// ----------------------------------------------------------------------------- ERRORS
+parcelHelpers.export(exports, "ReflexError", ()=>ReflexError);
+parcelHelpers.export(exports, "microtask", ()=>microtask);
+parcelHelpers.export(exports, "forceArray", ()=>forceArray);
+parcelHelpers.export(exports, "flattenChildren", ()=>flattenChildren);
+const _TEXT_NODE_TYPE_NAME = "#Text";
+const _ROOT_NODE_TYPE_NAME = "#Root";
+class ReflexError extends Error {
+}
+const microtask = window.queueMicrotask ?? ((h)=>window.setTimeout(h, 0));
+const forceArray = (item)=>Array.isArray(item) ? item : [
+        item
+    ];
+function flattenChildren(vnode) {
+    // Re-assign flattened array to the original virtual node, and return it
+    return vnode.props.children = vnode.props?.children?.flat() ?? [];
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"j7FRh":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
+},{}],"beq5O":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
 // NOTE : Keep it in a function and do not inline this
 // It seems to be V8 optimized. @see Preact source code
 parcelHelpers.export(exports, "createVNode", ()=>createVNode);
 parcelHelpers.export(exports, "cloneVNode", ()=>cloneVNode);
-parcelHelpers.export(exports, "h", ()=>h);
+parcelHelpers.export(exports, "h", ()=>h) // export function h ( type, props, ...children ) {
+ // 	// Remove debug properties
+ // 	// FIXME : Keep them in debug mode ? But in vnode not in props.
+ // 	delete props.__self
+ // 	delete props.__source
+ // 	// Extract key and ref from props
+ // 	const { key, ref, ...nodeProps } = props
+ // 	// Inject children in props
+ // 	nodeProps.children = ( children ?? [] ).map( child => (
+ // 		// Convert string and number children to text virtual nodes
+ // 		( ["string", "number"].indexOf( typeof child ) !== -1 )
+ // 			? createVNode( _TEXT_NODE_TYPE_NAME, { value: child + '' })
+ // 			// Otherwise keep child generated by JSX
+ // 			: child
+ // 	))
+ // 	return createVNode( type, nodeProps, key, ref )
+ // }
+;
 var _common = require("./common");
 function createVNode(type, props, key, ref) {
     return {
@@ -658,17 +685,22 @@ function cloneVNode(vnode) {
 function h(type, props, ...children) {
     // Remove debug properties
     // FIXME : Keep them in debug mode ? But in vnode not in props.
-    delete props.__self;
-    delete props.__source;
-    // Extract key and ref from props
-    const { key , ref , ...nodeProps } = props;
+    let nodeProps = {};
+    let key, ref;
+    for(let i in props){
+        const value = props[i];
+        // Set apart key and ref
+        if (i == "key") key = value;
+        else if (i == "ref") ref = value;
+        else if (!i.startsWith("__")) nodeProps[i] = value;
+    }
     // Inject children in props
-    nodeProps.children = (children ?? []).map((child)=>// Convert string and number children to text virtual nodes
+    nodeProps.children = children.map((child)=>// Convert string and number children to text virtual nodes
         [
-            "string",
-            "number"
-        ].indexOf(typeof child) !== -1 ? createVNode((0, _common._TEXT_NODE_TYPE_NAME), {
-            value: child + ""
+            "s",
+            "n"
+        ].indexOf((typeof child)[0]) != -1 ? createVNode((0, _common._TEXT_NODE_TYPE_NAME), {
+            value: "" + child
         }) : child);
     return createVNode(type, nodeProps, key, ref);
 }
@@ -723,7 +755,7 @@ function mountComponent(component) {
     // Call every mount handler and store returned unmount handlers
     component._mountHandlers.map((handler)=>{
         const mountedReturn = handler.apply(component, []);
-        if (typeof mountedReturn === "function") component._unmountHandlers.push(mountedReturn);
+        if ((typeof mountedReturn)[0] == "f") component._unmountHandlers.push(mountedReturn);
     });
     // Reset mount handlers, no need to keep them
     component._mountHandlers = [];
@@ -819,7 +851,7 @@ parcelHelpers.export(exports, "createStateObservable", ()=>createStateObservable
 parcelHelpers.export(exports, "createAsyncObservable", ()=>createAsyncObservable);
 var _signal = require("@zouloux/signal");
 function prepareInitialValue(initialValue) {
-    return typeof initialValue === "function" ? initialValue() : initialValue;
+    return (typeof initialValue)[0] == "f" ? initialValue() : initialValue;
 }
 function createBit(initialValue) {
     // Init and store the value in this scope
@@ -828,7 +860,7 @@ function createBit(initialValue) {
     // So code accessing signal externally would not be able to dispatch and mess
     const onChanged = (0, _signal.Signal)();
     const { dispatch  } = onChanged;
-    onChanged.dispatch = null;
+    delete onChanged.dispatch;
     // Return bit API
     return {
         onChanged,
@@ -1245,7 +1277,7 @@ function changed(detectChanges, executeHandler) {
         // Call executeHandler with new and old state
         const executeResult = executeHandler(state, oldState);
         // Get previous unmount handler from return or cancel it
-        previousUnmountHandler = typeof executeResult === "function" ? executeResult : null;
+        previousUnmountHandler = (typeof executeResult)[0] != "f" ? null : executeResult;
     }
     // After component just rendered
     let firstRender = true;
