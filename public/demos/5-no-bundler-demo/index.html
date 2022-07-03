@@ -2,13 +2,14 @@
 <head>
     <title>Reflex - No Bundler Demo</title>
     <!-- Load locally built bundle for tests purpose -->
-    <script src="../../dist/reflex+signal.es2017.min.js"></script>
-    <!-- Bundle can be loaded from UNPKG -->
+<!--    <script src="../../dist/reflex+signal.es2017.min.js"></script>-->
+<!--    <script src="../../../dist/reflex+signal.es2017.min.js"></script>-->
+    <!-- Bundle loaded from UNPKG -->
     <script src="https://unpkg.com/@zouloux/reflex"></script>
 </head>
 <body>
     <script>
-        // Import reflex, require function is exposed by the loaded bundle
+		// Import reflex, require function is exposed by the loaded bundle
 		const { render, h, state, ref } = require("@zouloux/reflex")
         // Create a stateful component with
 		function StateTest () {
