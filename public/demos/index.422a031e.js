@@ -237,10 +237,6 @@ parcelHelpers.defineInteropFlag(exports);
  * - Advanced Hot Module reloading with state keeping automagically
  */ // NOTE : Avoid glob exports from which insert an helper
 // Unzipped is smaller with glob but bigger when zipped
-// export *  from "./state"
-// export *  from "./ref"
-// export * from "./lifecycle"
-// export * from "./render"
 parcelHelpers.export(exports, "state", ()=>(0, _state.state));
 parcelHelpers.export(exports, "asyncState", ()=>(0, _state.asyncState));
 parcelHelpers.export(exports, "ref", ()=>(0, _ref.ref));
@@ -564,7 +560,7 @@ function diffNode(newNode, oldNode) {
         // We rendered something (not reusing old component)
         if (renderResult) {
             // Apply new children list to the parent component node
-            newNode.props.children = (0, _common.flattenChildren)(renderResult);
+            newNode.props.children = (0, _common._flattenChildren)(renderResult);
             // Diff rendered element
             newNode.dom = dom = diffElement(renderResult, oldNode);
             // Assign ref of first virtual node to the component's virtual node
@@ -591,20 +587,16 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "_TEXT_NODE_TYPE_NAME", ()=>_TEXT_NODE_TYPE_NAME);
 parcelHelpers.export(exports, "_ROOT_NODE_TYPE_NAME", ()=>_ROOT_NODE_TYPE_NAME);
-// ----------------------------------------------------------------------------- ERRORS
-parcelHelpers.export(exports, "ReflexError", ()=>ReflexError);
-parcelHelpers.export(exports, "microtask", ()=>microtask);
-parcelHelpers.export(exports, "forceArray", ()=>forceArray);
-parcelHelpers.export(exports, "flattenChildren", ()=>flattenChildren);
+parcelHelpers.export(exports, "_microtask", ()=>_microtask);
+parcelHelpers.export(exports, "_forceArray", ()=>_forceArray);
+parcelHelpers.export(exports, "_flattenChildren", ()=>_flattenChildren);
 const _TEXT_NODE_TYPE_NAME = "#Text";
 const _ROOT_NODE_TYPE_NAME = "#Root";
-class ReflexError extends Error {
-}
-const microtask = window.queueMicrotask ?? ((h)=>window.setTimeout(h, 0));
-const forceArray = (item)=>Array.isArray(item) ? item : [
+const _microtask = window.queueMicrotask ?? ((h)=>window.setTimeout(h, 0));
+const _forceArray = (item)=>Array.isArray(item) ? item : [
         item
     ];
-function flattenChildren(vnode) {
+function _flattenChildren(vnode) {
     // Re-assign flattened array to the original virtual node, and return it
     return vnode.props.children = vnode.props?.children?.flat() ?? [];
 }
@@ -733,11 +725,11 @@ function createPropsProxy(props) {
     const proxy = new Proxy({}, {
         // When request a prop, check on props object if it exists
         get (target, propName) {
-            return propName in props ? props[propName] : undefined;
+            return propName in props ? props[propName] : void 0;
         },
         // Disallow set on props
         set () {
-            throw new (0, _common.ReflexError)(`PropsProxy.set // Setting values to props manually is not allowed.`);
+            return false;
         }
     });
     return {
@@ -775,7 +767,7 @@ function unmountComponent(component) {
 }
 function recursivelyUpdateMountState(node, doMount) {
     if (node.type == (0, _common._TEXT_NODE_TYPE_NAME)) return;
-    (0, _common.flattenChildren)(node).map((c)=>c && recursivelyUpdateMountState(c, doMount));
+    (0, _common._flattenChildren)(node).map((c)=>c && recursivelyUpdateMountState(c, doMount));
     if (node._component) doMount ? mountComponent(node._component) : unmountComponent(node._component);
 }
 
@@ -804,7 +796,7 @@ function render(rootNode, parentElement) {
     // When using render, we create a new root node to detect new renders
     // This node is never rendered, we just attach it to the parentElement and render its children
     const root = (0, _jsx.createVNode)((0, _common._ROOT_NODE_TYPE_NAME), {
-        children: (0, _common.forceArray)(rootNode)
+        children: (0, _common._forceArray)(rootNode)
     });
     root.dom = parentElement;
     (0, _diff.diffChildren)(root, parentElement[0, _diff._DOM_PRIVATE_VIRTUAL_NODE_KEY]);
@@ -823,7 +815,7 @@ function updateDirtyComponents() {
 }
 function invalidateComponent(component) {
     // Queue rendering before end of frame
-    if (componentsToUpdate.length === 0) (0, _common.microtask)(updateDirtyComponents);
+    if (componentsToUpdate.length === 0) (0, _common._microtask)(updateDirtyComponents);
     // Invalidate this component once
     if (component._isDirty) return;
     component._isDirty = true;

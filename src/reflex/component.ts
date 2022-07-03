@@ -1,6 +1,7 @@
 import {
-	ComponentFunction, flattenChildren, LifecycleHandler, MountHandler, RenderFunction,
-	_TEXT_NODE_TYPE_NAME, VNode, ReflexError
+	ComponentFunction, _flattenChildren, LifecycleHandler,
+	MountHandler, RenderFunction,
+	_TEXT_NODE_TYPE_NAME, VNode
 } from "./common";
 import { IStateObservable } from "@zouloux/signal";
 
@@ -56,11 +57,13 @@ function createPropsProxy <GProps> ( props:GProps ) : IPropsProxy<GProps> {
 	const proxy = new Proxy({}, {
 		// When request a prop, check on props object if it exists
 		get ( target:{}, propName:string|symbol ):any {
-			return ( propName in props ? props[ propName ] : undefined )
+			return ( propName in props ? props[ propName ] : void 0 )
 		},
 		// Disallow set on props
 		set () {
-			throw new ReflexError(`PropsProxy.set // Setting values to props manually is not allowed.`)
+			if ( process.env.NODE_ENV == "production" ) return false
+			// throw new ReflexError(`PropsProxy.set // Setting values to props manually is not allowed.`)
+			throw new Error(`Reflex - PropsProxy.set // Setting values to props manually is not allowed.`)
 		}
 	})
 	return {
@@ -100,7 +103,7 @@ export function unmountComponent ( component:ComponentInstance ) {
 
 export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 	if ( node.type == _TEXT_NODE_TYPE_NAME ) return
-	flattenChildren( node ).map( c => c && recursivelyUpdateMountState(c, doMount) )
+	_flattenChildren( node ).map( c => c && recursivelyUpdateMountState(c, doMount) )
 	if ( node._component )
 		doMount ? mountComponent( node._component ) : unmountComponent( node._component )
 }

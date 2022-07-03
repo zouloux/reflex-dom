@@ -1,7 +1,7 @@
 import {
 	_TEXT_NODE_TYPE_NAME, RenderDom, RenderFunction,
 	VNode, VNodeDomType, VTextNode, ComponentFunction,
-	ComponentReturn, ReflexError, flattenChildren
+	ComponentReturn, _flattenChildren
 } from "./common";
 import { cloneVNode } from "./jsx";
 import { IInternalRef, IInternalRefs } from "./ref";
@@ -35,7 +35,8 @@ const _CAPTURE_REGEX = /Capture$/
 let _hookedComponent:ComponentInstance = null
 export function getHookedComponent ():ComponentInstance {
 	if ( !_hookedComponent && process.env.NODE_ENV !== "production" )
-		throw new ReflexError(`Using hook outside of a factory component.`)
+		// throw new ReflexError(`getHookedComponent // Cannot use a factory hook outside of a factory component.`)
+		throw new Error(`Reflex - getHookedComponent // Cannot use a factory hook outside of a factory component.`)
 	return _hookedComponent
 }
 
@@ -379,7 +380,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 		// We rendered something (not reusing old component)
 		if ( renderResult ) {
 			// Apply new children list to the parent component node
-			newNode.props.children = flattenChildren( renderResult )
+			newNode.props.children = _flattenChildren( renderResult )
 			// Diff rendered element
 			newNode.dom = dom = diffElement( renderResult, oldNode )
 			// Assign ref of first virtual node to the component's virtual node

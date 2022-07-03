@@ -19,19 +19,19 @@ export const _ROOT_NODE_TYPE_NAME = "#Root"
 
 // ----------------------------------------------------------------------------- ERRORS
 
-export class ReflexError extends Error {}
+//export class ReflexError extends Error {}
 
 // ----------------------------------------------------------------------------- POLYFILLS
 
-export const microtask = ( window.queueMicrotask ?? (h => window.setTimeout( h, 0 )) )
+export const _microtask = ( window.queueMicrotask ?? ( h => window.setTimeout( h, 0 )) )
 
 // ----------------------------------------------------------------------------- UTILS
 
 // Force a list or a lonely item to be an array with the same type
-export const forceArray = <G>( item:G|G[] ):G[] => Array.isArray( item ) ? item : [ item ]
+export const _forceArray = <G>( item:G|G[] ):G[] => Array.isArray( item ) ? item : [ item ]
 
 
-export function flattenChildren ( vnode:VNode ) {
+export function _flattenChildren ( vnode:VNode ) {
 	// Re-assign flattened array to the original virtual node, and return it
 	return vnode.props.children = (vnode.props?.children?.flat() ?? [])
 }
