@@ -8,8 +8,8 @@ cp "./demos/index.html" "./public/demos/index.html"
 
 if [ "$1" = "build" ]
 then
-  parcel build demos --dist-dir './public/demos/' --public-url .
+  parcel build demos --dist-dir './public/demos/' --public-url ..
   echo ""
 else
-  parcel demos --dist-dir './public/demos/' --public-url .
+  parcel serve demos --dist-dir './public/demos/'
 fi

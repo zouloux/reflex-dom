@@ -2,6 +2,8 @@
 <html>
 <head>
     <title>Reflex - Demos</title>
+    <!-- Include reflex and its dependencies at demos/ root folder -->
+    <script type="module" src="../src/reflex/index.ts"></script>
     <style>
         body {
             background: black;
@@ -20,14 +22,21 @@
 <!-- TODO Reflex image -->
 <!-- TODO Introduction -->
 <ul>
-    <li><a href="./0-life-cycle-demo/">0 - Life Cycle Demo</a></li>
-    <li><a href="./1-props-demo/">1 - Props Demo</a></li>
-    <li><a href="./2-list-demo/">2 - List Demo</a></li>
-    <li><a href="./3-stateful-list-demo/">3 - Stateful List Demo</a></li>
-    <li><a href="./4-store-list-demo/">4 - Store List Demo</a></li>
-    <li><a id="NoBundlerLink">5 - No Bundler Demo</a></li>
+    <li><a data-href="./0-life-cycle-demo/index.html">0 - Life Cycle Demo</a></li>
+    <li><a data-href="./1-props-demo/index.html">1 - Props Demo</a></li>
+    <li><a data-href="./2-list-demo/index.html">2 - List Demo</a></li>
+    <li><a data-href="./3-stateful-list-demo/index.html">3 - Stateful List Demo</a></li>
+    <li><a data-href="./4-store-list-demo/index.html">4 - Store List Demo</a></li>
+    <li><a data-href="./5-no-bundler-demo/index.html">5 - No Bundler Demo</a></li>
     <script>
-        document.getElementById("NoBundlerLink").setAttribute("href", "./5-no-bundler-demo/index.html")
+        // Because parcel is smart-dumb, we need to hide href's
+        // Otherwise it will something silly and will fail to link correctly
+        [...document.getElementsByTagName('a')].map( el => {
+			if ('href' in el.dataset) {
+				el.setAttribute( 'href', el.dataset.href );
+				delete el.dataset.href
+            }
+        })
     </script>
 </ul>
 </body>
