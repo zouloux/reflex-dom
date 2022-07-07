@@ -2,8 +2,35 @@
 
 __Reflex JS__ is a tiny ![~3kb](./bits/reflex+signal.es2017.min.js.svg) virtual-dom library with factory based functional components.
 
+---
+<p align="center">
+	<strong>Reflex</strong> ➡
+	<a href="#concept">Concept</a>&nbsp;/&nbsp;
+	<a href="#how-to-install">Installation</a>&nbsp;/&nbsp;
+	<a href="#simple-dom-rendering">Rendering</a>&nbsp;/&nbsp;
+	<a href="#stateless-and-pure-components">Stateless</a>&nbsp;/&nbsp;
+	<a href="#Stateful components with factory pattern">Stateful and Factory Pattern</a>&nbsp;/&nbsp;
+	<a href="#props">Props</a>&nbsp;/&nbsp;
+	<a href="#factory-hooks">Factory hooks</a>&nbsp;/&nbsp;
+	<a href="#state">State</a>&nbsp;/&nbsp;
+	<a href="#ref">Ref</a>&nbsp;/&nbsp;
+	<a href="#refs-aka-multi-ref">Refs</a>&nbsp;/&nbsp;
+	<a href="#mounted-and-unmounted">Mounted & Unmounted</a>&nbsp;/&nbsp;
+	<a href="#changed">Changed</a>&nbsp;/&nbsp;
+	<a href="#things-missing">Things missing</a>&nbsp;/&nbsp;
+	<a href="#performances">Performances</a>&nbsp;/&nbsp;
+	<a href="#examples">Examples</a>&nbsp;/&nbsp;
+	<a href="#roadmap">Roadmap</a>&nbsp;/&nbsp;
+	<a href="#unpkg">Unpkg</a>
+</p>
+
+---
+
+## Concept
+
 Stateful components will return a __render function__ instead of virtual-nodes directly.
 Scope is shared between the factory and the render function.
+
 
 ```typescript jsx
 function FactoryComponent ( props ) {
@@ -13,15 +40,12 @@ function FactoryComponent ( props ) {
 }
 ```
 
-Classic React Hooks like `useCallback`, `useEvent` and `useMemo` are useless.
-Also, hooks dependencies array does not exist with __Factory Hooks__. Using `useRef` to store stateless values does not exist anymore. In __Reflex__, `ref` are only here to target dom node or components.
+Classic React Hooks like `useCallback`, `useEvent` and `useMemo` becomes useless.
+Also, hooks dependencies array to keep state scopes ([#1](https://itnext.io/how-to-work-with-intervals-in-react-hooks-f29892d650f2) [#2](https://overreacted.io/a-complete-guide-to-useeffect/)) does not exist with __Factory Hooks__. Using `useRef` to store stateless values does not exist anymore. In __Reflex__, `ref` are only here to target dom node or components, `let` is used to declare local variables like it would normally do.
 
+## How to install
 
-## Because code samples are better than a thousand words
-
-### How to install in your project
-
-Install with `npm i @zouloux/reflex` and you will need at least those options into `tsconfig.json` :
+Install it with `npm i @zouloux/reflex`. You will need at least those options into `tsconfig.json` :
 ```json
 {
     "compilerOptions": {
@@ -30,6 +54,8 @@ Install with `npm i @zouloux/reflex` and you will need at least those options in
     }
 }
 ```
+
+## Because code samples are better than a thousand words
 
 ### Simple DOM rendering
 
@@ -45,11 +71,11 @@ function renderApp( greetings:string ) {
 }
 
 renderApp( `Hello from Reflex ✌️` )
-// Note : if you call renderApp, it will update state
+// Note : if you call renderApp again, it will update state of previously rendered app
 // renderApp( `Dom is updated` )
 ```
 
-### Stateless & pure components
+### Stateless and pure components
 
 Stateless, or components without logic can avoid the factory pattern. Simply return the virtual-dom tree derived from props like you would do it in React or Preact.
 
@@ -61,7 +87,7 @@ function StatelessComponent ( props ) {
 }
 ```
 
-> Because Stateless and Stateful components are written differently, Reflex can  optimize render of Stateless components by keeping old tree if props did not change between a render. We have better performances without adding anything to our app.
+> Because Stateless and Stateful components are written differently, Reflex can  optimize render of Stateless components by keeping old virtual-node tree, if props did not change between renders. We have better performances without adding anything to our app.
 
 ```typescript jsx
 function ChangingComponent ( props ) {
@@ -74,16 +100,17 @@ function ChangingComponent ( props ) {
 }
 ```
 
+> Set `<StatelessComponent name={ connectedUser.name } pure={ false } />` if your stateless component isn't a pure function (if it uses some other dependencies than its props). 
+
 
 ### Stateful components with factory pattern
 
-This is where it changes from React. Stateful components in Reflex follows the __Factory Component Pattern__. __Factory hooks__ are used only in the "factory phase" of the component.
+This is where it changes from React. Stateful components in Reflex follows the __Factory Component Pattern__. __[Factory hooks](#factory-hooks)__ are used __only__ in the "factory phase" of the component.
 
 ```typescript jsx
-// Component which can have state or factory hooks will follow factory pattern
 function StatefulComponent ( props ) {
     // This is the "factory phase"
-    // This part of the component is executed once, when component is created !
+    // This part of the component is executed once, when component is created and not updated.
     
     // Create a state for this component, like in React or Solid 
     const currentNumber = state( 0 )
@@ -99,7 +126,7 @@ function StatefulComponent ( props ) {
 }
 ```
 
-> States are based on [Observable](./src/reflex/observable.ts), which is an internal dependency. __Observable__ is based on [Signal](https://github.com/zouloux/signal), which is the only external dependency of Reflex (~300 bytes). [The UNPKG bundle](https://unpkg.com/@zouloux/reflex) inline the __Signal__ package as an internal dependency to be standalone.
+> States are based on [Observable](./src/reflex/observable.ts), which is an internal dependency of Reflex. __Observable__ is based on [Signal](https://github.com/zouloux/signal), which is the only external dependency of Reflex (~300 bytes). [The UNPKG bundle](https://unpkg.com/@zouloux/reflex) inlines the __Signal__ package as an internal dependency to be standalone.
 
 
 ### Props
@@ -118,7 +145,7 @@ function PropsComponent ( props ) {
 }
 ```
 
-The main tradeoff is that props destructuring is not possible anymore. Or destructed props will be equal to the first props value and never change.
+> The main tradeoff is that props destructuring is not possible anymore. Or destructed props will be equal to the first props value and will never change.
 
 ```typescript jsx
 function PropsComponent ( props )  {
@@ -131,15 +158,19 @@ function PropsComponent ( props )  {
 
 # Factory hooks
 
-Here is a list of all base factory hooks : 
+Here is a list of all base __factory hooks__ available.
+Remember, __factory hooks__ are only usable in __factory phase__ of components and not available in Stateless components.
+Like in React, __factory hooks__ are composable into other functions easily.
 
 ## State
 
 ```typescript jsx
 // Create a new state
 const myState = state( initialState )
+
 // Get current state value
 console.log( myState.value )
+
 // Set new value (will trigger a component update)
 myState.set( newValue )
 ```
@@ -183,7 +214,7 @@ function MyComponent () {
 }
 ```
 
-## Refs (aka multi-ref)
+## Refs aka multi-ref
 
 Multi ref in Reflex is `ref` as an array of components. Very handy when dealing with lists !
 
@@ -200,7 +231,7 @@ function List ( props ) {
 }
 ```
 
-> Refs are populated in order of rendering. So if you are using a list which can render in another order than from 0 to length, you can specify the index.
+> Refs are populated in order of rendering. So if you are using a list which can render in another order than from 0 to length, you can specify the index ( [see example](./demos/common/CodeViewer/CodeViewer.tsx) )
 
 ```typescript jsx
 function List ( props ) {
@@ -216,9 +247,9 @@ function List ( props ) {
 ```
 
 
-## Mounted / unmounted
+## Mounted and unmounted
 
-Self-explanatory
+Pretty self-explanatory, will be called when mounting or unmounting the component. 
 
 ```typescript jsx
 function MountUnmount ( props ) {
@@ -242,14 +273,14 @@ function MountUnmount ( props ) {
 
 ## Changed
 
-__Changed__ factory hook is useful to detect changes into a component.
-With only a handler, it will be called after each component render.
+__Changed__ factory hook is useful to detect changes into a component.  With only one handler as argument, it will be called after each component render.
 
 ```typescript jsx
 function ChangedComponent ( props ) {
     const root = ref()
     const number = state(0)
     changed(() => {
+		// Called after each render
         // Ref and state are available
         console.log("Component updated", root.dom, number.value)
     })
@@ -260,8 +291,7 @@ function ChangedComponent ( props ) {
 }
 ```
 
-__Changed__ can have a first argument to detect changes on values. Because we are in __Factory phase__, raw props or values can't be used directly.
-Note than the check function always returns an array.
+__Changed__ can have a first argument to detect changes on values. Because we are in __Factory phase__, raw props or values can't be used directly. __Note__ that the check function __always returns an array__.
 
 ```typescript jsx
 function ChangedComponent ( props ) {
@@ -329,13 +359,26 @@ Here is the list of things missing from React :
 
 ## Performances
 
-Reflex goal is to be as performant as possible and as light as possible. Reflex will never be as performant than Solid (because of Virtual DOM), but will easily be more performant than React or Preact in a lot of cases. 
+Reflex goal is to be __as performant as possible__ and __as light as possible__. Reflex will never be as performant than Solid (because of Virtual DOM), but will easily be more performant than React or Preact in a lot of cases. 
 
 Library weight will be around `4kb gzipped`. It may be a bit more if we add some useful features. Not used features can be tree-shaken thanks to your bundler (like Parcel or Vite). [See note](./CODEGOLF.md) about code golfing. 
 
-# Examples
+## Examples
 
 [Click here](https://zouloux.github.io/reflex/demos/) to see some demo (WIP)
+
+## Roadmap
+
+- Better doc
+- A solution for forwardRef (store two refs ?)
+- Cleaner and richer demos !
+- Benchmarks
+- Smaller package / better performances
+
+
+### Unpkg
+
+__Reflex__ is available on [Unpkg](https://unpkg.com/@zouloux/reflex) ![](./bits/reflex+signal.es2017.min.js.svg)
 
 ---
 
