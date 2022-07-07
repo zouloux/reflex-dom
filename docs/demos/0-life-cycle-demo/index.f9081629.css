@@ -17,16 +17,23 @@
   appearance: none;
   height: 100%;
   cursor: pointer;
+  background: #999;
+  border: none;
+  margin-right: 1px;
   padding: 5px 8px;
   font-family: Consolas, Monaco, Andale Mono, Ubuntu Mono, monospace;
 }
 
 .gKCiPq__tab-selected {
-  background: red;
+  background: #fff;
+  font-weight: bold;
 }
 
 .gKCiPq__file {
   height: 100%;
+  background: #333;
+  margin: 0;
+  padding: 0;
 }
 
 pre[class*="language-"].line-numbers {

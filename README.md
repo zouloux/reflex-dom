@@ -2,7 +2,7 @@
 
 __Reflex JS__ is a tiny ![~3kb](./bits/reflex+signal.es2017.min.js.svg) virtual-dom library with factory based functional components.
 
-> Lib and doc are still in beta.
+#### _Be kind, Lib and doc are still in beta 😘_
 
 ---
 <p align="center">

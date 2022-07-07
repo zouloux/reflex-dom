@@ -684,16 +684,18 @@ function h(type, props, ...children) {
     // FIXME : Keep them in debug mode ? But in vnode not in props.
     let nodeProps = {};
     let key, ref;
-    for(let i in props){
-        const value = props[i];
-        // Set apart key and ref
-        if (i == "key") key = value;
-        else if (i == "ref") ref = value;
-        else if (!i.startsWith("__")) nodeProps[i] = value;
+    if (props) {
+        for(let i in props){
+            const value = props[i];
+            // Set apart key and ref
+            if (i == "key") key = value;
+            else if (i == "ref") ref = value;
+            else if (!i.startsWith("__")) nodeProps[i] = value;
+        }
+        // Append children props into children array
+        if ((0, _common._isStringOrNumber)(props.children)) children.push(props.children);
+        else if (Array.isArray(props.children)) children.concat(props.children);
     }
-    // Append children props into children array
-    if ((0, _common._isStringOrNumber)(props.children)) children.push(props.children);
-    else if (Array.isArray(props.children)) children.concat(props.children);
     // Inject children in props and override
     nodeProps.children = children.map((child)=>// Convert string and number children to text virtual nodes
         (0, _common._isStringOrNumber)(child) ? createVNode((0, _common._TEXT_NODE_TYPE_NAME), {
