@@ -1,11 +1,6 @@
 {
 	"name" : "reflex-demos",
 	"source" : [
-		"./index.html",
-		"./0-life-cycle-demo/index.html",
-		"./1-props-demo/index.html",
-		"./2-list-demo/index.html",
-		"./3-stateful-list-demo/index.html",
-		"./4-store-list-demo/index.html"
+		"./index.html"
 	]
 }

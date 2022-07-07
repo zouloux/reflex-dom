@@ -1,4 +1,5 @@
 import { Signal, ISignal } from "@zouloux/signal";
+import { _isFunction } from "./common";
 
 // ----------------------------------------------------------------------------- COMMON TYPES
 
@@ -6,17 +7,18 @@ export type TChangedHandler<GType, GReturnType = void> = ( newValue:GType, oldVa
 
 export type TSignalWithoutDispatch <GSignalArguments extends any[]> = Omit<ISignal<GSignalArguments>, "dispatch">
 
-// ----------------------------------------------------------------------------- PREPARE INITIAL VALUE
+// ----------------------------------------------------------------------------- INITIAL VALUE & SETTER
 
 export type TInitialValue<GType> = GType | (() => GType)
+export type TSetter<GType> = GType | ((GType) => GType)
 
-function prepareInitialValue <GType> ( initialValue:TInitialValue<GType> ) {
-	return (
-		(typeof initialValue)[0] == "f"
-		? ( initialValue as () => GType )()
-		: initialValue as GType
-	)
-}
+const prepareInitialValue = <GType> ( initialValue:TInitialValue<GType> ) => (
+	_isFunction(initialValue) ? ( initialValue as () => GType )() : initialValue as GType
+)
+
+const executeSetter = <GType> ( currentValue:GType, setter:TSetter<GType> ):GType => (
+	_isFunction(setter) ? (setter as ((GType) => GType))( currentValue ) : setter as GType
+)
 
 // ----------------------------------------------------------------------------- BIT
 
@@ -50,7 +52,7 @@ export function createBit <GType> ( initialValue?:TInitialValue<GType> ):IBit<GT
 		onChanged,
 		dispatch,
 		get () { return value },
-		set ( newValue:GType ) { value = newValue; },
+		set ( newValue:TSetter<GType> ) { value = executeSetter(value, newValue) },
 		dispose () {
 			onChanged.clear();
 			value = null;
@@ -72,7 +74,7 @@ export interface IBasicObservable <GType> extends IPublicBit <GType> {
  * Has a private _dispose method to destroy it from memory.
  * @param initialValue Initial value or initial value generator.
  */
-export function createBasicObservable <GType> ( initialValue?:TInitialValue<GType> ):IBasicObservable<GType> {
+/*export function createBasicObservable <GType> ( initialValue?:TInitialValue<GType> ):IBasicObservable<GType> {
 	// Create the bit and extract private dispatch and setter
 	// const { get, set, dispatch, ...bit } = createBit<GType>( initialValue );
 	const bit = createBit<GType>( initialValue );
@@ -87,7 +89,7 @@ export function createBasicObservable <GType> ( initialValue?:TInitialValue<GTyp
 			bit.dispatch( newValue, oldValue )
 		}
 	}
-}
+}*/
 
 // ----------------------------------------------------------------------------- STATE OBSERVABLE
 
@@ -109,8 +111,9 @@ export function createStateObservable <GType> (
 		onChanged: bit.onChanged,
 		dispose: bit.dispose,
 		get value () { return bit.get() },
-		async set ( newValue:GType ) {
+		async set ( newValue:TSetter<GType> ) {
 			const oldValue = bit.get();
+			newValue = executeSetter( oldValue, newValue )
 			bit.set( newValue );
 			if ( beforeChanged ) {
 				// isLocked = true;
@@ -150,9 +153,10 @@ export function createAsyncObservable <GType> (
 		get value () { return bit.get() },
 		get isChanging () { return isChanging },
 		get wasAlreadyChanging () { return wasAlreadyChanging },
-		async set ( newValue:GType ) {
+		async set ( newValue:TSetter<GType> ) {
 			// Keep old to check changes
 			const oldValue = bit.get();
+			newValue = executeSetter( oldValue, newValue )
 			bit.set( newValue )
 			// Call private changed as async (may change state asynchronously)
 			if ( beforeChanged ) {

@@ -8,14 +8,7 @@ setReflexDebug( true )
 
 export function init () {
 	const p = trackPerformances("Root rendering")
-
-	console.log( <div>
-		<ul>
-			<li></li>
-			<li></li>
-		</ul>
-	</div>)
-	// render( <LifecycleDemoApp />, document.body )
+	render( <LifecycleDemoApp />, document.body )
 	p();
 }
 

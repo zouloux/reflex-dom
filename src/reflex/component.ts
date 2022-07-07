@@ -1,7 +1,7 @@
 import {
 	ComponentFunction, _flattenChildren, LifecycleHandler,
 	MountHandler, RenderFunction,
-	_TEXT_NODE_TYPE_NAME, VNode
+	_TEXT_NODE_TYPE_NAME, VNode, _isFunction
 } from "./common";
 import { IStateObservable } from "@zouloux/signal";
 
@@ -62,7 +62,6 @@ function createPropsProxy <GProps> ( props:GProps ) : IPropsProxy<GProps> {
 		// Disallow set on props
 		set () {
 			if ( process.env.NODE_ENV == "production" ) return false
-			// throw new ReflexError(`PropsProxy.set // Setting values to props manually is not allowed.`)
 			throw new Error(`Reflex - PropsProxy.set // Setting values to props manually is not allowed.`)
 		}
 	})
@@ -80,7 +79,7 @@ export function mountComponent ( component:ComponentInstance ) {
 	// Call every mount handler and store returned unmount handlers
 	component._mountHandlers.map( handler => {
 		const mountedReturn = handler.apply( component, [] );
-		if ( (typeof mountedReturn)[0] == "f" )
+		if ( _isFunction(mountedReturn) )
 			component._unmountHandlers.push( mountedReturn )
 	})
 	// Reset mount handlers, no need to keep them

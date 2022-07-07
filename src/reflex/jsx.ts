@@ -23,7 +23,7 @@ export function h ( type, props, ...children ) {
 	for ( let i in props ) {
 		const value = props[ i ]
 		// Set apart key and ref
-		if (i == "key")
+		if ( i == "key" )
 			key = value
 		else if ( i == "ref" )
 			ref = value

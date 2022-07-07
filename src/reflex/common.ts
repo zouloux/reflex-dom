@@ -14,8 +14,8 @@ import { ComponentInstance } from "./component";
 
 // Name of private node types which should not be created with JSX
 
-export const _TEXT_NODE_TYPE_NAME = "#Text"
-export const _ROOT_NODE_TYPE_NAME = "#Root"
+export const _TEXT_NODE_TYPE_NAME = "#T"
+export const _ROOT_NODE_TYPE_NAME = "#R"
 
 // ----------------------------------------------------------------------------- ERRORS
 
@@ -23,13 +23,17 @@ export const _ROOT_NODE_TYPE_NAME = "#Root"
 
 // ----------------------------------------------------------------------------- POLYFILLS
 
+// TODO : Into ecma-core + inline in bundle
 export const _microtask = ( window.queueMicrotask ?? ( h => window.setTimeout( h, 0 )) )
 
 // ----------------------------------------------------------------------------- UTILS
 
 // Force a list or a lonely item to be an array with the same type
+// TODO : Into ecma-core + inline in bundle
 export const _forceArray = <G>( item:G|G[] ):G[] => Array.isArray( item ) ? item : [ item ]
 
+
+export const _isFunction = fn => (typeof fn)[0] == "f"
 
 export function _flattenChildren ( vnode:VNode ) {
 	// Re-assign flattened array to the original virtual node, and return it

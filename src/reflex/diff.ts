@@ -1,7 +1,7 @@
 import {
 	_TEXT_NODE_TYPE_NAME, RenderDom, RenderFunction,
 	VNode, VNodeDomType, VTextNode, ComponentFunction,
-	ComponentReturn, _flattenChildren
+	ComponentReturn, _flattenChildren, _isFunction
 } from "./common";
 import { cloneVNode } from "./jsx";
 import { IInternalRef, IInternalRefs } from "./ref";
@@ -244,7 +244,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		) {
 			const oldNode = oldParentKeys[ newChildNode.key ]
 			diffNode( newChildNode, oldNode )
-			oldNode.keep = true;
+			oldNode._keep = true;
 			// Check if index changed, compare with collapsed index to detect moves
 			const collapsedIndex = i + collapseCount
 			// FIXME : Should do 1 operation when swapping positions, not 2
@@ -318,13 +318,13 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 	let component:ComponentInstance = oldNode?._component
 	// We may need a new component instance
 	let renderResult:VNode
-	if ( !component && (typeof newNode.type)[0] == "f" ) {
+	if ( !component && _isFunction(newNode.type) ) {
 		// Create component instance (without new keyword for better performances)
 		component = createComponentInstance( newNode as VNode<null, ComponentFunction> )
 		// Execute component's function and check what is returned
 		const result = renderComponentNode( newNode as VNode<null, ComponentFunction>, component )
 		// This is a factory component which return a render function
-		if ( (typeof result)[0] == "f" ) {
+		if ( _isFunction(result) ) {
 			component._render = result as RenderFunction
 			component.isFactory = true
 		}

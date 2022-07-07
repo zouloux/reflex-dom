@@ -11,7 +11,7 @@ export function setReflexDebug (value:boolean) {
 // ----------------------------------------------------------------------------- TRACK PERFORMANCES
 
 export function trackPerformances ( subject:string ) {
-	if ( !_enableReflexDebug || process.env.NODE_ENV === "production" )
+	if ( process.env.NODE_ENV === "production" || !_enableReflexDebug )
 		return () => {};
 	const start = performance.now()
 	return () => {

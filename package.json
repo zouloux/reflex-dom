@@ -1,7 +1,7 @@
 {
 	"name": "@zouloux/reflex",
 	"type": "module",
-	"version": "0.1.6",
+	"version": "0.1.7",
 	"description": "Reflex is a tiny 3kb virtual-dom library with factory based functional components.",
 	"main": "./dist/index.es2017.cjs",
 	"module": "./dist/index.es2020.mjs",
@@ -10,9 +10,11 @@
 	"scripts": {
 		"reset": "rm -rf node_modules && npm i",
 		"clean": "rm -rf .parcel-cache && rm -rf dist && rm -rf public",
-		"dev": "./parcel-demo.sh watch",
-		"build": "npm run clean && ./parcel-demo.sh build && tsbundle build",
-		"publish": "npm run clean && ./parcel-demo.sh build && tsbundle publish"
+		"-dev": "./parcel-demo.sh watch",
+		"demos-dev": "parcel serve demos --dist-dir public/demos",
+		"demos-build": "parcel build demos --dist-dir public/demos --public-url /public/demos",
+		"build": "npm run clean && tsbundle build",
+		"publish": "npm run clean && npm run demos-build && tsbundle publish"
 	},
 	"author": "Alexis Bouhet (ZoulouX)",
 	"license": "MIT",
@@ -20,14 +22,16 @@
 		"@types/node": "^17.0.38",
 		"@zouloux/tsbundle": "^1.2.3",
 		"parcel": "^2.6.2",
-		"typescript": "^4.7.2"
+		"typescript": "^4.7.2",
+		"less": "^4.1.3"
 	},
 	"dependencies": {
 		"@zouloux/signal": "^0.1.11"
 	},
 	"tsbundle": {
 		"exportMap": {
-			"Reflex": "./index"
+			"Reflex": "./index",
+			"Signal": "@zouloux/signal"
 		},
 		"files": [
 			{

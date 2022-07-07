@@ -25,24 +25,29 @@ interface IUserComponentProps {
 
 function UserComponent ( props:IUserComponentProps ) {
 
+	// Here props are a proxy, so it's values can be updated dynamically
+
+	// PATTERN #1 - Detect prop changes
+	// Will show a log if isAdmin is changing on props.user
+	changed( () => props.user.isAdmin, isAdmin => {
+		console.log(`PATTERN #1 - User ${props.user.firstname} ${isAdmin ? 'is' : 'is not'} admin`)
+	})
+
+	// PATTERN #2 - Attach and detach from prop changes
 	// Will disconnect previous user from chat, and connect new user
 	changed( () => props.user.id, newId => {
-		console.log(`Connect user ${newId} to chat panel`)
+		console.log(`PATTERN #2 - Connect user ${newId} to chat panel`)
 		return oldId => {
-			console.log(`Disconnect user ${oldId} from chat`)
+			console.log(`PATTERN #2 - Disconnect user ${oldId} from chat`)
 		}
 	})
 
-	// Will show a log if isAdmin is changing on props.user
-	changed( () => props.user.isAdmin, isAdmin => {
-		console.log(`User ${props.user.firstname} ${isAdmin ? 'is' : 'is not'} admin`)
-	})
-
+	// REFS - Refs are updated just after dom has been updated.
 	// This proves that after render, refs are updated correctly and available right after
 	const root = ref()
 	const image = ref()
 	changed(() => {
-		console.log("UserComponent just rendered", root.dom, image.dom.getAttribute('src'))
+		console.log("REFS - UserComponent just rendered", root.component, image.dom.getAttribute('src'))
 	})
 
 	return () => <div ref={ root } class="UserComponent">

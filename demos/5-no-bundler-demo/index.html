@@ -3,16 +3,17 @@
     <title>Reflex - No Bundler Demo</title>
     <!-- Load locally built bundle for tests purpose -->
     <script src="../../dist/reflex+signal.es2017.min.js"></script>
-<!--    <script src="../../../dist/reflex+signal.es2017.min.js"></script>-->
     <!-- Bundle loaded from UNPKG -->
 <!--    <script src="https://unpkg.com/@zouloux/reflex"></script>-->
-<!--    <script src="https://unpkg.com/@zouloux/reflex@0.1.4"></script>-->
 </head>
 <body>
     <script>
 		// Import reflex, require function is exposed by the loaded bundle
 		const { render, h, state, ref } = require("@zouloux/reflex")
-		console.log( require( "@zouloux/reflex" ) );
+        // Reflex is also available in public
+		// const { render, h, state, ref } = Reflex
+
+        // Same as Signal which is injected into the bundle
 
 		// Create a stateful component with
 		function StateTest () {
