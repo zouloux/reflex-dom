@@ -10,9 +10,9 @@
 	"scripts": {
 		"reset": "rm -rf node_modules && npm i",
 		"clean": "rm -rf .parcel-cache && rm -rf dist && rm -rf public",
-		"-dev": "./parcel-demo.sh watch",
-		"demos-dev": "parcel serve demos --dist-dir public/demos",
-		"demos-build": "parcel build demos --dist-dir public/demos --public-url /public/demos",
+		"-dev": "build-parcel-demo.sh watch",
+		"demos-dev": "./build-parcel-demo.sh dev",
+		"demos-build": "./build-parcel-demo.sh build",
 		"build": "npm run clean && tsbundle build",
 		"publish": "npm run clean && npm run demos-build && tsbundle publish"
 	},

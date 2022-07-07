@@ -1,6 +1,6 @@
 .idea
 .DS_Store
-public/
+docs/
 .parcel-cache
 src/
 tests/
