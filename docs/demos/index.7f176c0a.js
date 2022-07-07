@@ -330,17 +330,11 @@ function getEventNameAndKey(name, dom) {
 function setStyle(style, key, value) {
     if (key[0] === "-") style.setProperty(key, value);
     else if (value == null) style[key] = "";
-    else if ((typeof value)[0] != "n" || _IS_NON_DIMENSIONAL_REGEX.test(key)) style[key] = value;
+    else if (!(0, _common._typeof)(value, "n") || _IS_NON_DIMENSIONAL_REGEX.test(key)) style[key] = value;
     else style[key] = value + "px";
 }
 function updateNodeRef(node) {
-    if (!node._ref) return;
-    // Ref as refs
-    if ("list" in node._ref) // FIXME : Type
-    // FIXME : Keep track of index ? Do it from diffChildren maybe ?
-    node._ref.setFromVNode(0, node);
-    else // FIXME : Type
-    node._ref.setFromVNode(node);
+    node._ref && node._ref._setFromVNode(node);
 }
 // Shallow compare two objects, applied only for props between new and old virtual nodes.
 // Will not compare "children" which is always different
@@ -394,12 +388,14 @@ function diffElement(newNode, oldNode) {
             if (name == "className") name = "class";
             // Manage class as arrays
             if (name == "class" && Array.isArray(value)) value = value.filter((v)=>v !== true && !!v).join(" ").trim();
-            else if (name == "style" && (typeof value)[0] == "o") // FIXME : Can it be optimized ? Maybe only setStyle when needed ?
+            else if (name == "style" && (0, _common._typeof)(value, "o")) // FIXME : Can it be optimized ? Maybe only setStyle when needed ?
             return Object.keys(value).map((k)=>setStyle(dom.style, k, value[k]));
             else if (value == false) return;
             // FIXME : What about checked / disabled / autoplay ...
-            // Set new attribute value
-            dom.setAttribute(name, value);
+            // Set new attribute value if not undefined
+            // FIXME : Add only if truey ?
+            // if ( typeof value < "u" )
+            if (value) dom.setAttribute(name, value);
         }
     });
     return dom;
@@ -512,18 +508,20 @@ function diffNode(newNode, oldNode) {
     if (oldNode && oldNode === newNode) newNode = (0, _jsx.cloneVNode)(oldNode);
     // Transfer component instance from old node to new node
     let component = oldNode?._component;
+    // Transfer id
+    if (oldNode && oldNode._id) newNode._id = oldNode._id;
     // We may need a new component instance
     let renderResult;
-    if (!component && (0, _common._isFunction)(newNode.type)) {
+    if (!component && (0, _common._typeof)(newNode.type, "f")) {
         // Create component instance (without new keyword for better performances)
         component = (0, _component.createComponentInstance)(newNode);
         // Execute component's function and check what is returned
         const result = renderComponentNode(newNode, component);
         // This is a factory component which return a render function
-        if ((0, _common._isFunction)(result)) {
+        if ((0, _common._typeof)(result, "f")) {
             component._render = result;
             component.isFactory = true;
-        } else if ((typeof result)[0] == "o" && "type" in result) {
+        } else if ((0, _common._typeof)(result, "o") && "type" in result) {
             component._render = newNode.type;
             component.isFactory = false;
             renderResult = result;
@@ -589,7 +587,8 @@ parcelHelpers.export(exports, "_TEXT_NODE_TYPE_NAME", ()=>_TEXT_NODE_TYPE_NAME);
 parcelHelpers.export(exports, "_ROOT_NODE_TYPE_NAME", ()=>_ROOT_NODE_TYPE_NAME);
 parcelHelpers.export(exports, "_microtask", ()=>_microtask);
 parcelHelpers.export(exports, "_forceArray", ()=>_forceArray);
-parcelHelpers.export(exports, "_isFunction", ()=>_isFunction);
+parcelHelpers.export(exports, "_typeof", ()=>_typeof);
+parcelHelpers.export(exports, "_isStringOrNumber", ()=>_isStringOrNumber);
 parcelHelpers.export(exports, "_flattenChildren", ()=>_flattenChildren);
 const _TEXT_NODE_TYPE_NAME = "#T";
 const _ROOT_NODE_TYPE_NAME = "#R";
@@ -597,7 +596,11 @@ const _microtask = window.queueMicrotask ?? ((h)=>window.setTimeout(h, 0));
 const _forceArray = (item)=>Array.isArray(item) ? item : [
         item
     ];
-const _isFunction = (fn)=>(typeof fn)[0] == "f";
+const _typeof = (entity, firstLetterOfType)=>(typeof entity)[0] == firstLetterOfType;
+const _isStringOrNumber = (entity)=>[
+        "s",
+        "n"
+    ].indexOf((typeof entity)[0]) >= 0;
 function _flattenChildren(vnode) {
     // Re-assign flattened array to the original virtual node, and return it
     return vnode.props.children = vnode.props?.children?.flat() ?? [];
@@ -688,12 +691,12 @@ function h(type, props, ...children) {
         else if (i == "ref") ref = value;
         else if (!i.startsWith("__")) nodeProps[i] = value;
     }
-    // Inject children in props
+    // Append children props into children array
+    if ((0, _common._isStringOrNumber)(props.children)) children.push(props.children);
+    else if (Array.isArray(props.children)) children.concat(props.children);
+    // Inject children in props and override
     nodeProps.children = children.map((child)=>// Convert string and number children to text virtual nodes
-        [
-            "s",
-            "n"
-        ].indexOf((typeof child)[0]) != -1 ? createVNode((0, _common._TEXT_NODE_TYPE_NAME), {
+        (0, _common._isStringOrNumber)(child) ? createVNode((0, _common._TEXT_NODE_TYPE_NAME), {
             value: "" + child
         }) : child);
     return createVNode(type, nodeProps, key, ref);
@@ -749,7 +752,7 @@ function mountComponent(component) {
     // Call every mount handler and store returned unmount handlers
     component._mountHandlers.map((handler)=>{
         const mountedReturn = handler.apply(component, []);
-        if ((0, _common._isFunction)(mountedReturn)) component._unmountHandlers.push(mountedReturn);
+        if ((0, _common._typeof)(mountedReturn, "f")) component._unmountHandlers.push(mountedReturn);
     });
     // Reset mount handlers, no need to keep them
     component._mountHandlers = [];
@@ -838,8 +841,8 @@ parcelHelpers.export(exports, "createStateObservable", ()=>createStateObservable
 parcelHelpers.export(exports, "createAsyncObservable", ()=>createAsyncObservable);
 var _signal = require("@zouloux/signal");
 var _common = require("./common");
-const prepareInitialValue = (initialValue)=>(0, _common._isFunction)(initialValue) ? initialValue() : initialValue;
-const executeSetter = (currentValue, setter)=>(0, _common._isFunction)(setter) ? setter(currentValue) : setter;
+const prepareInitialValue = (initialValue)=>(0, _common._typeof)(initialValue, "f") ? initialValue() : initialValue;
+const executeSetter = (currentValue, setter)=>(0, _common._typeof)(setter, "f") ? setter(currentValue) : setter;
 function createBit(initialValue) {
     // Init and store the value in this scope
     let value = prepareInitialValue(initialValue);
@@ -874,6 +877,7 @@ function createStateObservable(initialValue, beforeChanged) {
         // ...bit,
         onChanged: bit.onChanged,
         dispose: bit.dispose,
+        // get: bit.get,
         get value () {
             return bit.get();
         },
@@ -905,6 +909,7 @@ function createAsyncObservable(initialValue, beforeChanged) {
         // ...bit,
         onChanged: bit.onChanged,
         dispose: bit.dispose,
+        // get: bit.get,
         get value () {
             return bit.get();
         },
@@ -1184,7 +1189,7 @@ function ref() {
     const value = {
         component: null,
         dom: null,
-        setFromVNode (vnode) {
+        _setFromVNode (vnode) {
             value.dom = vnode.dom;
             value.component = vnode._component;
         }
@@ -1192,21 +1197,34 @@ function ref() {
     return value;
 }
 function refs() {
+    let _counter = 0;
+    let _list = [];
+    function registerAtIndex(vnode, index) {
+        // Delete
+        if (!vnode.dom) _list = _list.filter((_, i)=>i != index);
+        else _list[index] = {
+            dom: vnode.dom,
+            component: vnode._component
+        };
+    }
     const value = {
-        list: [],
-        setFromVNode (index, vnode) {
-            // Delete
-            if (vnode == null) {
-                delete value.list[index];
-                value.list.length--;
-            // Update
-            } else if (index in value.list) {
-                value.list[index].component = vnode._component;
-                value.list[index].dom = vnode.dom;
-            // Create
-            } else value.list[index] = {
-                dom: vnode.dom,
-                component: vnode._component
+        get list () {
+            return _list;
+        },
+        _setFromVNode (vnode) {
+            // Set vnode id from counter.
+            // Node ids starts from 1 to be able to compress a bit
+            if (!vnode._id) vnode._id = ++_counter;
+            // Set back from starting 1 to 0
+            registerAtIndex(vnode, vnode._id - 1);
+        },
+        // FIXME : Better api ?
+        atIndex (index) {
+            return {
+                // TODO : Check if terser uses same mangled name
+                _setFromVNode (vnode) {
+                    registerAtIndex(vnode, index);
+                }
             };
         }
     };
@@ -1249,7 +1267,7 @@ function changed(detectChanges, executeHandler) {
         // Call executeHandler with new and old state
         const executeResult = executeHandler(state, oldState);
         // Get previous unmount handler from return or cancel it
-        previousUnmountHandler = (0, _common._isFunction)(executeResult) ? executeResult : null;
+        previousUnmountHandler = (0, _common._typeof)(executeResult, "f") ? executeResult : null;
     }
     // After component just rendered
     let firstRender = true;
@@ -1262,7 +1280,8 @@ function changed(detectChanges, executeHandler) {
             // Otherwise, detect changes
             const oldState = state;
             state = detectChanges();
-            if (oldState != state) updateState(oldState);
+            // Check if any part of state changed
+            if (state.filter((e, i)=>oldState[i] != e)) updateState(oldState);
         }
     });
 }

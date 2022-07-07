@@ -149,6 +149,7 @@ parcelHelpers.export(exports, "init", ()=>init);
 var _reflex = require("../../src/reflex");
 var _debug = require("../../src/reflex/debug");
 var _propsDemoApp = require("./PropsDemoApp");
+var _codeViewerHelpers = require("../common/codeViewerHelpers");
 // -----------------------------------------------------------------------------
 (0, _debug.setReflexDebug)(true);
 function init() {
@@ -156,9 +157,14 @@ function init() {
     (0, _reflex.render)(/*#__PURE__*/ (0, _reflex.h)((0, _propsDemoApp.PropsDemoApp), null), document.body);
     p();
 }
+(0, _codeViewerHelpers.injectCodeViewer)([
+    "demos/1-props-demo/index.tsx",
+    "demos/1-props-demo/PropsDemoApp.tsx",
+    "demos/1-props-demo/UserComponent.tsx"
+], 1);
 init();
 
-},{"../../src/reflex":"cuBJf","../../src/reflex/debug":"7uUcT","./PropsDemoApp":"53gkc","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7uUcT":[function(require,module,exports) {
+},{"../../src/reflex":"cuBJf","../../src/reflex/debug":"7uUcT","./PropsDemoApp":"53gkc","../common/codeViewerHelpers":"ca3Po","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7uUcT":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "getReflexDebug", ()=>getReflexDebug);
@@ -182,8 +188,11 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "PropsDemoApp", ()=>PropsDemoApp);
 var _reflex = require("../../src/reflex");
-var _demoHelpers = require("../demoHelpers");
-function getRandomUser() {
+var _demoHelpers = require("../common/demoHelpers");
+var _userComponent = require("./UserComponent");
+/**
+ * In this demo we will see how
+ */ function getRandomUser() {
     return {
         firstname: (0, _demoHelpers.pickRandom)((0, _demoHelpers.firstnameList)),
         lastname: (0, _demoHelpers.pickRandom)((0, _demoHelpers.lastnameList)),
@@ -191,16 +200,42 @@ function getRandomUser() {
         id: (0, _demoHelpers.createUID)()
     };
 }
+function PropsDemoApp() {
+    // Create a state attached to "PropsDemoApp".
+    // Initial state is gathered at init from "getRandomUser" function.
+    const currentUser = (0, _reflex.state)(getRandomUser);
+    // With factory pattern, we have to return a render function.
+    return ()=>/*#__PURE__*/ (0, _reflex.h)("div", null, /*#__PURE__*/ (0, _reflex.h)("button", {
+            onClick: (e)=>currentUser.set(getRandomUser)
+        }, "Change user"), /*#__PURE__*/ (0, _reflex.h)("br", null), /*#__PURE__*/ (0, _reflex.h)((0, _userComponent.UserComponent), {
+            user: currentUser.value
+        }));
+}
+
+},{"../../src/reflex":"cuBJf","../common/demoHelpers":"7ZAOq","./UserComponent":"elNhi","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"elNhi":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+// -----------------------------------------------------------------------------
+parcelHelpers.export(exports, "UserComponent", ()=>UserComponent);
+var _reflex = require("../../src/reflex");
 function UserComponent(props) {
-    // Here props are a proxy, so it's values can be updated dynamically
+    // Here "props" is a proxy, so it's values can be updated dynamically
+    // The main tradeoff is that destructuring props is not possible
     // PATTERN #1 - Detect prop changes
     // Will show a log if isAdmin is changing on props.user
-    (0, _reflex.changed)(()=>props.user.isAdmin, (isAdmin)=>{
+    (0, _reflex.changed)(// To detect changes, we simply use an anonymous function which return
+    // the state to check after each render.
+    ()=>[
+            props.user.isAdmin
+        ], // Result of test function is given as first argument
+    (isAdmin)=>{
         console.log(`PATTERN #1 - User ${props.user.firstname} ${isAdmin ? "is" : "is not"} admin`);
     });
     // PATTERN #2 - Attach and detach from prop changes
     // Will disconnect previous user from chat, and connect new user
-    (0, _reflex.changed)(()=>props.user.id, (newId)=>{
+    (0, _reflex.changed)(()=>[
+            props.user.id
+        ], (newId)=>{
         console.log(`PATTERN #2 - Connect user ${newId} to chat panel`);
         return (oldId)=>{
             console.log(`PATTERN #2 - Disconnect user ${oldId} from chat`);
@@ -213,72 +248,21 @@ function UserComponent(props) {
     (0, _reflex.changed)(()=>{
         console.log("REFS - UserComponent just rendered", root.component, image.dom.getAttribute("src"));
     });
+    // With factory pattern, we have to return a render function.
     return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
             ref: root,
             class: "UserComponent"
-        }, "Hello ", props.user.firstname, " ", props.user.lastname, /*#__PURE__*/ (0, _reflex.h)("img", {
+        }, "Hello ", props.user.firstname, " ", props.user.lastname, /*#__PURE__*/ (0, _reflex.h)("br", null), /*#__PURE__*/ (0, _reflex.h)("img", {
             src: `https://i.pravatar.cc/150?u=${props.user.id}`,
-            ref: image
-        }));
-}
-function PropsDemoApp() {
-    const currentUser = (0, _reflex.state)(getRandomUser);
-    return ()=>/*#__PURE__*/ (0, _reflex.h)("div", null, /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: (e)=>currentUser.set(getRandomUser)
-        }, "Change user"), /*#__PURE__*/ (0, _reflex.h)(UserComponent, {
-            user: currentUser.value
+            ref: image,
+            style: {
+                width: 150,
+                height: 150,
+                backgroundColor: "#333",
+                borderRadius: 10
+            }
         }));
 }
 
-},{"../../src/reflex":"cuBJf","../demoHelpers":"yZRLL","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"yZRLL":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "toHex", ()=>toHex);
-parcelHelpers.export(exports, "createUID", ()=>createUID);
-parcelHelpers.export(exports, "pickRandom", ()=>pickRandom);
-parcelHelpers.export(exports, "rand", ()=>rand);
-parcelHelpers.export(exports, "randBoolean", ()=>randBoolean);
-parcelHelpers.export(exports, "foodList", ()=>foodList);
-parcelHelpers.export(exports, "colorList", ()=>colorList);
-parcelHelpers.export(exports, "firstnameList", ()=>firstnameList);
-parcelHelpers.export(exports, "lastnameList", ()=>lastnameList);
-const toHex = (n)=>(~~n).toString(16);
-const createUID = ()=>`${toHex(Date.now())}-${toHex(Math.random() * 999999999)}`;
-const pickRandom = (array)=>array[~~(Math.random() * array.length)];
-const rand = (max)=>~~(Math.random() * max);
-const randBoolean = (threshold = .5)=>Math.random() > threshold;
-const foodList = [
-    "Cheese",
-    "Carrots",
-    "Pastas",
-    "Pizza",
-    "Burgers",
-    "Ham",
-    "Salad",
-    "Mustard"
-];
-const colorList = [
-    "Red",
-    "Blue",
-    "Yellow",
-    "Purple",
-    "Orange",
-    "Black",
-    "White",
-    "Green"
-];
-const firstnameList = [
-    "Alfred",
-    "Jessica",
-    "Gwen",
-    "Jeanne"
-];
-const lastnameList = [
-    "Dupont",
-    "Smith",
-    "Stevensen",
-    "Odea"
-];
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["4xApz"], "4xApz", "parcelRequirea1a1")
+},{"../../src/reflex":"cuBJf","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["4xApz"], "4xApz", "parcelRequirea1a1")
 

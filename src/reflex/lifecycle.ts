@@ -1,5 +1,5 @@
 import { getHookedComponent } from "./diff";
-import { _isFunction, LifecycleHandler, MountHandler } from "./common";
+import { _typeof, LifecycleHandler, MountHandler } from "./common";
 
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 
@@ -19,7 +19,7 @@ type UnmountTrackHandler <GState> = (oldState:GState) => void
 type TrackHandler <GState> = (newState:GState, oldState:GState) => UnmountTrackHandler<GState>|void
 type DetectChanges <GState> = () => GState
 
-export function changed <GState> ( detectChanges:DetectChanges<GState>|TrackHandler<GState>, executeHandler?:TrackHandler<GState> ) {
+export function changed <GState extends any[]> ( detectChanges:DetectChanges<GState>|TrackHandler<GState>, executeHandler?:TrackHandler<GState> ) {
 	const component = getHookedComponent()
 	// No executeHandler function means detectChanges has been omitted.
 	// Do not check any change, just call executeHandler after every render.
@@ -39,7 +39,7 @@ export function changed <GState> ( detectChanges:DetectChanges<GState>|TrackHand
 		const executeResult = executeHandler( state, oldState )
 		// Get previous unmount handler from return or cancel it
 		previousUnmountHandler = (
-			_isFunction(executeResult)
+			_typeof(executeResult, "f")
 			? executeResult as UnmountTrackHandler<GState>
 			: null
 		)
@@ -54,8 +54,9 @@ export function changed <GState> ( detectChanges:DetectChanges<GState>|TrackHand
 		} else {
 			// Otherwise, detect changes
 			const oldState = state;
-			state = ( detectChanges as DetectChanges<GState> )()
-			if( oldState != state )
+			state = ( detectChanges as DetectChanges<GState> )();
+			// Check if any part of state changed
+			if ( state.filter( (e, i) => oldState[i] != e ) )
 				updateState( oldState )
 		}
 	})

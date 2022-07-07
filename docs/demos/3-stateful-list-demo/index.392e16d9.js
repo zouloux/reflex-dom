@@ -187,7 +187,7 @@ parcelHelpers.defineInteropFlag(exports);
 // ----------------------------------------------------------------------------- LIST APP
 parcelHelpers.export(exports, "StatefulDemoApp", ()=>StatefulDemoApp);
 var _reflex = require("../../src/reflex");
-var _demoHelpers = require("../demoHelpers");
+var _demoHelpers = require("../common/demoHelpers");
 // ----------------------------------------------------------------------------- LIST ITEM
 const listItemStyle = {
     border: `1px solid black`
@@ -304,7 +304,7 @@ function StatefulDemoApp() {
             }))));
 }
 
-},{"../../src/reflex":"cuBJf","../demoHelpers":"yZRLL","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"yZRLL":[function(require,module,exports) {
+},{"../../src/reflex":"cuBJf","../common/demoHelpers":"7ZAOq","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7ZAOq":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "toHex", ()=>toHex);
@@ -316,6 +316,8 @@ parcelHelpers.export(exports, "foodList", ()=>foodList);
 parcelHelpers.export(exports, "colorList", ()=>colorList);
 parcelHelpers.export(exports, "firstnameList", ()=>firstnameList);
 parcelHelpers.export(exports, "lastnameList", ()=>lastnameList);
+parcelHelpers.export(exports, "delay", ()=>delay);
+parcelHelpers.export(exports, "randomDelay", ()=>randomDelay);
 const toHex = (n)=>(~~n).toString(16);
 const createUID = ()=>`${toHex(Date.now())}-${toHex(Math.random() * 999999999)}`;
 const pickRandom = (array)=>array[~~(Math.random() * array.length)];
@@ -353,6 +355,8 @@ const lastnameList = [
     "Stevensen",
     "Odea"
 ];
+const delay = (durationInSeconds)=>new Promise((resolve)=>window.setTimeout(resolve, durationInSeconds * 1000));
+const randomDelay = (min, max)=>delay(min + rand(max - min));
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["lNzLw"], "lNzLw", "parcelRequirea1a1")
 

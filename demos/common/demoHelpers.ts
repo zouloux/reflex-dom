@@ -9,3 +9,8 @@ export const foodList = ["Cheese", "Carrots", "Pastas", "Pizza", "Burgers", "Ham
 export const colorList = ["Red", "Blue", "Yellow", "Purple", "Orange", "Black", "White", "Green"]
 export const firstnameList = ["Alfred", "Jessica", "Gwen", "Jeanne"]
 export const lastnameList = ["Dupont", "Smith", "Stevensen", "Odea"]
+
+export const delay = (durationInSeconds:number) => new Promise( resolve =>
+	window.setTimeout(resolve, durationInSeconds * 1000)
+)
+export const randomDelay = (min:number, max:number) => delay( min + rand(max - min) )

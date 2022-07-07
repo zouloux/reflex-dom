@@ -1,5 +1,5 @@
 import { Signal, ISignal } from "@zouloux/signal";
-import { _isFunction } from "./common";
+import { _typeof } from "./common";
 
 // ----------------------------------------------------------------------------- COMMON TYPES
 
@@ -13,11 +13,11 @@ export type TInitialValue<GType> = GType | (() => GType)
 export type TSetter<GType> = GType | ((GType) => GType)
 
 const prepareInitialValue = <GType> ( initialValue:TInitialValue<GType> ) => (
-	_isFunction(initialValue) ? ( initialValue as () => GType )() : initialValue as GType
+	_typeof(initialValue, "f") ? ( initialValue as () => GType )() : initialValue as GType
 )
 
 const executeSetter = <GType> ( currentValue:GType, setter:TSetter<GType> ):GType => (
-	_isFunction(setter) ? (setter as ((GType) => GType))( currentValue ) : setter as GType
+	_typeof(setter, "f") ? (setter as ((GType) => GType))( currentValue ) : setter as GType
 )
 
 // ----------------------------------------------------------------------------- BIT
@@ -64,6 +64,7 @@ export function createBit <GType> ( initialValue?:TInitialValue<GType> ):IBit<GT
 
 export interface IBasicObservable <GType> extends IPublicBit <GType> {
 	readonly value:GType
+	// get () : GType
 	set ( newValue:TInitialValue<GType> ) : void
 }
 
@@ -110,6 +111,7 @@ export function createStateObservable <GType> (
 		// ...bit,
 		onChanged: bit.onChanged,
 		dispose: bit.dispose,
+		// get: bit.get,
 		get value () { return bit.get() },
 		async set ( newValue:TSetter<GType> ) {
 			const oldValue = bit.get();
@@ -150,6 +152,7 @@ export function createAsyncObservable <GType> (
 		// ...bit,
 		onChanged: bit.onChanged,
 		dispose: bit.dispose,
+		// get: bit.get,
 		get value () { return bit.get() },
 		get isChanging () { return isChanging },
 		get wasAlreadyChanging () { return wasAlreadyChanging },

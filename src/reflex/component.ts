@@ -1,7 +1,7 @@
 import {
 	ComponentFunction, _flattenChildren, LifecycleHandler,
 	MountHandler, RenderFunction,
-	_TEXT_NODE_TYPE_NAME, VNode, _isFunction
+	_TEXT_NODE_TYPE_NAME, VNode, _typeof
 } from "./common";
 import { IStateObservable } from "@zouloux/signal";
 
@@ -79,7 +79,7 @@ export function mountComponent ( component:ComponentInstance ) {
 	// Call every mount handler and store returned unmount handlers
 	component._mountHandlers.map( handler => {
 		const mountedReturn = handler.apply( component, [] );
-		if ( _isFunction(mountedReturn) )
+		if ( _typeof(mountedReturn, "f") )
 			component._unmountHandlers.push( mountedReturn )
 	})
 	// Reset mount handlers, no need to keep them

@@ -2,9 +2,10 @@
 <head>
     <title>Reflex - No Bundler Demo</title>
     <!-- Load locally built bundle for tests purpose -->
-    <script src="../../dist/reflex+signal.es2017.min.js"></script>
-    <!-- Bundle loaded from UNPKG -->
-<!--    <script src="https://unpkg.com/@zouloux/reflex"></script>-->
+<!--    <script src="../../dist/reflex+signal.es2017.min.js"></script>-->
+    <!-- This is how to load Reflex bundle from UNPKG -->
+    <!-- Note : It's better to set version to avoid long load time -->
+    <script src="https://unpkg.com/@zouloux/reflex"></script>
 </head>
 <body>
     <script>
@@ -12,8 +13,8 @@
 		const { render, h, state, ref } = require("@zouloux/reflex")
         // Reflex is also available in public
 		// const { render, h, state, ref } = Reflex
-
         // Same as Signal which is injected into the bundle
+        // let signal = Signal()
 
 		// Create a stateful component with
 		function StateTest () {
@@ -43,11 +44,13 @@
 		// Create app V-DOM
         const App = h('div', { className: 'super' },
             h('h1', {}, 'Hello 👋 from Reflex' ),
-            h('h4', {}, 'Loaded from UNPKG. No bundler, no JSX'),
-			h(StateTest, {})
+            h('h4', {}, 'Loaded from UNPKG. No bundler, no JSX ✌️'),
+			h(StateTest, {}),
+            h('p', {}, 'Open console to check events.')
         )
         // Render this stateful app into body
 		render( App, document.body )
     </script>
+    <iframe></iframe>
 </body>
 </html>

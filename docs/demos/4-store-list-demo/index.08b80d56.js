@@ -170,7 +170,7 @@ parcelHelpers.export(exports, "StoreListDemoApp", ()=>StoreListDemoApp);
 var _reflex = require("../../src/reflex");
 var _store = require("../../src/store/store");
 var _reflexStoreState = require("../../src/store/reflexStoreState");
-var _demoHelpers = require("../demoHelpers");
+var _demoHelpers = require("../common/demoHelpers");
 const getInitialListState = ()=>[];
 const listStore = (0, _store.createStore)(getInitialListState(), {
     clearList () {
@@ -276,7 +276,7 @@ function StoreListDemoApp(props) {
             }))));
 }
 
-},{"../../src/reflex":"cuBJf","../../src/store/store":"bonrN","../../src/store/reflexStoreState":"lTIuh","../demoHelpers":"yZRLL","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"bonrN":[function(require,module,exports) {
+},{"../../src/reflex":"cuBJf","../../src/store/store":"bonrN","../../src/store/reflexStoreState":"lTIuh","../common/demoHelpers":"7ZAOq","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"bonrN":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // ----------------------------------------------------------------------------- CREATE STORE
@@ -384,7 +384,7 @@ function storeState(store) {
     return bit;
 }
 
-},{"../reflex":"cuBJf","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"yZRLL":[function(require,module,exports) {
+},{"../reflex":"cuBJf","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7ZAOq":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "toHex", ()=>toHex);
@@ -396,6 +396,8 @@ parcelHelpers.export(exports, "foodList", ()=>foodList);
 parcelHelpers.export(exports, "colorList", ()=>colorList);
 parcelHelpers.export(exports, "firstnameList", ()=>firstnameList);
 parcelHelpers.export(exports, "lastnameList", ()=>lastnameList);
+parcelHelpers.export(exports, "delay", ()=>delay);
+parcelHelpers.export(exports, "randomDelay", ()=>randomDelay);
 const toHex = (n)=>(~~n).toString(16);
 const createUID = ()=>`${toHex(Date.now())}-${toHex(Math.random() * 999999999)}`;
 const pickRandom = (array)=>array[~~(Math.random() * array.length)];
@@ -433,6 +435,8 @@ const lastnameList = [
     "Stevensen",
     "Odea"
 ];
+const delay = (durationInSeconds)=>new Promise((resolve)=>window.setTimeout(resolve, durationInSeconds * 1000));
+const randomDelay = (min, max)=>delay(min + rand(max - min));
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7uUcT":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");

@@ -149,16 +149,21 @@ parcelHelpers.export(exports, "init", ()=>init);
 var _reflex = require("../../src/reflex");
 var _debug = require("../../src/reflex/debug");
 var _lifecycleDemoApp = require("./LifecycleDemoApp");
+var _codeViewerHelpers = require("../common/codeViewerHelpers");
 // -----------------------------------------------------------------------------
 (0, _debug.setReflexDebug)(true);
 function init() {
     const p = (0, _debug.trackPerformances)("Root rendering");
-    (0, _reflex.render)(/*#__PURE__*/ (0, _reflex.h)((0, _lifecycleDemoApp.LifecycleDemoApp), null), document.body);
+    (0, _reflex.render)(/*#__PURE__*/ (0, _reflex.h)((0, _lifecycleDemoApp.LifecycleDemoApp), null), document.getElementById("App"));
     p();
 }
+(0, _codeViewerHelpers.injectCodeViewer)([
+    "demos/0-life-cycle-demo/index.tsx",
+    "demos/0-life-cycle-demo/LifecycleDemoApp.tsx", 
+], 1);
 init();
 
-},{"../../src/reflex":"cuBJf","../../src/reflex/debug":"7uUcT","./LifecycleDemoApp":"8PsVL","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7uUcT":[function(require,module,exports) {
+},{"../../src/reflex":"cuBJf","../../src/reflex/debug":"7uUcT","./LifecycleDemoApp":"8PsVL","../common/codeViewerHelpers":"ca3Po","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7uUcT":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "getReflexDebug", ()=>getReflexDebug);
@@ -182,7 +187,7 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "LifecycleDemoApp", ()=>LifecycleDemoApp);
 var _reflex = require("../../src/reflex");
-var _demoHelpers = require("../demoHelpers");
+var _demoHelpers = require("../common/demoHelpers");
 function SubChild(props) {
     const titleRef = (0, _reflex.ref)();
     // Local stateless variable without ref 👀
@@ -254,55 +259,5 @@ function LifecycleDemoApp() {
         }));
 }
 
-},{"../../src/reflex":"cuBJf","../demoHelpers":"yZRLL","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"yZRLL":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "toHex", ()=>toHex);
-parcelHelpers.export(exports, "createUID", ()=>createUID);
-parcelHelpers.export(exports, "pickRandom", ()=>pickRandom);
-parcelHelpers.export(exports, "rand", ()=>rand);
-parcelHelpers.export(exports, "randBoolean", ()=>randBoolean);
-parcelHelpers.export(exports, "foodList", ()=>foodList);
-parcelHelpers.export(exports, "colorList", ()=>colorList);
-parcelHelpers.export(exports, "firstnameList", ()=>firstnameList);
-parcelHelpers.export(exports, "lastnameList", ()=>lastnameList);
-const toHex = (n)=>(~~n).toString(16);
-const createUID = ()=>`${toHex(Date.now())}-${toHex(Math.random() * 999999999)}`;
-const pickRandom = (array)=>array[~~(Math.random() * array.length)];
-const rand = (max)=>~~(Math.random() * max);
-const randBoolean = (threshold = .5)=>Math.random() > threshold;
-const foodList = [
-    "Cheese",
-    "Carrots",
-    "Pastas",
-    "Pizza",
-    "Burgers",
-    "Ham",
-    "Salad",
-    "Mustard"
-];
-const colorList = [
-    "Red",
-    "Blue",
-    "Yellow",
-    "Purple",
-    "Orange",
-    "Black",
-    "White",
-    "Green"
-];
-const firstnameList = [
-    "Alfred",
-    "Jessica",
-    "Gwen",
-    "Jeanne"
-];
-const lastnameList = [
-    "Dupont",
-    "Smith",
-    "Stevensen",
-    "Odea"
-];
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["7I45p"], "7I45p", "parcelRequirea1a1")
+},{"../../src/reflex":"cuBJf","../common/demoHelpers":"7ZAOq","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["7I45p"], "7I45p", "parcelRequirea1a1")
 

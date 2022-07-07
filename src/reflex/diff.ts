@@ -1,10 +1,10 @@
 import {
 	_TEXT_NODE_TYPE_NAME, RenderDom, RenderFunction,
 	VNode, VNodeDomType, VTextNode, ComponentFunction,
-	ComponentReturn, _flattenChildren, _isFunction
+	ComponentReturn, _flattenChildren, _typeof
 } from "./common";
 import { cloneVNode } from "./jsx";
-import { IInternalRef, IInternalRefs } from "./ref";
+import { IInternalRef } from "./ref";
 import { ComponentInstance, createComponentInstance, recursivelyUpdateMountState } from "./component";
 
 /**
@@ -59,23 +59,14 @@ function setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) {
 	else if (value == null)
 		style[key] = '';
 	// FIXME : IS_NON_DIMENSIONAL_REGEX -> Is it really necessary ?
-	else if ((typeof value)[0] != 'n' || _IS_NON_DIMENSIONAL_REGEX.test(key))
+	else if ( !_typeof(value, "n") || _IS_NON_DIMENSIONAL_REGEX.test(key) )
 		style[key] = value;
 	else
 		style[key] = value + 'px';
 }
 
 function updateNodeRef ( node:VNode ) {
-	if ( !node._ref ) return;
-	// Ref as refs
-	if ( 'list' in node._ref ) {
-		// FIXME : Type
-		// FIXME : Keep track of index ? Do it from diffChildren maybe ?
-		( node._ref as IInternalRefs ).setFromVNode( 0, node as any )
-	} else {
-		// FIXME : Type
-		( node._ref as IInternalRef ).setFromVNode( node as any )
-	}
+	node._ref && ( node._ref as IInternalRef )._setFromVNode( node as any )
 }
 
 // Shallow compare two objects, applied only for props between new and old virtual nodes.
@@ -161,7 +152,7 @@ export function diffElement ( newNode:VNode, oldNode:VNode ) {
 			if ( name == "class" && Array.isArray( value ) )
 				value = value.filter( v => v !== true && !!v ).join(" ").trim()
 			// Manage style as object only
-			else if ( name == "style" && (typeof value)[0] == "o" )
+			else if ( name == "style" && _typeof(value, "o") )
 				// FIXME : Can it be optimized ? Maybe only setStyle when needed ?
 				return Object.keys( value ).map(
 					k => setStyle( (dom as HTMLElement).style, k, value[k] )
@@ -170,8 +161,11 @@ export function diffElement ( newNode:VNode, oldNode:VNode ) {
 			else if ( value == false )
 				return;
 			// FIXME : What about checked / disabled / autoplay ...
-			// Set new attribute value
-			( dom as Element ).setAttribute( name, value )
+			// Set new attribute value if not undefined
+			// FIXME : Add only if truey ?
+			// if ( typeof value < "u" )
+			if ( value )
+				( dom as Element ).setAttribute( name, value )
 		}
 	})
 	return dom;
@@ -316,20 +310,23 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 		newNode = cloneVNode( oldNode )
 	// Transfer component instance from old node to new node
 	let component:ComponentInstance = oldNode?._component
+	// Transfer id
+	if ( oldNode && oldNode._id )
+		newNode._id = oldNode._id
 	// We may need a new component instance
 	let renderResult:VNode
-	if ( !component && _isFunction(newNode.type) ) {
+	if ( !component && _typeof(newNode.type, "f") ) {
 		// Create component instance (without new keyword for better performances)
 		component = createComponentInstance( newNode as VNode<null, ComponentFunction> )
 		// Execute component's function and check what is returned
 		const result = renderComponentNode( newNode as VNode<null, ComponentFunction>, component )
 		// This is a factory component which return a render function
-		if ( _isFunction(result) ) {
+		if ( _typeof(result, "f") ) {
 			component._render = result as RenderFunction
 			component.isFactory = true
 		}
 		// This is pure functional component which returns a virtual node
-		else if ( (typeof result)[0] == "o" && "type" in result ) {
+		else if ( _typeof(result, "o") && "type" in result ) {
 			component._render = newNode.type as RenderFunction
 			component.isFactory = false
 			renderResult = result

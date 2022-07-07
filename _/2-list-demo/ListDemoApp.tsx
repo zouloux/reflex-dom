@@ -1,5 +1,5 @@
 import { h } from "../../src/reflex";
-import { colorList, createUID, foodList, pickRandom, rand } from "../demoHelpers";
+import { colorList, createUID, foodList, pickRandom, rand } from "../../demos/common/demoHelpers";
 
 // ----------------------------------------------------------------------------- DATA MODEL
 // TODO : Convert to state then store

@@ -32,8 +32,9 @@ export const _microtask = ( window.queueMicrotask ?? ( h => window.setTimeout( h
 // TODO : Into ecma-core + inline in bundle
 export const _forceArray = <G>( item:G|G[] ):G[] => Array.isArray( item ) ? item : [ item ]
 
+export const _typeof = (entity:any, firstLetterOfType:string) => (typeof entity)[0] == firstLetterOfType
 
-export const _isFunction = fn => (typeof fn)[0] == "f"
+export const _isStringOrNumber = entity => ["s", "n"].indexOf( (typeof entity)[0] ) >= 0
 
 export function _flattenChildren ( vnode:VNode ) {
 	// Re-assign flattened array to the original virtual node, and return it
@@ -79,6 +80,7 @@ export interface VNode <
 	_ref			?:IRef | IRefs
 	_component		?:ComponentInstance
 	_keep			?:boolean
+	_id				?:number
 }
 
 export interface VTextNode extends VNode<{value:string}> {
