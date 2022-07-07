@@ -2,6 +2,8 @@
 
 __Reflex JS__ is a tiny ![~3kb](./bits/reflex+signal.es2017.min.js.svg) virtual-dom library with factory based functional components.
 
+> Lib and doc are still in beta.
+
 ---
 <p align="center">
 	<strong>Reflex</strong> ➡
@@ -9,7 +11,7 @@ __Reflex JS__ is a tiny ![~3kb](./bits/reflex+signal.es2017.min.js.svg) virtual-
 	<a href="#how-to-install">Installation</a>&nbsp;/&nbsp;
 	<a href="#simple-dom-rendering">Rendering</a>&nbsp;/&nbsp;
 	<a href="#stateless-and-pure-components">Stateless</a>&nbsp;/&nbsp;
-	<a href="#Stateful components with factory pattern">Stateful and Factory Pattern</a>&nbsp;/&nbsp;
+	<a href="#stateful-components-with-factory-pattern">Stateful and Factory Pattern</a>&nbsp;/&nbsp;
 	<a href="#props">Props</a>&nbsp;/&nbsp;
 	<a href="#factory-hooks">Factory hooks</a>&nbsp;/&nbsp;
 	<a href="#state">State</a>&nbsp;/&nbsp;
@@ -379,8 +381,3 @@ Library weight will be around `4kb gzipped`. It may be a bit more if we add some
 ### Unpkg
 
 __Reflex__ is available on [Unpkg](https://unpkg.com/@zouloux/reflex) ![](./bits/reflex+signal.es2017.min.js.svg)
-
----
-
-> __/!\ Doc is very work in progress__
-> 
