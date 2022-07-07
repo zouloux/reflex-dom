@@ -239,6 +239,7 @@ parcelHelpers.defineInteropFlag(exports);
 // Unzipped is smaller with glob but bigger when zipped
 parcelHelpers.export(exports, "state", ()=>(0, _state.state));
 parcelHelpers.export(exports, "asyncState", ()=>(0, _state.asyncState));
+parcelHelpers.export(exports, "getHookedComponent", ()=>(0, _diff.getHookedComponent));
 parcelHelpers.export(exports, "ref", ()=>(0, _ref.ref));
 parcelHelpers.export(exports, "refs", ()=>(0, _ref.refs));
 parcelHelpers.export(exports, "IRef", ()=>(0, _ref.IRef));
@@ -252,12 +253,13 @@ parcelHelpers.export(exports, "invalidateComponent", ()=>(0, _render.invalidateC
 parcelHelpers.export(exports, "h", ()=>(0, _jsx.h));
 parcelHelpers.export(exports, "createElement", ()=>(0, _jsx.h));
 var _state = require("./state");
+var _diff = require("./diff");
 var _ref = require("./ref");
 var _lifecycle = require("./lifecycle");
 var _render = require("./render");
 var _jsx = require("./jsx");
 
-},{"./state":"5nTfq","./ref":"fdaPH","./lifecycle":"8Qw9Y","./render":"krTG7","./jsx":"beq5O","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"5nTfq":[function(require,module,exports) {
+},{"./state":"5nTfq","./diff":"6sa8r","./ref":"fdaPH","./lifecycle":"8Qw9Y","./render":"krTG7","./jsx":"beq5O","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"5nTfq":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // ----------------------------------------------------------------------------- STATE
@@ -289,14 +291,14 @@ parcelHelpers.export(exports, "_DOM_PRIVATE_VIRTUAL_NODE_KEY", ()=>_DOM_PRIVATE_
 parcelHelpers.export(exports, "_DOM_PRIVATE_LISTENERS_KEY", ()=>_DOM_PRIVATE_LISTENERS_KEY);
 parcelHelpers.export(exports, "getHookedComponent", ()=>getHookedComponent);
 // ----------------------------------------------------------------------------- DIFF ELEMENT
-parcelHelpers.export(exports, "diffElement", ()=>diffElement);
+parcelHelpers.export(exports, "_diffElement", ()=>_diffElement);
 // ----------------------------------------------------------------------------- DIFF CHILDREN
 /**
  * Note about performances
  * - Very important, avoid loops in loops ! Prefer 4 static loops at top level
  *   rather than 2 nested loops. n*4 is lower than n^n !
- */ parcelHelpers.export(exports, "diffChildren", ()=>diffChildren);
-parcelHelpers.export(exports, "diffNode", ()=>diffNode);
+ */ parcelHelpers.export(exports, "_diffChildren", ()=>_diffChildren);
+parcelHelpers.export(exports, "_diffNode", ()=>_diffNode);
 var _common = require("./common");
 var _jsx = require("./jsx");
 var _component = require("./component");
@@ -341,7 +343,7 @@ function updateNodeRef(node) {
 // https://esbench.com/bench/62a138846c89f600a5701904
 const shallowPropsCompare = (a, b)=>// Same amount of properties ?
     Object.keys(a).length === Object.keys(b).length && Object.keys(a).every((key)=>key === "children" || b.hasOwnProperty(key) && a[key] === b[key]);
-function diffElement(newNode, oldNode) {
+function _diffElement(newNode, oldNode) {
     // console.log("diffElement", newNode, oldNode)
     const isTextNode = newNode.type == (0, _common._TEXT_NODE_TYPE_NAME);
     // Get dom element from oldNode or create it
@@ -400,7 +402,7 @@ function diffElement(newNode, oldNode) {
     });
     return dom;
 }
-function diffChildren(newParentNode, oldParentNode) {
+function _diffChildren(newParentNode, oldParentNode) {
     // console.log("Diff children", newParentNode, oldParentNode)
     // Target new and old children.
     const newChildren = newParentNode.props.children?.flat();
@@ -420,7 +422,7 @@ function diffChildren(newParentNode, oldParentNode) {
     if (!oldChildren) {
         newChildren.map((newChildNode)=>{
             if (!newChildNode) return;
-            diffNode(newChildNode);
+            _diffNode(newChildNode);
             parentDom.appendChild(newChildNode.dom);
             // Register this child with its key on its parent
             registerKey(newChildNode);
@@ -449,7 +451,7 @@ function diffChildren(newParentNode, oldParentNode) {
         // Has key, same key found in old, same type on both
         /** MOVE & UPDATE KEYED CHILD **/ if (newChildNode.key && oldParentKeys[newChildNode.key] && oldParentKeys[newChildNode.key].type == newChildNode.type) {
             const oldNode = oldParentKeys[newChildNode.key];
-            diffNode(newChildNode, oldNode);
+            _diffNode(newChildNode, oldNode);
             oldNode._keep = true;
             // Check if index changed, compare with collapsed index to detect moves
             const collapsedIndex = i + collapseCount;
@@ -457,15 +459,15 @@ function diffChildren(newParentNode, oldParentNode) {
             // FIXME : Perf, is indexOf quick ? Maybe store every indexes in an array ?
             if (oldChildren.indexOf(oldNode) != collapsedIndex) parentDom.insertBefore(newChildNode.dom, parentDom.children[i]);
         } else if (newChildNode.key && !oldParentKeys[newChildNode.key]) {
-            diffNode(newChildNode);
+            _diffNode(newChildNode);
             parentDom.insertBefore(newChildNode.dom, parentDom.children[i]);
             collapseCount--;
         } else if (i in oldChildren && oldChildren[i] && oldChildren[i].type == newChildNode.type) {
             const oldNode = oldChildren[i];
-            diffNode(newChildNode, oldNode);
+            _diffNode(newChildNode, oldNode);
             oldNode._keep = true;
         } else {
-            diffNode(newChildNode);
+            _diffNode(newChildNode);
             parentDom.insertBefore(newChildNode.dom, parentDom.children[i]);
             collapseCount--;
         }
@@ -475,7 +477,7 @@ function diffChildren(newParentNode, oldParentNode) {
     oldChildren.map((oldChildNode)=>{
         if (oldChildNode && !oldChildNode._keep) {
             // Call unmount handlers
-            (0, _component.recursivelyUpdateMountState)(oldChildNode, false);
+            (0, _component._recursivelyUpdateMountState)(oldChildNode, false);
             // Remove ref
             const { dom  } = oldChildNode;
             oldChildNode.dom = null;
@@ -501,11 +503,11 @@ function renderComponentNode(node, component) {
     _hookedComponent = null;
     return result;
 }
-function diffNode(newNode, oldNode) {
+function _diffNode(newNode, oldNode) {
     // IMPORTANT : Here we clone node if we got the same instance
     // 			   Otherwise, altering props.children after render will fuck everything up
     // Clone identical nodes to be able to diff them
-    if (oldNode && oldNode === newNode) newNode = (0, _jsx.cloneVNode)(oldNode);
+    if (oldNode && oldNode === newNode) newNode = (0, _jsx._cloneVNode)(oldNode);
     // Transfer component instance from old node to new node
     let component = oldNode?._component;
     // Transfer id
@@ -514,7 +516,7 @@ function diffNode(newNode, oldNode) {
     let renderResult;
     if (!component && (0, _common._typeof)(newNode.type, "f")) {
         // Create component instance (without new keyword for better performances)
-        component = (0, _component.createComponentInstance)(newNode);
+        component = (0, _component._createComponentInstance)(newNode);
         // Execute component's function and check what is returned
         const result = renderComponentNode(newNode, component);
         // This is a factory component which return a render function
@@ -529,7 +531,7 @@ function diffNode(newNode, oldNode) {
     }
     let dom;
     // Virtual node is a dom element
-    if (!component) newNode.dom = dom = diffElement(newNode, oldNode);
+    if (!component) newNode.dom = dom = _diffElement(newNode, oldNode);
     else {
         // FIXME : Is it a good idea to shallow compare props on every changes by component ?
         // 			-> It seems to be faster than preact + memo with this 👀, check other cases
@@ -560,7 +562,7 @@ function diffNode(newNode, oldNode) {
             // Apply new children list to the parent component node
             newNode.props.children = (0, _common._flattenChildren)(renderResult);
             // Diff rendered element
-            newNode.dom = dom = diffElement(renderResult, oldNode);
+            newNode.dom = dom = _diffElement(renderResult, oldNode);
             // Assign ref of first virtual node to the component's virtual node
             newNode._ref = renderResult._ref;
         }
@@ -573,9 +575,9 @@ function diffNode(newNode, oldNode) {
     // Update ref on node
     updateNodeRef(newNode);
     // Diff children of this element (do not process text nodes)
-    if (dom instanceof Element) diffChildren(newNode, oldNode);
+    if (dom instanceof Element) _diffChildren(newNode, oldNode);
     // If component is not mounted yet, mount it recursively
-    if (component && !component.isMounted) (0, _component.recursivelyUpdateMountState)(newNode, true);
+    if (component && !component.isMounted) (0, _component._recursivelyUpdateMountState)(newNode, true);
     // Execute after render handlers
     component?._renderHandlers.map((h)=>h());
 }
@@ -641,8 +643,8 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // NOTE : Keep it in a function and do not inline this
 // It seems to be V8 optimized. @see Preact source code
-parcelHelpers.export(exports, "createVNode", ()=>createVNode);
-parcelHelpers.export(exports, "cloneVNode", ()=>cloneVNode);
+parcelHelpers.export(exports, "_createVNode", ()=>_createVNode);
+parcelHelpers.export(exports, "_cloneVNode", ()=>_cloneVNode);
 parcelHelpers.export(exports, "h", ()=>h) // export function h ( type, props, ...children ) {
  // 	// Remove debug properties
  // 	// FIXME : Keep them in debug mode ? But in vnode not in props.
@@ -662,7 +664,7 @@ parcelHelpers.export(exports, "h", ()=>h) // export function h ( type, props, ..
  // }
 ;
 var _common = require("./common");
-function createVNode(type, props, key, ref) {
+function _createVNode(type, props, key, ref) {
     return {
         type: type,
         props: props,
@@ -670,7 +672,7 @@ function createVNode(type, props, key, ref) {
         _ref: ref
     };
 }
-function cloneVNode(vnode) {
+function _cloneVNode(vnode) {
     return {
         ...vnode,
         // IMPORTANT : also clone props object
@@ -698,10 +700,10 @@ function h(type, props, ...children) {
     }
     // Inject children in props and override
     nodeProps.children = children.map((child)=>// Convert string and number children to text virtual nodes
-        (0, _common._isStringOrNumber)(child) ? createVNode((0, _common._TEXT_NODE_TYPE_NAME), {
+        (0, _common._isStringOrNumber)(child) ? _createVNode((0, _common._TEXT_NODE_TYPE_NAME), {
             value: "" + child
         }) : child);
-    return createVNode(type, nodeProps, key, ref);
+    return _createVNode(type, nodeProps, key, ref);
 }
 
 },{"./common":"8NUdO","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"jK9Qg":[function(require,module,exports) {
@@ -709,13 +711,13 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // ----------------------------------------------------------------------------- CREATE COMPONENT INSTANCE
 // Optimize it in a function @see jsx.ts/createVNode()
-parcelHelpers.export(exports, "createComponentInstance", ()=>createComponentInstance);
+parcelHelpers.export(exports, "_createComponentInstance", ()=>_createComponentInstance);
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
-parcelHelpers.export(exports, "mountComponent", ()=>mountComponent);
-parcelHelpers.export(exports, "unmountComponent", ()=>unmountComponent);
-parcelHelpers.export(exports, "recursivelyUpdateMountState", ()=>recursivelyUpdateMountState);
+parcelHelpers.export(exports, "_mountComponent", ()=>_mountComponent);
+parcelHelpers.export(exports, "_unmountComponent", ()=>_unmountComponent);
+parcelHelpers.export(exports, "_recursivelyUpdateMountState", ()=>_recursivelyUpdateMountState);
 var _common = require("./common");
-function createComponentInstance(vnode) {
+function _createComponentInstance(vnode) {
     return {
         vnode,
         _propsProxy: createPropsProxy(vnode.props),
@@ -750,7 +752,7 @@ function createPropsProxy(props) {
         }
     };
 }
-function mountComponent(component) {
+function _mountComponent(component) {
     // Call every mount handler and store returned unmount handlers
     component._mountHandlers.map((handler)=>{
         const mountedReturn = handler.apply(component, []);
@@ -760,7 +762,7 @@ function mountComponent(component) {
     component._mountHandlers = [];
     component.isMounted = true;
 }
-function unmountComponent(component) {
+function _unmountComponent(component) {
     component._unmountHandlers.map((h)=>h.apply(component, []));
     component._observables.map((o)=>o.dispose());
     // FIXME : Do we need to do this ? Is it efficient or is it just noise ?
@@ -772,10 +774,10 @@ function unmountComponent(component) {
     delete component._observables;
     component.isMounted = false;
 }
-function recursivelyUpdateMountState(node, doMount) {
+function _recursivelyUpdateMountState(node, doMount) {
     if (node.type == (0, _common._TEXT_NODE_TYPE_NAME)) return;
-    (0, _common._flattenChildren)(node).map((c)=>c && recursivelyUpdateMountState(c, doMount));
-    if (node._component) doMount ? mountComponent(node._component) : unmountComponent(node._component);
+    (0, _common._flattenChildren)(node).map((c)=>c && _recursivelyUpdateMountState(c, doMount));
+    if (node._component) doMount ? _mountComponent(node._component) : _unmountComponent(node._component);
 }
 
 },{"./common":"8NUdO","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"krTG7":[function(require,module,exports) {
@@ -802,11 +804,11 @@ var _jsx = require("./jsx");
 function render(rootNode, parentElement) {
     // When using render, we create a new root node to detect new renders
     // This node is never rendered, we just attach it to the parentElement and render its children
-    const root = (0, _jsx.createVNode)((0, _common._ROOT_NODE_TYPE_NAME), {
+    const root = (0, _jsx._createVNode)((0, _common._ROOT_NODE_TYPE_NAME), {
         children: (0, _common._forceArray)(rootNode)
     });
     root.dom = parentElement;
-    (0, _diff.diffChildren)(root, parentElement[0, _diff._DOM_PRIVATE_VIRTUAL_NODE_KEY]);
+    (0, _diff._diffChildren)(root, parentElement[0, _diff._DOM_PRIVATE_VIRTUAL_NODE_KEY]);
     parentElement[0, _diff._DOM_PRIVATE_VIRTUAL_NODE_KEY] = root;
 }
 // ----------------------------------------------------------------------------- INVALIDATION
@@ -815,7 +817,7 @@ function updateDirtyComponents() {
     let p;
     // TODO : Update with depth ! Deepest first ? Or last ?
     componentsToUpdate.map((component)=>{
-        (0, _diff.diffNode)(component.vnode, component.vnode);
+        (0, _diff._diffNode)(component.vnode, component.vnode);
     });
     componentsToUpdate = [];
     p && p();

@@ -3,9 +3,9 @@ import {
 	VNode, VNodeDomType, VTextNode, ComponentFunction,
 	ComponentReturn, _flattenChildren, _typeof
 } from "./common";
-import { cloneVNode } from "./jsx";
+import { _cloneVNode } from "./jsx";
 import { IInternalRef } from "./ref";
-import { ComponentInstance, createComponentInstance, recursivelyUpdateMountState } from "./component";
+import { ComponentInstance, _createComponentInstance, _recursivelyUpdateMountState } from "./component";
 
 /**
  * TODO : Errors
@@ -82,7 +82,7 @@ const shallowPropsCompare = ( a:object, b:object ) => (
 
 // ----------------------------------------------------------------------------- DIFF ELEMENT
 
-export function diffElement ( newNode:VNode, oldNode:VNode ) {
+export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 	// console.log("diffElement", newNode, oldNode)
 	const isTextNode = newNode.type == _TEXT_NODE_TYPE_NAME
 	// Get dom element from oldNode or create it
@@ -178,7 +178,7 @@ export function diffElement ( newNode:VNode, oldNode:VNode ) {
  * - Very important, avoid loops in loops ! Prefer 4 static loops at top level
  *   rather than 2 nested loops. n*4 is lower than n^n !
  */
-export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
+export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// console.log("Diff children", newParentNode, oldParentNode)
 	// Target new and old children.
 	const newChildren = newParentNode.props.children?.flat()
@@ -198,7 +198,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	if ( !oldChildren ) {
 		newChildren.map( newChildNode => {
 			if (!newChildNode) return;
-			diffNode( newChildNode )
+			_diffNode( newChildNode )
 			parentDom.appendChild( newChildNode.dom )
 			// Register this child with its key on its parent
 			registerKey( newChildNode )
@@ -237,7 +237,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 			&& oldParentKeys[ newChildNode.key ].type == newChildNode.type
 		) {
 			const oldNode = oldParentKeys[ newChildNode.key ]
-			diffNode( newChildNode, oldNode )
+			_diffNode( newChildNode, oldNode )
 			oldNode._keep = true;
 			// Check if index changed, compare with collapsed index to detect moves
 			const collapsedIndex = i + collapseCount
@@ -249,7 +249,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		// Has key, but not found in old
 		/** CREATE **/
 		else if ( newChildNode.key && !oldParentKeys[ newChildNode.key ] ) {
-			diffNode( newChildNode )
+			_diffNode( newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
 		}
@@ -258,13 +258,13 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		/** UPDATE IN PLACE **/
 		else if ( i in oldChildren && oldChildren[ i ] && oldChildren[ i ].type == newChildNode.type ) {
 			const oldNode = oldChildren[ i ]
-			diffNode( newChildNode, oldNode )
+			_diffNode( newChildNode, oldNode )
 			oldNode._keep = true;
 		}
 		// Not found
 		/** CREATE **/
 		else {
-			diffNode( newChildNode )
+			_diffNode( newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
 		}
@@ -274,7 +274,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	oldChildren.map( oldChildNode => {
 		if ( oldChildNode && !oldChildNode._keep ) {
 			// Call unmount handlers
-			recursivelyUpdateMountState( oldChildNode, false );
+			_recursivelyUpdateMountState( oldChildNode, false );
 			// Remove ref
 			const { dom } = oldChildNode
 			oldChildNode.dom = null;
@@ -302,12 +302,12 @@ function renderComponentNode <GReturn = ComponentReturn> ( node:VNode<null, Comp
 	return result as GReturn
 }
 
-export function diffNode ( newNode:VNode, oldNode?:VNode ) {
+export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 	// IMPORTANT : Here we clone node if we got the same instance
 	// 			   Otherwise, altering props.children after render will fuck everything up
 	// Clone identical nodes to be able to diff them
 	if ( oldNode && oldNode === newNode )
-		newNode = cloneVNode( oldNode )
+		newNode = _cloneVNode( oldNode )
 	// Transfer component instance from old node to new node
 	let component:ComponentInstance = oldNode?._component
 	// Transfer id
@@ -317,7 +317,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 	let renderResult:VNode
 	if ( !component && _typeof(newNode.type, "f") ) {
 		// Create component instance (without new keyword for better performances)
-		component = createComponentInstance( newNode as VNode<null, ComponentFunction> )
+		component = _createComponentInstance( newNode as VNode<null, ComponentFunction> )
 		// Execute component's function and check what is returned
 		const result = renderComponentNode( newNode as VNode<null, ComponentFunction>, component )
 		// This is a factory component which return a render function
@@ -335,7 +335,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 	let dom:RenderDom
 	// Virtual node is a dom element
 	if ( !component ) {
-		newNode.dom = dom = diffElement( newNode, oldNode )
+		newNode.dom = dom = _diffElement( newNode, oldNode )
 	}
 	// Virtual node is a component
 	else {
@@ -379,7 +379,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 			// Apply new children list to the parent component node
 			newNode.props.children = _flattenChildren( renderResult )
 			// Diff rendered element
-			newNode.dom = dom = diffElement( renderResult, oldNode )
+			newNode.dom = dom = _diffElement( renderResult, oldNode )
 			// Assign ref of first virtual node to the component's virtual node
 			newNode._ref = renderResult._ref
 		}
@@ -393,10 +393,10 @@ export function diffNode ( newNode:VNode, oldNode?:VNode ) {
 	updateNodeRef( newNode )
 	// Diff children of this element (do not process text nodes)
 	if ( dom instanceof Element )
-		diffChildren( newNode, oldNode )
+		_diffChildren( newNode, oldNode )
 	// If component is not mounted yet, mount it recursively
 	if ( component && !component.isMounted )
-		recursivelyUpdateMountState( newNode, true )
+		_recursivelyUpdateMountState( newNode, true )
 	// Execute after render handlers
 	component?._renderHandlers.map( h => h() )
 }

@@ -138,7 +138,7 @@ In Stateful components, "props" is a __Proxy__ object (like in Solid). Because f
 ```typescript jsx
 function PropsComponent ( props ) {
     function logName () {
-        // Will log latest name, even if component rendered several times
+        // ✅ Will log latest name, even if component rendered several times
         console.log( props.name )
     }
     return () => <div>
@@ -151,8 +151,11 @@ function PropsComponent ( props ) {
 
 ```typescript jsx
 function PropsComponent ( props )  {
-    // Here name will never change even the component is updated by its parent
+    // 🚫 Here name will never change even if the component is updated by its parent
     const { name } = props
+	function logName () {
+		console.log( name )
+	}
     return () => <div></div>
 }
 ```
@@ -201,7 +204,7 @@ function MyComponent () {
 
 > The main difference with React is that ref are useless to create locally scoped component variables.
 
-To create a locally scoped props that will not trigger rendering, just use `let`
+To create a locally scoped prop that will not trigger rendering, just use `let`
 
 ```typescript jsx
 function MyComponent () {

@@ -25,7 +25,7 @@ export interface ComponentInstance { // FIXME : Generics ?
 // ----------------------------------------------------------------------------- CREATE COMPONENT INSTANCE
 
 // Optimize it in a function @see jsx.ts/createVNode()
-export function createComponentInstance ( vnode:VNode<null, ComponentFunction> ):ComponentInstance {
+export function _createComponentInstance ( vnode:VNode<null, ComponentFunction> ):ComponentInstance {
 	return {
 		vnode,
 		_propsProxy: createPropsProxy( vnode.props ),
@@ -75,7 +75,7 @@ function createPropsProxy <GProps> ( props:GProps ) : IPropsProxy<GProps> {
 
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 
-export function mountComponent ( component:ComponentInstance ) {
+export function _mountComponent ( component:ComponentInstance ) {
 	// Call every mount handler and store returned unmount handlers
 	component._mountHandlers.map( handler => {
 		const mountedReturn = handler.apply( component, [] );
@@ -87,7 +87,7 @@ export function mountComponent ( component:ComponentInstance ) {
 	component.isMounted = true;
 }
 
-export function unmountComponent ( component:ComponentInstance ) {
+export function _unmountComponent ( component:ComponentInstance ) {
 	component._unmountHandlers.map( h => h.apply( component, [] ) )
 	component._observables.map( o => o.dispose() )
 	// FIXME : Do we need to do this ? Is it efficient or is it just noise ?
@@ -100,9 +100,9 @@ export function unmountComponent ( component:ComponentInstance ) {
 	component.isMounted = false;
 }
 
-export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
+export function _recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 	if ( node.type == _TEXT_NODE_TYPE_NAME ) return
-	_flattenChildren( node ).map( c => c && recursivelyUpdateMountState(c, doMount) )
+	_flattenChildren( node ).map( c => c && _recursivelyUpdateMountState(c, doMount) )
 	if ( node._component )
-		doMount ? mountComponent( node._component ) : unmountComponent( node._component )
+		doMount ? _mountComponent( node._component ) : _unmountComponent( node._component )
 }

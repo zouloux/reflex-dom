@@ -1,6 +1,6 @@
 import { _ROOT_NODE_TYPE_NAME, _forceArray, VNodeOrVNodes, _microtask } from "./common";
-import { diffChildren, diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
-import { createVNode } from "./jsx";
+import { _diffChildren, _diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
+import { _createVNode } from "./jsx";
 import { ComponentInstance } from "./component";
 
 // ----------------------------------------------------------------------------- RENDER
@@ -8,9 +8,9 @@ import { ComponentInstance } from "./component";
 export function render ( rootNode:VNodeOrVNodes, parentElement:HTMLElement ) {
 	// When using render, we create a new root node to detect new renders
 	// This node is never rendered, we just attach it to the parentElement and render its children
-	const root = createVNode( _ROOT_NODE_TYPE_NAME, { children: _forceArray( rootNode ) })
+	const root = _createVNode( _ROOT_NODE_TYPE_NAME, { children: _forceArray( rootNode ) })
 	root.dom = parentElement
-	diffChildren( root, parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ] )
+	_diffChildren( root, parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ] )
 	parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ] = root
 }
 
@@ -23,7 +23,7 @@ function updateDirtyComponents () {
 		p = require("./debug").trackPerformances("Update dirty components")
 	// TODO : Update with depth ! Deepest first ? Or last ?
 	componentsToUpdate.map( component => {
-		diffNode( component.vnode, component.vnode )
+		_diffNode( component.vnode, component.vnode )
 	})
 	componentsToUpdate = []
 	p && p();
