@@ -56,7 +56,7 @@ export function changed <GState extends any[]> ( detectChanges:DetectChanges<GSt
 			const oldState = state;
 			state = ( detectChanges as DetectChanges<GState> )();
 			// Check if any part of state changed
-			if ( state.filter( (e, i) => oldState[i] != e ) )
+			if ( state.filter( (e, i) => oldState[i] != e ).length )
 				updateState( oldState )
 		}
 	})

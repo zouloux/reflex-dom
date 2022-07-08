@@ -461,3 +461,4 @@ Library weight will be around `4kb gzipped`. It may be a bit more if we add some
 ### Unpkg
 
 __Reflex__ is available on [Unpkg](https://unpkg.com/@zouloux/reflex) ![](./bits/reflex+signal.es2017.min.js.svg)
+- [see unpkg usage example](https://zouloux.github.io/reflex/demos/5-no-bundler-demo/index.html)
