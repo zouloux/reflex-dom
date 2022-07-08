@@ -14,7 +14,7 @@
 		"demos-dev": "./build-parcel-demo.sh dev",
 		"demos-build": "./build-parcel-demo.sh build",
 		"example-dev" : "parcel serve example --dist-dir './docs/example'",
-		"example-build" : "parcel build example --dist-dir './docs/example' && echo ''",
+		"example-build" : "parcel build example --dist-dir './docs/example' --public-url '/reflex/example' --no-source-maps --no-optimize --no-scope-hoist && echo ''",
 		"publish": "npm run clean && npm run demos-build && npm run example-build && tsbundle publish"
 	},
 	"author": "Alexis Bouhet (ZoulouX)",
