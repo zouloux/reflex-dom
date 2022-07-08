@@ -25,7 +25,7 @@ export function UserComponent ( props:IUserComponentProps ) {
 		// the state to check after each render.
 		() => [props.user.isAdmin],
 		// Result of test function is given as first argument
-		isAdmin => {
+		(isAdmin, wereAdmin) => {
 			console.log(`PATTERN #1 - User ${props.user.firstname} ${isAdmin ? 'is' : 'is not'} admin`)
 		}
 	)

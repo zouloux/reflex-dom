@@ -340,10 +340,12 @@ function ChangedComponent ( props ) {
         // The function detect changes in stateA and props.name, stateB is ignored
         () => [stateA.value, props.name],
         // Called when change is detected in stateA OR props.name
-        (newValues, oldValues) => {
+        // Both new state and old state values are concatenated into arguments
+        //      new array       |        old array      //
+        (newStateA, newPropsName, oldStateA, oldPropsName) => {
             // Values array here are the last and previous returned array
             // Useful to detect changes, or pub-sub any other component or model
-            console.log( newValues, oldValues )
+            console.log( newStateA, newPropsName, oldStateA, oldPropsName )
         }
     )
     return () => <div>...</div>

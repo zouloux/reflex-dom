@@ -228,7 +228,7 @@ function UserComponent(props) {
     ()=>[
             props.user.isAdmin
         ], // Result of test function is given as first argument
-    (isAdmin)=>{
+    (isAdmin, wereAdmin)=>{
         console.log(`PATTERN #1 - User ${props.user.firstname} ${isAdmin ? "is" : "is not"} admin`);
     });
     // PATTERN #2 - Attach and detach from prop changes

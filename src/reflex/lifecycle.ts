@@ -15,11 +15,15 @@ export function unmounted ( handler:LifecycleHandler ) {
 
 // ----------------------------------------------------------------------------- TRACK CHANGE AFTER RENDER
 
-type UnmountTrackHandler <GState> = (oldState:GState) => void
-type TrackHandler <GState> = (newState:GState, oldState:GState) => UnmountTrackHandler<GState>|void
-type DetectChanges <GState> = () => GState
+type TChangeDetector = any[]
 
-export function changed <GState extends any[]> ( detectChanges:DetectChanges<GState>|TrackHandler<GState>, executeHandler?:TrackHandler<GState> ) {
+type UnmountTrackHandler 	<GState extends TChangeDetector> 	= (...oldState:GState) => void
+type TrackHandler 			<GState extends TChangeDetector>	= (...newState:GState) => UnmountTrackHandler<GState>|void
+// type UnmountTrackHandler 	<GState extends TChangeDetector> 	= (oldState:GState) => void
+// type TrackHandler 			<GState extends TChangeDetector>	= (newState:GState, oldState:GState) => UnmountTrackHandler<GState>|void
+type DetectChanges 			<GState extends TChangeDetector>	= () => GState
+
+export function changed <GState extends TChangeDetector> ( detectChanges:DetectChanges<GState>|TrackHandler<GState>, executeHandler?:TrackHandler<GState> ) {
 	const component = getHookedComponent()
 	// No executeHandler function means detectChanges has been omitted.
 	// Do not check any change, just call executeHandler after every render.
@@ -34,9 +38,11 @@ export function changed <GState extends any[]> ( detectChanges:DetectChanges<GSt
 	// Update new state and call handlers
 	function updateState ( oldState:GState ) {
 		// Call previous handler with old state if it exists
-		previousUnmountHandler && previousUnmountHandler( oldState );
+		previousUnmountHandler && previousUnmountHandler.apply( null, oldState );
+		// previousUnmountHandler && previousUnmountHandler( oldState );
 		// Call executeHandler with new and old state
-		const executeResult = executeHandler( state, oldState )
+		const executeResult = executeHandler.apply( null, state.concat( oldState ) )
+		// const executeResult = executeHandler( state, oldState )
 		// Get previous unmount handler from return or cancel it
 		previousUnmountHandler = (
 			_typeof(executeResult, "f")
