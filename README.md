@@ -1,30 +1,41 @@
 # Reflex
 
-__Reflex JS__ is a tiny ![~3kb](./bits/reflex+signal.es2017.min.js.svg) virtual-dom library with factory based functional components.
+__Reflex JS__ is a tiny ![~3kb](./bits/reflex+signal.es2017.min.js.svg) virtual-dom library with __factory based functional components__.
 
-#### _Be kind, Lib and doc are still in beta 😘_
+![](./example/example.png)
+![](./example/example.gif)
+
+- [See this example running](.https://zouloux.github.io/reflex/examples/example.html)
+- [See more complex demos](https://zouloux.github.io/reflex/demos/)
+
 
 ---
-<p align="center">
-	<strong>Reflex</strong> ➡
-	<a href="#concept">Concept</a>&nbsp;/&nbsp;
-	<a href="#how-to-install">Installation</a>&nbsp;/&nbsp;
-	<a href="#simple-dom-rendering">Rendering</a>&nbsp;/&nbsp;
-	<a href="#stateless-and-pure-components">Stateless</a>&nbsp;/&nbsp;
-	<a href="#stateful-components-with-factory-pattern">Stateful and Factory Pattern</a>&nbsp;/&nbsp;
-	<a href="#props">Props</a>&nbsp;/&nbsp;
-	<a href="#factory-hooks">Factory hooks</a>&nbsp;/&nbsp;
-	<a href="#state">State</a>&nbsp;/&nbsp;
-	<a href="#ref">Ref</a>&nbsp;/&nbsp;
-	<a href="#refs-aka-multi-ref">Refs</a>&nbsp;/&nbsp;
-	<a href="#mounted-and-unmounted">Mounted & Unmounted</a>&nbsp;/&nbsp;
-	<a href="#changed">Changed</a>&nbsp;/&nbsp;
-	<a href="#things-missing">Things missing</a>&nbsp;/&nbsp;
-	<a href="#performances">Performances</a>&nbsp;/&nbsp;
-	<a href="#examples">Examples</a>&nbsp;/&nbsp;
-	<a href="#roadmap">Roadmap</a>&nbsp;/&nbsp;
-	<a href="#unpkg">Unpkg</a>
-</p>
+
+## Table of contents
+
+- <a href="#concept">Concept</a>
+- <a href="#how-to-install">Installation</a>
+- <a href="#because-code-samples-are-better-than-a-thousand-words">Code samples</a>
+  - <a href="#simple-dom-rendering">Rendering</a>
+  - <a href="#stateless-and-pure-components">Stateless</a>
+  - <a href="#stateful-components-with-factory-pattern">Stateful and Factory Pattern</a>
+  - <a href="#props">Props</a>
+- <a href="#factory-hooks">Factory hooks</a>
+  - <a href="#state">State</a>
+  - <a href="#ref">Ref</a>
+  - <a href="#refs-aka-multi-ref">Refs</a>
+  - <a href="#mounted-and-unmounted">Mounted & Unmounted</a>
+  - <a href="#changed">Changed</a>
+- <a href="#more">More</a>
+  - 
+- <a href="#about">About</a>
+  - <a href="#things-missing">Things missing</a>
+  - <a href="#performances">Performances</a>
+  - <a href="#demos">Demos</a>
+  - <a href="#roadmap">Roadmap</a>
+  - <a href="#unpkg">Unpkg</a>
+
+#### _Be kind, Lib and doc are still in beta 😘_
 
 ---
 
@@ -153,9 +164,9 @@ function PropsComponent ( props ) {
 function PropsComponent ( props )  {
     // 🚫 Here name will never change even if the component is updated by its parent
     const { name } = props
-	function logName () {
-		console.log( name )
-	}
+    function logName () {
+        console.log( name )
+    }
     return () => <div></div>
 }
 ```
@@ -285,7 +296,7 @@ function ChangedComponent ( props ) {
     const root = ref()
     const number = state(0)
     changed(() => {
-		// Called after each render
+        // Called after each render
         // Ref and state are available
         console.log("Component updated", root.dom, number.value)
     })
@@ -352,32 +363,92 @@ function ChangedComponent ( props ) {
 }
 ```
 
-## Things missing
+## More
+
+### Automatic forwardRef [WIP]
+
+When attaching a ref from inside the component, an from the parent, it will just work as expected.
+
+```typescript jsx
+function Child () {
+    // Works, will have component instance and div element
+    const root = ref()
+    return () => <div ref={ root }></div>
+}
+function Parent () {
+    // Also works without forwardRef
+    // will have component instance and div element
+    const child = ref()
+    return () => <div>
+      <Child ref={ child } />
+    </div>
+}
+```
+
+### Classes as array
+
+Classes can be set as an array. Falsy values will be automatically filtered out.
+
+```typescript jsx
+function PureComponent ( props ) {
+    const classes = [
+        "PureComponent",
+        props.modifier ? `PureComponent-${props.modifier}` : null,
+        props.disabled && "disabled",
+        ...props.classes
+    ]
+  return <div class={ classes }></div>
+}
+// Will have class="PureComponent PureComponent-big ParentComponent_pureComponent"
+// Disabled is filtered out because props.disabled is not defined
+const component = <PureComponent
+  modifier="big"
+  classes={["ParentComponent_pureComponent"]}
+/>
+```
+
+## About
+
+### History
+
+Reflex idea comes from 2018 when React proposed [React Hooks](https://github.com/reactjs/rfcs/pull/68).
+After digging hooks for some months, a [lot of people](https://github.com/zouloux/prehook-proof-of-concept/issues/1) talked about the benefits of having a __Factory Phase__ with a render function returned instead of all in one function.
+[I proposed a proof of concept of a factory component system](https://github.com/zouloux/prehook-proof-of-concept) based on [Preact](https://github.com/preactjs/preact).
+Years after using React hooks (with Preact a lot), I finally had time to get this idea working into a standalone lib ✨
+
+### Things missing
 
 Here is the list of things missing from React :
-
 - React suspense (loading fallback)
 - React fiber (asynchronous rendering)
 - renderToString (for now only)
 - Class components
-- A lot of stuff that I forgot
+- A lot of other stuff
 
-## Performances
+Things missing from Solid :
+- Crazy performances
+- A lot of other stuff
+
+Things missing from Preact :
+- Not so much I guess ?
+
+### Performances
 
 Reflex goal is to be __as performant as possible__ and __as light as possible__. Reflex will never be as performant than Solid (because of Virtual DOM), but will easily be more performant than React or Preact in a lot of cases. 
 
 Library weight will be around `4kb gzipped`. It may be a bit more if we add some useful features. Not used features can be tree-shaken thanks to your bundler (like Parcel or Vite). [See note](./CODEGOLF.md) about code golfing. 
 
-## Examples
+### Demos
 
 [Click here](https://zouloux.github.io/reflex/demos/) to see some demo (WIP)
 
-## Roadmap
+### Roadmap
 
 - Better doc
-- A solution for forwardRef (store two refs ?)
-- Cleaner and richer demos !
-- Benchmarks
+- Better demos
+- A solution for automatic forwardRef (store two refs into vnode ?)
+- Benchmarks with React / Preact / Solid
+- A `npm create reflex-app` script with Parcel
 - Smaller package / better performances
 
 

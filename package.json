@@ -10,10 +10,12 @@
 	"scripts": {
 		"reset": "rm -rf node_modules && npm i",
 		"clean": "rm -rf .parcel-cache && rm -rf dist && rm -rf docs",
+		"build": "npm run clean && tsbundle build",
 		"demos-dev": "./build-parcel-demo.sh dev",
 		"demos-build": "./build-parcel-demo.sh build",
-		"build": "npm run clean && tsbundle build",
-		"publish": "npm run clean && npm run demos-build && tsbundle publish"
+		"example-dev" : "parcel serve example --dist-dir './docs/example'",
+		"example-build" : "parcel build example --dist-dir './docs/example' && echo ''",
+		"publish": "npm run clean && npm run demos-build && npm run example-build && tsbundle publish"
 	},
 	"author": "Alexis Bouhet (ZoulouX)",
 	"license": "MIT",
