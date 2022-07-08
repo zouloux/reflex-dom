@@ -371,7 +371,7 @@ function ChangedComponent ( props ) {
 
 Reflex is slim, but it still has some cool features for greater DX.
 
-### Automatic forwardRef [WIP]
+### Automatic forwardRef
 
 When attaching a ref from inside the component, an from the parent, it will just work as expected.
 
