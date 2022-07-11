@@ -1,7 +1,7 @@
 {
 	"name": "@zouloux/reflex",
 	"type": "module",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"description": "Reflex is a tiny 3kb virtual-dom library with factory based functional components.",
 	"main": "./dist/index.es2017.cjs",
 	"module": "./dist/index.es2020.mjs",
@@ -38,10 +38,20 @@
 			"Reflex": "./index",
 			"Signal": "@zouloux/signal"
 		},
+		"output": "./dist",
+		"formats": [
+			"es2017.cjs",
+			"es2020.mjs"
+		],
 		"files": [
 			{
+				"input": "./src/reflex/index.ts"
+			},
+			{
+				"input": "./src/reflex/debug.ts"
+			},
+			{
 				"input": "./src/reflex/index.ts",
-				"output": "./dist",
 				"formats": [
 					"es2017.min.js"
 				],
@@ -50,14 +60,6 @@
 				"include": {
 					"@zouloux/signal": "./node_modules/@zouloux/signal/dist/signal.es2017.cjs"
 				}
-			},
-			{
-				"input": "./src/reflex/index.ts",
-				"output": "./dist",
-				"formats": [
-					"es2017.cjs",
-					"es2020.mjs"
-				]
 			}
 		]
 	}
