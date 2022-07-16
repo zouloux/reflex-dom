@@ -195,11 +195,20 @@ const listStore = (0, _store.createStore)(getInitialListState(), {
         state.splice(index, 0, item);
         return state;
     },
+    swapItems (state, indexA, indexB) {
+        if (state.length < indexA || state.length < indexB) return state;
+        state = Array.from(state);
+        const a = state[indexA];
+        state[indexA] = state[indexB];
+        state[indexB] = a;
+        console.log(state);
+        return state;
+    },
     addRandomItems (state, total = 0) {
         total ||= (0, _demoHelpers.rand)(5 + state.length) + 1;
         for(let i = 0; i < total; ++i)state = this.addItem(state, "bottom", {
             id: (0, _demoHelpers.createUID)(),
-            name: (0, _demoHelpers.pickRandom)((0, _demoHelpers.colorList)) + " " + (0, _demoHelpers.pickRandom)((0, _demoHelpers.foodList))
+            name: state.length + " " + (0, _demoHelpers.pickRandom)((0, _demoHelpers.colorList)) + " " + (0, _demoHelpers.pickRandom)((0, _demoHelpers.foodList))
         });
         return state;
     },
@@ -253,6 +262,8 @@ function StoreListDemoApp(props) {
         }, "Add 1.000 items to bottom"), /*#__PURE__*/ (0, _reflex.h)("button", {
             onClick: (e)=>listStore.dispatch("addRandomItems", 10000)
         }, "Add 10.000 items to bottom"), /*#__PURE__*/ (0, _reflex.h)("button", {
+            onClick: (e)=>listStore.dispatch("swapItems", 2, 5)
+        }, "Switch item 2 and 5"), /*#__PURE__*/ (0, _reflex.h)("button", {
             onClick: (e)=>listStore.dispatch("removeRandomItems")
         }, "Remove random items"), /*#__PURE__*/ (0, _reflex.h)("button", {
             onClick: (e)=>listStore.dispatch("clearList")

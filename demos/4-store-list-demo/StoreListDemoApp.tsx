@@ -29,12 +29,22 @@ const listStore = createStore( getInitialListState(), {
 		state.splice( index, 0, item )
 		return state
 	},
+	swapItems ( state, indexA:number, indexB:number ) {
+		if ( state.length < indexA || state.length < indexB )
+			return state
+		state = Array.from( state )
+		const a = state[ indexA ]
+		state[ indexA ] = state[ indexB ]
+		state[ indexB ] = a
+		console.log(state)
+		return state;
+	},
 	addRandomItems ( state, total:number = 0 ) {
 		total ||= rand( 5 + state.length ) + 1
 		for ( let i = 0; i < total; ++i ) {
 			state = this.addItem(state, "bottom", {
 				id: createUID(),
-				name: pickRandom(colorList) + " " + pickRandom(foodList)
+				name: state.length + " " + pickRandom(colorList) + " " + pickRandom(foodList)
 			})
 		}
 		return state
@@ -94,6 +104,7 @@ export function StoreListDemoApp ( props ) {
 				<button onClick={ e => listStore.dispatch("addRandomItems") }>Add random items to bottom</button>
 				<button onClick={ e => listStore.dispatch("addRandomItems", 1_000 ) }>Add 1.000 items to bottom</button>
 				<button onClick={ e => listStore.dispatch("addRandomItems", 10_000 ) }>Add 10.000 items to bottom</button>
+				<button onClick={ e => listStore.dispatch("swapItems", 2, 5 ) }>Switch item 2 and 5</button>
 				<button onClick={ e => listStore.dispatch("removeRandomItems") }>Remove random items</button>
 				<button onClick={ e => listStore.dispatch("clearList") }>Clear list</button>
 			</table>

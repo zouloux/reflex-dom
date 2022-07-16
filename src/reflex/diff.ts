@@ -244,7 +244,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 			// FIXME : Should do 1 operation when swapping positions, not 2
 			// FIXME : Perf, is indexOf quick ? Maybe store every indexes in an array ?
 			if ( oldChildren.indexOf( oldNode ) != collapsedIndex )
-				parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
+				parentDom.insertBefore( newChildNode.dom, parentDom.children[ collapsedIndex + 1 ] )
 		}
 		// Has key, but not found in old
 		/** CREATE **/
