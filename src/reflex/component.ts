@@ -1,7 +1,7 @@
 import {
-	ComponentFunction, _flattenChildren, LifecycleHandler,
+	ComponentFunction, LifecycleHandler,
 	MountHandler, RenderFunction,
-	_TEXT_NODE_TYPE_NAME, VNode, _typeof
+	_TEXT_NODE_TYPE_NAME, VNode
 } from "./common";
 import { IStateObservable } from "@zouloux/signal";
 
@@ -79,7 +79,8 @@ export function _mountComponent ( component:ComponentInstance ) {
 	// Call every mount handler and store returned unmount handlers
 	component._mountHandlers.map( handler => {
 		const mountedReturn = handler.apply( component, [] );
-		if ( _typeof(mountedReturn, "f") )
+		// if ( _typeof(mountedReturn, "f") )
+		if ( typeof mountedReturn == "function" )
 			component._unmountHandlers.push( mountedReturn )
 	})
 	// Reset mount handlers, no need to keep them
@@ -101,8 +102,12 @@ export function _unmountComponent ( component:ComponentInstance ) {
 }
 
 export function _recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
-	if ( node.type == _TEXT_NODE_TYPE_NAME ) return
-	_flattenChildren( node ).map( c => c && _recursivelyUpdateMountState(c, doMount) )
-	if ( node._component )
-		doMount ? _mountComponent( node._component ) : _unmountComponent( node._component )
+	if ( node.type != _TEXT_NODE_TYPE_NAME ) {
+		node.props.children.forEach( c => {
+			if ( c )
+				_recursivelyUpdateMountState(c, doMount)
+		})
+		if ( node._component )
+			doMount ? _mountComponent( node._component ) : _unmountComponent( node._component )
+	}
 }

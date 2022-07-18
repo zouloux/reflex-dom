@@ -48,7 +48,7 @@ export function CodeViewer ( props:ICodeViewProps ) {
 						i == selectedTabIndex.value && `${S._tab}-selected`
 					]}
 					onClick={ e => selectedTabIndex.set( i ) }
-					children={ path.basename( file ) }
+					children={[path.basename( file )]}
 				/>
 			)}
 		</div>
@@ -60,7 +60,7 @@ export function CodeViewer ( props:ICodeViewProps ) {
 						: <code
 							ref={ codeElements.atIndex( i ) }
 							class={[ S._code, `language-typescript`]}
-							children={ file }
+							children={[file]}
 						/>
 					}
 				</pre>

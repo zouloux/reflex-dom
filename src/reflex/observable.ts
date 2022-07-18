@@ -1,5 +1,5 @@
 import { Signal, ISignal } from "@zouloux/signal";
-import { _typeof } from "./common";
+// import { _typeof } from "./common";
 
 // ----------------------------------------------------------------------------- COMMON TYPES
 
@@ -13,11 +13,13 @@ export type TInitialValue<GType> = GType | (() => GType)
 export type TSetter<GType> = GType | ((GType) => GType)
 
 const prepareInitialValue = <GType> ( initialValue:TInitialValue<GType> ) => (
-	_typeof(initialValue, "f") ? ( initialValue as () => GType )() : initialValue as GType
+	// _typeof(initialValue, "f") ? ( initialValue as () => GType )() : initialValue as GType
+	typeof initialValue == "function" ? ( initialValue as () => GType )() : initialValue as GType
 )
 
 const executeSetter = <GType> ( currentValue:GType, setter:TSetter<GType> ):GType => (
-	_typeof(setter, "f") ? (setter as ((GType) => GType))( currentValue ) : setter as GType
+	// _typeof(setter, "f") ? (setter as ((GType) => GType))( currentValue ) : setter as GType
+	typeof setter == "function" ? (setter as ((GType) => GType))( currentValue ) : setter as GType
 )
 
 // ----------------------------------------------------------------------------- BIT

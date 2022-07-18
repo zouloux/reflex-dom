@@ -1,9 +1,8 @@
 import {
-	_TEXT_NODE_TYPE_NAME, RenderDom, RenderFunction,
-	VNode, VNodeDomType, VTextNode, ComponentFunction,
-	ComponentReturn, _flattenChildren, _typeof
+	_TEXT_NODE_TYPE_NAME, RenderDom, RenderFunction, VNode,
+	VNodeDomType, VTextNode, ComponentFunction, ComponentReturn
 } from "./common";
-import { _cloneVNode } from "./jsx";
+import { _cloneVNode, _createVNode } from "./jsx";
 import { IInternalRef } from "./ref";
 import { ComponentInstance, _createComponentInstance, _recursivelyUpdateMountState } from "./component";
 
@@ -59,7 +58,8 @@ function setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) {
 	else if (value == null)
 		style[key] = '';
 	// FIXME : IS_NON_DIMENSIONAL_REGEX -> Is it really necessary ?
-	else if ( !_typeof(value, "n") || _IS_NON_DIMENSIONAL_REGEX.test(key) )
+	// else if ( !_typeof(value, "n") || _IS_NON_DIMENSIONAL_REGEX.test(key) )
+	else if ( typeof value != "number" || _IS_NON_DIMENSIONAL_REGEX.test(key) )
 		style[key] = value;
 	else
 		style[key] = value + 'px';
@@ -103,15 +103,15 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 	// Text nodes does not have attributes or events
 	if ( isTextNode ) return dom
 	// Remove attributes which are removed from old node
-	oldNode && Object.keys( oldNode.props ).map( name => {
+	if ( oldNode ) for ( let name in oldNode.props ) {
 		// Do not process children and remove only if not in new node
-		if ( name == "children" ) return
+		if ( name == "children" ) continue
 		if ( name in newNode.props && newNode.props[ name ] === oldNode.props[ name ] )
-			return
+			continue;
 		// Insert HTML directly without warning
 		if ( name == "innerHTML" )
 			( dom as Element ).innerHTML = "" // FIXME : Maybe use delete or null ?
-			// Events starts with "on". On preact this is optimized with [0] == "o"
+		// Events starts with "on". On preact this is optimized with [0] == "o"
 		// But recent benchmarks are pointing to startsWith usage as faster
 		else if ( name.startsWith("on") ) {
 			const { eventName, eventKey, useCapture } = getEventNameAndKey( name, dom as Element );
@@ -121,14 +121,15 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 		else {
 			( dom as Element ).removeAttribute( name )
 		}
-	})
+	}
 	// Update props
-	Object.keys( newNode.props ).map( name => {
-		if ( name == "children" ) return
+	for ( let name in newNode.props ) {
 		let value = newNode.props[ name ];
+		if ( name == "children" || !value )
+			continue;
 		// Do not continue if attribute or event did not change
 		if ( oldNode && name in oldNode.props && oldNode.props[ name ] === value )
-			return;
+			continue;
 		// Insert HTML directly without warning
 		if ( name == "innerHTML" )
 			( dom as Element ).innerHTML = value
@@ -137,7 +138,8 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 		else if ( name.startsWith("on") ) {
 			const { eventName, eventKey, useCapture } = getEventNameAndKey( name, dom as Element );
 			// Init a collection of handlers on the dom object as private property
-			dom[ _DOM_PRIVATE_LISTENERS_KEY ] ??= new Map();
+			if (!dom[ _DOM_PRIVATE_LISTENERS_KEY ])
+				dom[ _DOM_PRIVATE_LISTENERS_KEY ] = new Map();
 			// Store original listener to be able to remove it later
 			dom[ _DOM_PRIVATE_LISTENERS_KEY ][ eventKey ] = value;
 			// And attach listener
@@ -152,22 +154,18 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 			if ( name == "class" && Array.isArray( value ) )
 				value = value.filter( v => v !== true && !!v ).join(" ").trim()
 			// Manage style as object only
-			else if ( name == "style" && _typeof(value, "o") )
+			// else if ( name == "style" && _typeof(value, "o") )
+			else if ( name == "style" && typeof value == "object" ) {
 				// FIXME : Can it be optimized ? Maybe only setStyle when needed ?
-				return Object.keys( value ).map(
+				Object.keys( value ).map(
 					k => setStyle( (dom as HTMLElement).style, k, value[k] )
 				);
-			// Remove falsy values
-			else if ( value == false )
-				return;
+				continue;
+			}
 			// FIXME : What about checked / disabled / autoplay ...
-			// Set new attribute value if not undefined
-			// FIXME : Add only if truey ?
-			// if ( typeof value < "u" )
-			if ( value )
-				( dom as Element ).setAttribute( name, value )
+			( dom as Element ).setAttribute( name, value === true ? "" : value )
 		}
-	})
+	}
 	return dom;
 }
 
@@ -179,50 +177,55 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
  *   rather than 2 nested loops. n*4 is lower than n^n !
  */
 export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
-	// console.log("Diff children", newParentNode, oldParentNode)
-	// Target new and old children.
-	const newChildren = newParentNode.props.children?.flat()
-	const oldChildren = oldParentNode?.props.children?.flat()
-	// FIXME : If new does not have children but old does, we need to destroy old children components instances
-	if ( !newChildren ) return;
-	const parentDom = newParentNode.dom as Element
 	// Create key array on parent node to register keyed children
 	// This will allow us to find any child by its key directly without
 	// having to search for it
-	newParentNode._keys = new Map()
-	const registerKey = c => {
-		if ( c?.key ) newParentNode._keys[ c.key ] = c
+	function registerKey ( c:VNode ) {
+		if ( !newParentNode._keys )
+			newParentNode._keys = new Map()
+		newParentNode._keys[ c.key ] = c
 	}
-	// This is a new parent node (no old), so no diffing
-	// we juste process and add every child node
-	if ( !oldChildren ) {
-		newChildren.map( newChildNode => {
-			if (!newChildNode) return;
-			_diffNode( newChildNode )
-			parentDom.appendChild( newChildNode.dom )
-			// Register this child with its key on its parent
-			registerKey( newChildNode )
-		})
-		return;
+	// Faster .flat
+	// @see https://stackoverflow.com/questions/61411776/is-js-native-array-flat-slow-for-depth-1
+	newParentNode.props.children = [].concat( ...newParentNode.props.children )
+	// Faster for each loop
+	let childIndex = -1
+	const totalChildren = newParentNode.props.children.length
+	while ( ++childIndex < totalChildren ) {
+		let child = newParentNode.props.children[ childIndex ]
+		// Convert string and numbers to text type nodes
+		// We do it here because this is the first time we have to browse children
+		// So it's not made into h() (later is better)
+		if ( typeof child == "string" || typeof child == "number" )
+			newParentNode.props.children[ childIndex ] = child = _createVNode( _TEXT_NODE_TYPE_NAME, { value: '' + child } )
+		// If child is valid, register its keys
+		if ( child ) {
+			child.key && registerKey( child )
+			// If no old parent node, add right now into dom
+			if ( !oldParentNode ) {
+				_diffNode( child )
+				newParentNode.dom.appendChild( child.dom )
+			}
+		}
 	}
-	// Map all new children keys into the keys register to avoid to use find
-	// when searching for removed nodes
-	// NOTE : About performances : 1st non-nested loop
-	newChildren.map( registerKey )
-	// Check if an old keyed node has been removed and get which index are offset after removal
-	// NOTE : About performances : 2nd non-nested loop
-	const lostIndexes = oldChildren.map(
-		oldChild => !!(oldChild?.key && !newParentNode._keys[oldChild.key] )
-	)
+	// Next, we check differences with old node.
+	// So do not continue if there are no changes to check
+	if ( !oldParentNode ) return
+	const oldChildren = oldParentNode.props.children
 	// Otherwise we need to compare between old and new tree
 	const oldParentKeys = oldParentNode._keys
 	let collapseCount = 0
-	// NOTE : About performances : 3rd non-nested loop
-	newChildren.map( (newChildNode, i) => {
+	const parentDom = newParentNode.dom as Element
+	// newParentNode.props.children.forEach( (newChildNode, i) => {
+	const total = newParentNode.props.children.length
+	for ( let i = 0; i < total; ++i ) {
 		// Collapsed corresponding index between old and new nodes
 		// To be able to detect moves or if just collapsing because a top sibling
 		// has been removed
-		if ( lostIndexes[i] )
+		// if ( lostIndexes[i] )
+		const newChildNode = newParentNode.props.children[ i ]
+		const oldAtSameIndex = oldChildren[ i ]
+		if ( oldAtSameIndex && newParentNode._keys && oldAtSameIndex.key && !newParentNode._keys[ oldAtSameIndex.key ] )
 			collapseCount ++
 		/** REMOVED **/
 		// If falsy, it's surely a child that has been removed with a ternary or a boolean
@@ -233,6 +236,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		/** MOVE & UPDATE KEYED CHILD **/
 		if (
 			newChildNode.key
+			&& oldParentKeys
 			&& oldParentKeys[ newChildNode.key ]
 			&& oldParentKeys[ newChildNode.key ].type == newChildNode.type
 		) {
@@ -248,7 +252,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		}
 		// Has key, but not found in old
 		/** CREATE **/
-		else if ( newChildNode.key && !oldParentKeys[ newChildNode.key ] ) {
+		else if ( oldParentKeys && newChildNode.key && !oldParentKeys[ newChildNode.key ] ) {
 			_diffNode( newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
@@ -268,10 +272,9 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
 		}
-	})
+	}
 	// Remove old children which are not reused
-	// NOTE : About performances : 4th non-nested loop
-	oldChildren.map( oldChildNode => {
+	for ( const oldChildNode of oldChildren ) {
 		if ( oldChildNode && !oldChildNode._keep ) {
 			// Call unmount handlers
 			_recursivelyUpdateMountState( oldChildNode, false );
@@ -281,7 +284,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 			updateNodeRef( oldChildNode )
 			parentDom.removeChild( dom )
 		}
-	})
+	}
 }
 
 // ----------------------------------------------------------------------------- DIFF NODE
@@ -295,8 +298,8 @@ function renderComponentNode <GReturn = ComponentReturn> ( node:VNode<null, Comp
 	// FIXME: Before render handlers ?
 	// FIXME: Optimize rendering with a hook ?
 	// Execute rendering
-	const result = (component._render ?? node.type as RenderFunction)
-		.apply( component, [ component._propsProxy.value ])
+	const render = component._render ? component._render : node.type as RenderFunction
+	const result = render.apply( component, [ component._propsProxy.value ])
 	// Unselect hooked component
 	_hookedComponent = null
 	return result as GReturn
@@ -315,18 +318,21 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 		newNode._id = oldNode._id
 	// We may need a new component instance
 	let renderResult:VNode
-	if ( !component && _typeof(newNode.type, "f") ) {
+	// if ( !component && _typeof(newNode.type, "f") ) {
+	if ( !component && typeof newNode.type == "function" ) {
 		// Create component instance (without new keyword for better performances)
 		component = _createComponentInstance( newNode as VNode<null, ComponentFunction> )
 		// Execute component's function and check what is returned
 		const result = renderComponentNode( newNode as VNode<null, ComponentFunction>, component )
 		// This is a factory component which return a render function
-		if ( _typeof(result, "f") ) {
+		// if ( _typeof(result, "f") ) {
+		if ( typeof result == "function" ) {
 			component._render = result as RenderFunction
 			component.isFactory = true
 		}
 		// This is pure functional component which returns a virtual node
-		else if ( _typeof(result, "o") && "type" in result ) {
+		// else if ( _typeof(result, "o") && "type" in result ) {
+		else if ( typeof result == "object" && "type" in result ) {
 			component._render = newNode.type as RenderFunction
 			component.isFactory = false
 			renderResult = result
@@ -359,7 +365,7 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 			// Because parent component may have altered rendering of injected children
 			&& newNode.props.children.length === 0
 			// Do shallow compare
-			&& shallowPropsCompare(newNode.props, oldNode.props)
+			&& shallowPropsCompare( newNode.props, oldNode.props )
 		) {
 			// FIXME : Weirdly, it seems to optimize not all components
 			//			Ex : click on create 1000 several times and watch next console log
@@ -377,7 +383,10 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 		// We rendered something (not reusing old component)
 		if ( renderResult ) {
 			// Apply new children list to the parent component node
-			newNode.props.children = _flattenChildren( renderResult )
+			// FIXME :
+			newNode.props.children = renderResult.props.children
+			// newNode.props.children = _flattenChildren( renderResult )
+
 			// Diff rendered element
 			newNode.dom = dom = _diffElement( renderResult, oldNode )
 			// Assign ref of first virtual node to the component's virtual node

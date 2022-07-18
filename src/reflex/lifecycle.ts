@@ -1,5 +1,5 @@
 import { getHookedComponent } from "./diff";
-import { _typeof, LifecycleHandler, MountHandler } from "./common";
+import { LifecycleHandler, MountHandler } from "./common";
 
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 
@@ -45,7 +45,8 @@ export function changed <GState extends TChangeDetector> ( detectChanges:DetectC
 		// const executeResult = executeHandler( state, oldState )
 		// Get previous unmount handler from return or cancel it
 		previousUnmountHandler = (
-			_typeof(executeResult, "f")
+			// _typeof(executeResult, "f")
+			typeof executeResult == "function"
 			? executeResult as UnmountTrackHandler<GState>
 			: null
 		)

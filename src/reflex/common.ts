@@ -17,29 +17,24 @@ import { ComponentInstance } from "./component";
 export const _TEXT_NODE_TYPE_NAME = "#T"
 export const _ROOT_NODE_TYPE_NAME = "#R"
 
-// ----------------------------------------------------------------------------- ERRORS
-
-//export class ReflexError extends Error {}
-
 // ----------------------------------------------------------------------------- POLYFILLS
 
-// TODO : Into ecma-core + inline in bundle
-export const _microtask = ( window.queueMicrotask ?? ( h => window.setTimeout( h, 0 )) )
+// export const _microtask = ( window.queueMicrotask ?? ( h => window.setTimeout( h, 0 )) )
 
 // ----------------------------------------------------------------------------- UTILS
 
 // Force a list or a lonely item to be an array with the same type
 // TODO : Into ecma-core + inline in bundle
-export const _forceArray = <G>( item:G|G[] ):G[] => Array.isArray( item ) ? item : [ item ]
+// export const _forceArray = <G>( item:G|G[] ):G[] => Array.isArray( item ) ? item : [ item ]
 
-export const _typeof = (entity:any, firstLetterOfType:string) => (typeof entity)[0] == firstLetterOfType
+// export const _typeof = (entity:any, firstLetterOfType:string) => (typeof entity)[0] == firstLetterOfType
 
-export const _isStringOrNumber = entity => ["s", "n"].indexOf( (typeof entity)[0] ) >= 0
+// export const _isStringOrNumber = entity => ["s", "n"].indexOf( (typeof entity)[0] ) >= 0
 
-export function _flattenChildren ( vnode:VNode ) {
-	// Re-assign flattened array to the original virtual node, and return it
-	return vnode.props.children = (vnode.props?.children?.flat() ?? [])
-}
+// export function _flattenChildren ( vnode:VNode ) {
+// 	// Re-assign flattened array to the original virtual node, and return it
+// 	return vnode.props.children = (vnode.props.children.flat() ?? [])
+// }
 
 // ----------------------------------------------------------------------------- INTERNAL - CREATE COMPONENT
 

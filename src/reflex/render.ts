@@ -1,14 +1,14 @@
-import { _ROOT_NODE_TYPE_NAME, _forceArray, VNodeOrVNodes, _microtask } from "./common";
+import { _ROOT_NODE_TYPE_NAME, VNode } from "./common";
 import { _diffChildren, _diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
 import { _createVNode } from "./jsx";
 import { ComponentInstance } from "./component";
 
 // ----------------------------------------------------------------------------- RENDER
 
-export function render ( rootNode:VNodeOrVNodes, parentElement:HTMLElement ) {
+export function render ( rootNode:VNode, parentElement:HTMLElement ) {
 	// When using render, we create a new root node to detect new renders
 	// This node is never rendered, we just attach it to the parentElement and render its children
-	const root = _createVNode( _ROOT_NODE_TYPE_NAME, { children: _forceArray( rootNode ) })
+	const root = _createVNode( _ROOT_NODE_TYPE_NAME, { children: [rootNode] } )
 	root.dom = parentElement
 	_diffChildren( root, parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ] )
 	parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ] = root
@@ -29,10 +29,12 @@ function updateDirtyComponents () {
 	p && p();
 }
 
+const __microtask = self.queueMicrotask ? self.queueMicrotask : h => self.setTimeout( h, 0 )
+
 export function invalidateComponent ( component:ComponentInstance ) {
 	// Queue rendering before end of frame
 	if ( componentsToUpdate.length === 0 )
-		_microtask( updateDirtyComponents );
+		__microtask( updateDirtyComponents );
 	// Invalidate this component once
 	if ( component._isDirty ) return;
 	component._isDirty = true
