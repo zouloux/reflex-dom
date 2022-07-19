@@ -4,6 +4,7 @@ import {
 	_TEXT_NODE_TYPE_NAME, VNode
 } from "./common";
 import { IStateObservable } from "@zouloux/signal";
+import { createPropsProxy, IAtomicBitProxy } from "./atomic-bit";
 
 // ----------------------------------------------------------------------------- TYPES
 
@@ -14,11 +15,14 @@ export interface ComponentInstance { // FIXME : Generics ?
 	isMounted			:boolean;
 	_isDirty			?:boolean
 	_render				?:RenderFunction
-	_propsProxy			?:IPropsProxy<any>
+	_propsProxy			?:IAtomicBitProxy<any>
 	_mountHandlers		:MountHandler[]
 	_renderHandlers		:LifecycleHandler[]
 	_unmountHandlers	:LifecycleHandler[]
 	_observables		:IStateObservable<any>[]
+
+	_affectedNodesByStates		:VNode[][]
+	_isRendering		:boolean
 	// TODO : Imperative handlers ?
 }
 
@@ -36,6 +40,8 @@ export function _createComponentInstance ( vnode:VNode<null, ComponentFunction> 
 		_renderHandlers: [],
 		_unmountHandlers: [],
 		_observables: [],
+		_affectedNodesByStates: [],
+		_isRendering: false
 	}
 }
 
@@ -48,30 +54,30 @@ export function _createComponentInstance ( vnode:VNode<null, ComponentFunction> 
 // object. Not really concerning because it makes no sense to iterate over
 // a props object.
 
-export interface IPropsProxy <GType> {
-	readonly value:GType
-	set ( newValue:GType ) : void
-}
-
-function createPropsProxy <GProps> ( props:GProps ) : IPropsProxy<GProps> {
-	const proxy = new Proxy({}, {
-		// When request a prop, check on props object if it exists
-		get ( target:{}, propName:string|symbol ):any {
-			return ( propName in props ? props[ propName ] : void 0 )
-		},
-		// Disallow set on props
-		set () {
-			if ( process.env.NODE_ENV == "production" ) return false
-			throw new Error(`Reflex - PropsProxy.set // Setting values to props manually is not allowed.`)
-		}
-	})
-	return {
-		// Get the proxy object typed as a GProps object
-		get value () { return proxy as GProps },
-		// This method will set new props object (we override first argument of createPropsProxy)
-		set ( newProps:GProps ) { props = newProps }
-	}
-}
+// export interface IPropsProxy <GType> {
+// 	readonly value:GType
+// 	set ( newValue:GType ) : void
+// }
+//
+// function createPropsProxy <GProps> ( props:GProps ) : IPropsProxy<GProps> {
+// 	const proxy = new Proxy({}, {
+// 		// When request a prop, check on props object if it exists
+// 		get ( target:{}, propName:string|symbol ):any {
+// 			return ( propName in props ? props[ propName ] : void 0 )
+// 		},
+// 		// Disallow set on props
+// 		set () {
+// 			if ( process.env.NODE_ENV == "production" ) return false
+// 			throw new Error(`Reflex - PropsProxy.set // Setting values to props manually is not allowed.`)
+// 		}
+// 	})
+// 	return {
+// 		// Get the proxy object typed as a GProps object
+// 		get value () { return proxy as GProps },
+// 		// This method will set new props object (we override first argument of createPropsProxy)
+// 		set ( newProps:GProps ) { props = newProps }
+// 	}
+// }
 
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 

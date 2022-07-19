@@ -1,5 +1,5 @@
 import { _ROOT_NODE_TYPE_NAME, VNode } from "./common";
-import { _diffChildren, _diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
+import { _diffChildren, _diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY, renderComponentNode } from "./diff";
 import { _createVNode } from "./jsx";
 import { ComponentInstance } from "./component";
 
@@ -22,8 +22,17 @@ function updateDirtyComponents () {
 	if ( process.env.NODE_ENV !== "production" )
 		p = require("./debug").trackPerformances("Update dirty components")
 	// TODO : Update with depth ! Deepest first ? Or last ?
-	componentsToUpdate.map( component => {
-		_diffNode( component.vnode, component.vnode )
+	componentsToUpdate.forEach( component => {
+		if ( component._affectedNodesByStates.length == 0 )
+			_diffNode( component.vnode, component.vnode )
+		else for ( let i = 0; i < component._affectedNodesByStates.length; ++i ) {
+			const oldNodes = component._affectedNodesByStates[ i ]
+			component._affectedNodesByStates[i] = []
+			renderComponentNode( component.vnode, component )
+			const newNodes = component._affectedNodesByStates[ i ]
+			for ( let j = 0; j < newNodes.length; ++j )
+				_diffNode( newNodes[j], oldNodes[j] )
+		}
 	})
 	componentsToUpdate = []
 	p && p();
@@ -31,15 +40,15 @@ function updateDirtyComponents () {
 
 const __microtask = self.queueMicrotask ? self.queueMicrotask : h => self.setTimeout( h, 0 )
 
-export function invalidateComponent ( component:ComponentInstance ) {
+export function invalidateComponent ( dirtyComponent:ComponentInstance ) {
 	// Queue rendering before end of frame
 	if ( componentsToUpdate.length === 0 )
 		__microtask( updateDirtyComponents );
 	// Invalidate this component once
-	if ( component._isDirty ) return;
-	component._isDirty = true
+	if ( dirtyComponent._isDirty ) return;
+	dirtyComponent._isDirty = true
 	// Store it into the list of dirty components
-	componentsToUpdate.push( component )
+	componentsToUpdate.push( dirtyComponent )
 }
 
 // ----------------------------------------------------------------------------- REGISTER WEB-COMPONENTS

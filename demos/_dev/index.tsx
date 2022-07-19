@@ -1,6 +1,7 @@
-import { h, render, state } from "../../src/reflex";
+import { h, render } from "../../src/reflex";
 import { trackPerformances, setReflexDebug } from "../../src/reflex/debug";
 import { colorList, createUID, foodList, pickRandom } from "../common/demoHelpers";
+import { state } from "../../src/reflex/atomic-bit"
 
 // -----------------------------------------------------------------------------
 
@@ -24,10 +25,12 @@ function TestComponent () {
 				name: pickRandom( colorList ) + ' ' + pickRandom( foodList )
 			})
 		}
-		list.set([ ...list.value, ...items ])
+		list.value = [ ...list.value, ...items ]
 	}
-	addItems();
-	return () => <div>
+	// addItems();
+	// FIXME : Does not target correct node (it target first child)
+	// return () => <div class={["TestComponent", list.value.length]}>
+	return () => <div class={["TestComponent"]}>
 		<button onClick={ addItems }>Add Items</button>
 		<ul>
 			{list.value.map( item =>
@@ -37,6 +40,12 @@ function TestComponent () {
 				/>
 			)}
 		</ul>
+		<span>{list.value.length}</span>
+		{
+			list.value.length > 0
+			? <span>YES</span>
+			: null
+		}
 	</div>
 }
 
@@ -54,7 +63,7 @@ setReflexDebug( true )
 export function init () {
 	const p = trackPerformances("Root rendering")
 	const a = <DevApp />
-	// console.log( a );
+	// console.log('A', a );
 	render( a, document.getElementById('App') )
 	// render( a, document.getElementById('App') )
 	p();

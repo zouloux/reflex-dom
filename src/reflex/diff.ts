@@ -289,7 +289,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 
 // ----------------------------------------------------------------------------- DIFF NODE
 
-function renderComponentNode <GReturn = ComponentReturn> ( node:VNode<null, ComponentFunction>, component:ComponentInstance ) :GReturn {
+export function renderComponentNode <GReturn = ComponentReturn> ( node:VNode<null, ComponentFunction>, component:ComponentInstance ) :GReturn {
 	// Tie component and virtual node
 	component.vnode = node
 	node._component = component
@@ -298,8 +298,10 @@ function renderComponentNode <GReturn = ComponentReturn> ( node:VNode<null, Comp
 	// FIXME: Before render handlers ?
 	// FIXME: Optimize rendering with a hook ?
 	// Execute rendering
+	component._isRendering = true
 	const render = component._render ? component._render : node.type as RenderFunction
-	const result = render.apply( component, [ component._propsProxy.value ])
+	const result = render.apply( component, [ component._propsProxy[0] ])
+	component._isRendering = false
 	// Unselect hooked component
 	_hookedComponent = null
 	return result as GReturn
@@ -375,9 +377,9 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 			newNode.props.children = oldNode.props.children
 			newNode.dom = dom = oldNode.dom
 		}
-		// Not already rendered, and not optimization possible. Render now.
+		// Not already rendered, and no optimization possible. Render now.
 		else if ( !renderResult ) {
-			component._propsProxy.set( newNode.props )
+			component._propsProxy[1]( newNode.props )
 			renderResult = renderComponentNode<VNode>( newNode as VNode<null, ComponentFunction>, component )
 		}
 		// We rendered something (not reusing old component)
