@@ -300,7 +300,7 @@ export function renderComponentNode <GReturn = ComponentReturn> ( node:VNode<nul
 	// Execute rendering
 	component._isRendering = true
 	const render = component._render ? component._render : node.type as RenderFunction
-	const result = render.apply( component, [ component._propsProxy[0] ])
+	const result = render.apply( component, [ component._propsProxy.proxy ])
 	component._isRendering = false
 	// Unselect hooked component
 	_hookedComponent = null
@@ -379,7 +379,7 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 		}
 		// Not already rendered, and no optimization possible. Render now.
 		else if ( !renderResult ) {
-			component._propsProxy[1]( newNode.props )
+			component._propsProxy.set( newNode.props )
 			renderResult = renderComponentNode<VNode>( newNode as VNode<null, ComponentFunction>, component )
 		}
 		// We rendered something (not reusing old component)

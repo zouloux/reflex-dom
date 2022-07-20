@@ -36,7 +36,6 @@ const listStore = createStore( getInitialListState(), {
 		const a = state[ indexA ]
 		state[ indexA ] = state[ indexB ]
 		state[ indexB ] = a
-		console.log(state)
 		return state;
 	},
 	addRandomItems ( state, total:number = 0 ) {

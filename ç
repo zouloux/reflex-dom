@@ -1,4 +1,0 @@
-eval "$(/opt/homebrew/bin/brew shellenv)"
-export PATH=~/.npm-global/bin:$PATH
-#export NODE_OPTIONS=--openssl-legacy-provider
-

@@ -33,9 +33,9 @@
 		"@zouloux/signal": "^0.1.11"
 	},
 	"tsbundle": {
+		"__Signal": "@zouloux/signal",
 		"exportMap": {
-			"Reflex": "./index",
-			"Signal": "@zouloux/signal"
+			"Reflex": "./index"
 		},
 		"output": "./dist",
 		"formats": [
@@ -44,21 +44,16 @@
 		],
 		"files": [
 			{
+				"input": "./src/reflex/index.ts",
+				"formats": [ "es2017.min.js" ],
+				"outName": "reflex",
+				"exportBits": true
+			},
+			{
 				"input": "./src/reflex/index.ts"
 			},
 			{
 				"input": "./src/reflex/debug.ts"
-			},
-			{
-				"input": "./src/reflex/index.ts",
-				"formats": [
-					"es2017.min.js"
-				],
-				"outName": "reflex+signal",
-				"exportBits": true,
-				"include": {
-					"@zouloux/signal": "./node_modules/@zouloux/signal/dist/signal.es2017.cjs"
-				}
 			}
 		]
 	}

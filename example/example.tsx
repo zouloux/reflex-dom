@@ -5,8 +5,8 @@ import { h, render, state, changed, ref, mounted } from "../src/reflex";
 function ReflexApp ( props ) {
 	// How basic state works
 	const counter = state( 0 )
-	const increment = () => counter.set( counter.value + 1 )
-	const reset = () => counter.set( 0 )
+	const increment = () => counter.value ++
+	const reset = () => counter.value = 0
 
 	// No need to use ref for locally scoped variables
 	let firstUpdate = true
@@ -31,4 +31,4 @@ function ReflexApp ( props ) {
 }
 
 // Render it like any other v-dom library
-render( <ReflexApp modifier="ReflexApp-darkMode" emoji="👋" />, document.body )
+render( <ReflexApp modifier="ReflexApp-lightMode" emoji="👋" />, document.body )

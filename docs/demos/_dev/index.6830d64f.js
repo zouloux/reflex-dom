@@ -142,27 +142,62 @@
       this[globalName] = mainExports;
     }
   }
-})({"lNzLw":[function(require,module,exports) {
+})({"fbtN8":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "init", ()=>init);
 var _reflex = require("../../src/reflex");
 var _debug = require("../../src/reflex/debug");
-var _statefulListDemoApp = require("./StatefulListDemoApp");
+var _demoHelpers = require("../common/demoHelpers");
+function ListItem(props) {
+    const item = props.item;
+    return /*#__PURE__*/ (0, _reflex.h)("li", null, item.id, " : ", item.name);
+}
+function TestComponent() {
+    const list = (0, _reflex.state)([]);
+    function addItems() {
+        const items = [];
+        for(let i = 0; i < 10; i++)items.push({
+            id: (0, _demoHelpers.createUID)(),
+            name: (0, _demoHelpers.pickRandom)((0, _demoHelpers.colorList)) + " " + (0, _demoHelpers.pickRandom)((0, _demoHelpers.foodList))
+        });
+        list.value = [
+            ...list.value,
+            ...items
+        ];
+    }
+    // addItems();
+    // FIXME : Does not target correct node (it target first child)
+    // return () => <div class={["TestComponent", list.value.length]}>
+    return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
+            class: [
+                "TestComponent"
+            ]
+        }, /*#__PURE__*/ (0, _reflex.h)("button", {
+            onClick: addItems
+        }, "Add Items"), /*#__PURE__*/ (0, _reflex.h)("ul", null, list.value.map((item)=>/*#__PURE__*/ (0, _reflex.h)(ListItem, {
+                key: item.id,
+                item: item
+            }))), /*#__PURE__*/ (0, _reflex.h)("span", null, list.value.length), list.value.length > 0 ? /*#__PURE__*/ (0, _reflex.h)("span", null, "YES") : null);
+}
+function DevApp() {
+    return /*#__PURE__*/ (0, _reflex.h)("div", {
+        class: "Coucou"
+    }, /*#__PURE__*/ (0, _reflex.h)("h1", null, "Hello"), /*#__PURE__*/ (0, _reflex.h)(TestComponent, null));
+}
 // -----------------------------------------------------------------------------
 (0, _debug.setReflexDebug)(true);
-let renderIndex = 0;
 function init() {
     const p = (0, _debug.trackPerformances)("Root rendering");
-    (0, _reflex.render)(/*#__PURE__*/ (0, _reflex.h)((0, _statefulListDemoApp.StatefulDemoApp), {
-        render: init,
-        renderIndex: renderIndex++
-    }), document.body);
+    const a = /*#__PURE__*/ (0, _reflex.h)(DevApp, null);
+    console.log("A", a);
+    (0, _reflex.render)(a, document.getElementById("App"));
+    // render( a, document.getElementById('App') )
     p();
 }
 init();
 
-},{"../../src/reflex":"cuBJf","../../src/reflex/debug":"7uUcT","./StatefulListDemoApp":"e1pMx","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7uUcT":[function(require,module,exports) {
+},{"../../src/reflex":"cuBJf","../../src/reflex/debug":"7uUcT","../common/demoHelpers":"7ZAOq","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7uUcT":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "getReflexDebug", ()=>getReflexDebug);
@@ -181,130 +216,7 @@ function trackPerformances(subject) {
     return ()=>{};
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"e1pMx":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-// ----------------------------------------------------------------------------- LIST APP
-parcelHelpers.export(exports, "StatefulDemoApp", ()=>StatefulDemoApp);
-var _reflex = require("../../src/reflex");
-var _demoHelpers = require("../common/demoHelpers");
-// ----------------------------------------------------------------------------- LIST ITEM
-const listItemStyle = {
-    border: `1px solid black`
-};
-function ListItem(props) {
-    // console.log( "ListItem" );
-    return /*#__PURE__*/ (0, _reflex.h)("tr", {
-        class: "ListItem",
-        "data-id": props.item.id,
-        style: listItemStyle
-    }, /*#__PURE__*/ (0, _reflex.h)("td", null, props.item.name), /*#__PURE__*/ (0, _reflex.h)("td", null, /*#__PURE__*/ (0, _reflex.h)("button", {
-        onClick: props.moveUpClicked
-    }, "\u2B06")), /*#__PURE__*/ (0, _reflex.h)("td", null, /*#__PURE__*/ (0, _reflex.h)("button", {
-        onClick: props.moveDownClicked
-    }, "\u2B07")), /*#__PURE__*/ (0, _reflex.h)("td", null, /*#__PURE__*/ (0, _reflex.h)("button", {
-        onClick: props.removeClicked
-    }, "Remove")));
-}
-function StatefulDemoApp() {
-    /**
-	 * List state and reducers
-	 */ const list = (0, _reflex.state)([]);
-    const clearList = ()=>{
-        list.set([]);
-    };
-    const addItem = (position, item)=>{
-        if (position === "bottom") list.set([
-            ...list.value,
-            item
-        ]);
-        else list.set([
-            item,
-            ...list.value
-        ]);
-    };
-    const removeItem = (item)=>{
-        list.set(list.value.filter((currentItem)=>currentItem != item));
-    };
-    const moveItem = (item, offset)=>{
-        const index = list.value.indexOf(item) + offset;
-        if (index < 0 || index >= list.value.length) return;
-        removeItem(item);
-        list.set([
-            ...list.value
-        ].splice(index, 0, item));
-        const newArray = [
-            ...list.value
-        ].splice(index, 0, item);
-        // FIXME : ERROR Here ?
-        list.set(newArray);
-    };
-    function addRandomItems(total = 0) {
-        total ||= (0, _demoHelpers.rand)(5 + list.value.length) + 1;
-        for(let i = 0; i < total; i++)addItem("bottom", {
-            id: (0, _demoHelpers.createUID)(),
-            name: (0, _demoHelpers.pickRandom)((0, _demoHelpers.colorList)) + " " + (0, _demoHelpers.pickRandom)((0, _demoHelpers.foodList))
-        });
-    }
-    function removeRandomItems() {
-        const total = (0, _demoHelpers.rand)(list.value.length) + 1;
-        for(let i = 0; i < total; i++){
-            const item = (0, _demoHelpers.pickRandom)(list.value);
-            removeItem(item);
-        }
-    }
-    /**
-	 * Handlers
-	 */ function controlSubmitted(event) {
-        event.preventDefault();
-        // TODO : Implement refs
-        const nameInput = document.getElementById("StatefulDemoApp_nameInput");
-        if (!nameInput.value) return;
-        addItem("top", {
-            name: nameInput.value,
-            id: (0, _demoHelpers.createUID)()
-        });
-        nameInput.value = "";
-    }
-    /**
-	 * Sub-components
-	 */ function Controls() {
-        console.log("Controls rendered");
-        return /*#__PURE__*/ (0, _reflex.h)("div", {
-            className: "StatefulDemoApp_controls"
-        }, /*#__PURE__*/ (0, _reflex.h)("table", null, /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: (e)=>addRandomItems()
-        }, "Add random items to bottom"), /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: (e)=>addRandomItems(1000)
-        }, "Add 1000 items to bottom"), /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: (e)=>removeRandomItems()
-        }, "Remove random items"), /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: (e)=>clearList()
-        }, "Clear list")), /*#__PURE__*/ (0, _reflex.h)("form", {
-            onSubmit: controlSubmitted
-        }, /*#__PURE__*/ (0, _reflex.h)("table", null, /*#__PURE__*/ (0, _reflex.h)("input", {
-            id: "StatefulDemoApp_nameInput",
-            type: "text",
-            name: "name",
-            placeholder: "Name ..."
-        }), /*#__PURE__*/ (0, _reflex.h)("button", {
-            type: "submit"
-        }, "Add to top"))));
-    }
-    /**
-	 * Render
-	 */ return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
-            class: "StatefulDemoApp"
-        }, /*#__PURE__*/ (0, _reflex.h)(Controls, null), /*#__PURE__*/ (0, _reflex.h)("h3", null, list.value.length, " element", list.value.length > 1 ? "s" : ""), /*#__PURE__*/ (0, _reflex.h)("table", null, list.value.map((item)=>/* Each item will be re-rendered, even with the same key */ /* Because handlers are recreated each time list.value is mapped */ /*#__PURE__*/ (0, _reflex.h)(ListItem, {
-                item: item,
-                key: item.id,
-                removeClicked: (e)=>removeItem(item),
-                moveUpClicked: (e)=>moveItem(item, -1),
-                moveDownClicked: (e)=>moveItem(item, 1)
-            }))));
-}
-
-},{"../../src/reflex":"cuBJf","../common/demoHelpers":"7ZAOq","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7ZAOq":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7ZAOq":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "toHex", ()=>toHex);
@@ -358,5 +270,5 @@ const lastnameList = [
 const delay = (durationInSeconds)=>new Promise((resolve)=>window.setTimeout(resolve, durationInSeconds * 1000));
 const randomDelay = (min, max)=>delay(min + rand(max - min));
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["lNzLw"], "lNzLw", "parcelRequirea1a1")
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["fbtN8"], "fbtN8", "parcelRequirea1a1")
 

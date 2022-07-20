@@ -1,6 +1,6 @@
 # Reflex
 
-__Reflex JS__ is a tiny ![~3kb](./bits/reflex+signal.es2017.min.js.svg) virtual-dom library with __factory based functional components__.
+__Reflex JS__ is a tiny ![~3kb](./bits/reflex.es2017.min.js.svg) virtual-dom library with __factory based functional components__.
 
 ![](./example/example.png)
 ![](./example/example.gif)
@@ -17,6 +17,7 @@ __Reflex JS__ is a tiny ![~3kb](./bits/reflex+signal.es2017.min.js.svg) virtual-
 ## Table of contents
 
 - <a href="#concept">Concept</a>
+- <a href="#roadmap">Roadmap</a>
 - <a href="#how-to-install">Installation</a>
 - <a href="#because-code-samples-are-better-than-a-thousand-words">Code samples</a>
   - <a href="#simple-dom-rendering">Rendering</a>
@@ -59,6 +60,23 @@ function FactoryComponent ( props ) {
 
 Classic React Hooks like `useCallback`, `useEvent` and `useMemo` becomes useless.
 Also, hooks dependencies array to keep state scopes ([#1](https://itnext.io/how-to-work-with-intervals-in-react-hooks-f29892d650f2) [#2](https://overreacted.io/a-complete-guide-to-useeffect/)) does not exist with __Factory Hooks__. Using `useRef` to store stateless values does not exist anymore. In __Reflex__, `ref` are only here to target dom node or components, `let` is used to declare local variables like it would normally do.
+
+## Roadmap
+
+- [x] Virtual dom
+- [x] Diffing
+- [x] Props as attributes
+- [x] Lifecycle events
+- [x] Lifecycle hooks (mounted / unmounted)
+- [x] Ref
+- [x] Refs
+- [x] State
+- [ ] Atomic rendering
+- [ ] Crazy performances 
+- [ ] JSX Types and runtime
+- [ ] Babel examples in doc
+- [ ] Better docs
+- [ ] Code-sandboxes
 
 ## How to install
 
@@ -187,15 +205,41 @@ Like in React, __factory hooks__ are composable into other functions easily.
 ```typescript jsx
 // Create a new state
 const myState = state( initialState )
-
 // Get current state value
 console.log( myState.value )
-
 // Set new value (will trigger a component update)
-myState.set( newValue )
+myState.value = newValue
+// After setting using .value, component is not refreshed instantanously
+// Use .set to wait for component invalidation
+await myState.set( newValue )
+// -> Now the dom is updated
 ```
 
 > Note, setting a new state is asynchronous because all state changes of a component are stacked and component renders only once for better performances. After the component is refreshed, the `await state.set( value )` promise will be resolved.
+
+Additional options for state are 
+- `filter` to change value when set, useful to avoid invalid values
+- `after` is called after the associated component is rendered
+
+```typescript
+function filter (newValue, oldValue) {
+    return Math.max(newValue, 0)
+}
+function afterChange ( newValue ) {
+    // Component has been updated and dom is ready
+    console.log( newValue ) 
+    // will show only `10` because component updates are debounced
+}
+
+const myState = state( 0, filter, afterChange )
+
+function changeStateValues () {
+    state.value = -2
+    console.log( state.value ) // 0
+    state.value = 10
+    console.log( state.value ) // 10
+}
+```
 
 ## Ref
 
@@ -305,8 +349,9 @@ function ChangedComponent ( props ) {
         console.log("Component updated", root.dom, number.value)
     })
     return () => <div ref={ root }>
-        <button onClick={ number.set( number.value + 1) }>
-            Update component</button>
+        <button onClick={ e => number.value ++ }>
+            Update component
+        </button>
     </div>
 }
 ```
@@ -440,11 +485,17 @@ Things missing from Solid :
 Things missing from Preact :
 - Not so much I guess ?
 
+### Atomic updates
+
+Reflex will implement atomic updates for states. Which means that when a state changes, not all the component is diffed, but only the affected dom nodes.
+See Jason Miller post : https://twitter.com/_developit/status/1549001036802625536
+
 ### Performances
 
-Reflex goal is to be __as performant as possible__ and __as light as possible__. Reflex will never be as performant than Solid (because of Virtual DOM), but will easily be more performant than React or Preact in a lot of cases. 
-
-Library weight will be around `4kb gzipped`. It may be a bit more if we add some useful features. Not used features can be tree-shaken thanks to your bundler (like Parcel or Vite). [See note](./CODEGOLF.md) about code golfing. 
+Reflex goal is to be __as performant as possible__ and __as light as possible__.
+Reflex will never be as performant than Solid (because of Virtual DOM), but targets to be as performant as Preact and more performant than React in a lot of cases.
+Library weight will be around `3kb gzipped`. It may be a bit more if we add some useful features. Not used features can be tree-shaken thanks to your bundler (like Parcel or Vite). [See note](./CODEGOLF.md) about code golfing. 
+Reflex performances are still not very high (around the same as React), but will be better latter with the same feature scope.
 
 ### Demos
 
@@ -462,5 +513,5 @@ Library weight will be around `4kb gzipped`. It may be a bit more if we add some
 
 ### Unpkg
 
-__Reflex__ is available on [Unpkg](https://unpkg.com/@zouloux/reflex) ![](./bits/reflex+signal.es2017.min.js.svg)
+__Reflex__ is available on [Unpkg](https://unpkg.com/@zouloux/reflex) ![](./bits/reflex.es2017.min.js.svg)
 - [see unpkg usage example](https://zouloux.github.io/reflex/demos/5-no-bundler-demo/index.html)

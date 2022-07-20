@@ -43,25 +43,22 @@ export function StatefulDemoApp () {
 	const list = state<IListItem[]>([])
 
 	const clearList = () => {
-		list.set([])
+		list.value = []
 	}
 	const addItem = ( position:"top"|"bottom", item:IListItem ) => {
 		if ( position === "bottom" )
-			list.set([...list.value, item])
+			list.value = [...list.value, item]
 		else
-			list.set([item, ...list.value])
+			list.value = [item, ...list.value]
 	}
 	const removeItem = ( item:IListItem ) => {
-		list.set( list.value.filter( currentItem => currentItem != item ) )
+		list.value = list.value.filter( currentItem => currentItem != item )
 	}
 	const moveItem = ( item:IListItem, offset:number ) => {
 		const index = list.value.indexOf( item ) + offset
 		if ( index < 0 || index >= list.value.length ) return;
 		removeItem( item )
-		list.set( [...list.value].splice( index, 0, item ) );
-		const newArray = [...list.value].splice( index, 0, item )
-		// FIXME : ERROR Here ?
-		list.set( newArray );
+		list.value.splice( index, 0, item )
 	}
 
 	function addRandomItems ( total:number = 0 ) {

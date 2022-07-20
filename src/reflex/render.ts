@@ -23,16 +23,19 @@ function updateDirtyComponents () {
 		p = require("./debug").trackPerformances("Update dirty components")
 	// TODO : Update with depth ! Deepest first ? Or last ?
 	componentsToUpdate.forEach( component => {
-		if ( component._affectedNodesByStates.length == 0 )
-			_diffNode( component.vnode, component.vnode )
-		else for ( let i = 0; i < component._affectedNodesByStates.length; ++i ) {
-			const oldNodes = component._affectedNodesByStates[ i ]
-			component._affectedNodesByStates[i] = []
-			renderComponentNode( component.vnode, component )
-			const newNodes = component._affectedNodesByStates[ i ]
-			for ( let j = 0; j < newNodes.length; ++j )
-				_diffNode( newNodes[j], oldNodes[j] )
-		}
+		_diffNode( component.vnode, component.vnode )
+		// if ( component._affectedNodesByStates.length == 0 )
+		// 	_diffNode( component.vnode, component.vnode )
+		// else for ( let i = 0; i < component._affectedNodesByStates.length; ++i ) {
+		// 	const oldNodes = component._affectedNodesByStates[ i ]
+		// 	component._affectedNodesByStates[i] = []
+		// 	renderComponentNode( component.vnode, component )
+		// 	const newNodes = component._affectedNodesByStates[ i ]
+		// 	for ( let j = 0; j < newNodes.length; ++j )
+		// 		_diffNode( newNodes[j], oldNodes[j] )
+		// }
+		component._afterRenderHandlers.forEach( handler => handler() )
+		component._afterRenderHandlers = []
 	})
 	componentsToUpdate = []
 	p && p();

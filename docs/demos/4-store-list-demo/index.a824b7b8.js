@@ -201,7 +201,6 @@ const listStore = (0, _store.createStore)(getInitialListState(), {
         const a = state[indexA];
         state[indexA] = state[indexB];
         state[indexB] = a;
-        console.log(state);
         return state;
     },
     addRandomItems (state, total = 0) {
@@ -383,16 +382,243 @@ function createStore(state = null, reducers = null, actions) {
     };
 }
 
-},{"@zouloux/signal":"kuTKe","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"lTIuh":[function(require,module,exports) {
+},{"@zouloux/signal":"kuTKe","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"kuTKe":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _signalEs2020Mjs = require("./signal.es2020.mjs");
+parcelHelpers.exportAll(_signalEs2020Mjs, exports);
+var _stateSignalEs2020Mjs = require("./state-signal.es2020.mjs");
+parcelHelpers.exportAll(_stateSignalEs2020Mjs, exports);
+var _observableEs2020Mjs = require("./observable.es2020.mjs");
+parcelHelpers.exportAll(_observableEs2020Mjs, exports);
+
+},{"./signal.es2020.mjs":"kBbw3","./state-signal.es2020.mjs":"74ZV8","./observable.es2020.mjs":"49l5Z","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"kBbw3":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+// TODO v1.1 RC
+// -> Better generic types that can leak from dispatch, without generic set at init
+// -> Better generic types which respect type order for GHP
+// ----------------------------------------------------------------------------- CLASSIC SIGNAL
+parcelHelpers.export(exports, "Signal", ()=>Signal);
+function Signal() {
+    // List of attached listeners
+    let _listeners = [];
+    // Remove a listener by its reference
+    const remove = (handler)=>_listeners = _listeners.filter((l)=>l[0] !== handler);
+    // Add a listener with once and call at init parameters
+    function add(handler, once, callAtInit = false) {
+        // Add listener
+        _listeners.push([
+            handler,
+            once
+        ]);
+        // Call at init with parameters if callAtInit is an array of parameters
+        // Just call without parameters if callAtInit is true
+        callAtInit && handler.apply(null, Array.isArray(callAtInit) ? callAtInit : null);
+        // Return a handler which will remove this listener
+        // Very handy with React hooks like useLayoutEffect
+        return ()=>remove(handler);
+    }
+    // Return public API
+    return {
+        // Add and return a remove thunk
+        add (handler, callAtInit = false) {
+            return add(handler, false, callAtInit);
+        },
+        // Add once and return a remove thunk
+        once (handler) {
+            return add(handler, true);
+        },
+        remove,
+        dispatch: (...rest)=>_listeners.map((listener)=>{
+                // Remove listener if this is a once
+                listener[1] && remove(listener[0]);
+                // Execute with parameters
+                return listener[0](...rest);
+            }),
+        clear () {
+            _listeners = [];
+        },
+        get listeners () {
+            return _listeners.map((l)=>l[0]);
+        }
+    };
+}
+exports.default = Signal;
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"74ZV8":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+// ----------------------------------------------------------------------------- STATE SIGNAL
+parcelHelpers.export(exports, "StateSignal", ()=>StateSignal);
+var _signalEs2020Mjs = require("./signal.es2020.mjs");
+function StateSignal(_state = null, _signal = (0, _signalEs2020Mjs.Signal)()) {
+    return {
+        ..._signal,
+        get state () {
+            return _state;
+        },
+        // Add and return a remove thunk
+        add (handler, callAtInit = false) {
+            // Call at init will dispatch current state and not a configurable array of props
+            return _signal.add(handler, callAtInit === true ? [
+                _state
+            ] : false);
+        },
+        // Add once and return a remove thunk
+        once (handler) {
+            return _signal.once(handler);
+        },
+        dispatch (state) {
+            _state = state;
+            return _signal.dispatch(state);
+        },
+        // Remove listeners and stored state
+        clear () {
+            _signal.clear();
+            _state = null;
+        }
+    };
+}
+
+},{"./signal.es2020.mjs":"kBbw3","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"49l5Z":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+/**
+ * A bit is a piece of data associated to a signal, a getter and a setter.
+ * A raw bit does not dispatch the signal when set on purpose. It's meant to be
+ * used by an upper function which holds dispatch as a private member.
+ * @param initialValue Initial value or initial value generator.
+ */ parcelHelpers.export(exports, "createBit", ()=>createBit);
+/**
+ * The simplest observable, holds a value a	and dispatch when mutated.
+ * No shallow check, no invalidation step, not cancellable.
+ * Everything is synchronous.
+ * Has a private _dispose method to destroy it from memory.
+ * @param initialValue Initial value or initial value generator.
+ */ parcelHelpers.export(exports, "createBasicObservable", ()=>createBasicObservable);
+parcelHelpers.export(exports, "createStateObservable", ()=>createStateObservable);
+parcelHelpers.export(exports, "createAsyncObservable", ()=>createAsyncObservable);
+var _signalEs2020Mjs = require("./signal.es2020.mjs");
+function prepareInitialValue(initialValue) {
+    return typeof initialValue === "function" ? initialValue() : initialValue;
+}
+function createBit(initialValue) {
+    // Init and store the value in this scope
+    let value = prepareInitialValue(initialValue);
+    // Create signal and extract dispatch method from it
+    // So code accessing signal externally would not be able to dispatch and mess
+    const onChanged = (0, _signalEs2020Mjs.Signal)();
+    const { dispatch  } = onChanged;
+    onChanged.dispatch = null;
+    // Return bit API
+    return {
+        onChanged,
+        dispatch,
+        get () {
+            return value;
+        },
+        set (newValue) {
+            value = newValue;
+        },
+        dispose () {
+            onChanged.clear();
+            value = null;
+        }
+    };
+}
+function createBasicObservable(initialValue) {
+    // Create the bit and extract private dispatch and setter
+    const { get , set , dispatch , ...bit } = createBit(initialValue);
+    return {
+        ...bit,
+        get value () {
+            return get();
+        },
+        set (newValue) {
+            const oldValue = get();
+            set(newValue);
+            dispatch(newValue, oldValue);
+        }
+    };
+}
+function createStateObservable(initialValue, beforeChanged) {
+    // Create the bit and extract private dispatch and setter
+    const { get , set , dispatch , ...bit } = createBit(initialValue);
+    return {
+        ...bit,
+        get value () {
+            return get();
+        },
+        async set (newValue) {
+            const oldValue = get();
+            set(newValue);
+            if (beforeChanged) {
+                // isLocked = true;
+                const haltChange = await beforeChanged(newValue, oldValue);
+                if (haltChange === true) {
+                    set(oldValue);
+                    // isLocked = false;
+                    return;
+                }
+            }
+            // isLocked = false;
+            dispatch(newValue, oldValue);
+        }
+    };
+}
+function createAsyncObservable(initialValue, beforeChanged) {
+    // Create the bit and extract private dispatch and setter
+    const { get , set , dispatch , ...bit } = createBit(initialValue);
+    let isChanging = false;
+    let wasAlreadyChanging = false;
+    return {
+        ...bit,
+        get value () {
+            return get();
+        },
+        get isChanging () {
+            return isChanging;
+        },
+        get wasAlreadyChanging () {
+            return wasAlreadyChanging;
+        },
+        async set (newValue) {
+            // Keep old to check changes
+            const oldValue = get();
+            set(newValue);
+            // Call private changed as async (may change state asynchronously)
+            if (beforeChanged) {
+                if (isChanging) wasAlreadyChanging = true;
+                isChanging = true;
+                const haltChange = await beforeChanged(newValue, oldValue);
+                if (haltChange === true) {
+                    set(oldValue);
+                    isChanging = false;
+                    wasAlreadyChanging = false;
+                    return;
+                }
+                isChanging = false;
+                if (wasAlreadyChanging) {
+                    wasAlreadyChanging = false;
+                    return;
+                }
+            }
+            // Call public onChange signal with new and old values
+            dispatch(newValue, oldValue);
+        }
+    };
+}
+
+},{"./signal.es2020.mjs":"kBbw3","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"lTIuh":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "storeState", ()=>storeState);
 var _reflex = require("../reflex");
 function storeState(store) {
-    const bit = (0, _reflex.state)(store.getState());
-    store.onAfter.add(()=>bit.set(store.getState()));
-    // TODO : When component is removed, remove onAfter listener
-    return bit;
+    const data = (0, _reflex.state)(store.getState());
+    (0, _reflex.mounted)(()=>store.onAfter.add(()=>data.set(store.getState())));
+    return data;
 }
 
 },{"../reflex":"cuBJf","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7ZAOq":[function(require,module,exports) {

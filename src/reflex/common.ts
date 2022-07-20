@@ -51,6 +51,14 @@ export type ComponentFunction = FunctionalComponent|FactoryComponent
 export type LifecycleHandler <GReturn = void> = (...rest) => GReturn
 export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler>
 
+
+// ----------------------------------------------------------------------------- INITIAL VALUE
+export type TInitialValue<GType> = GType | ((oldValue?:GType) => GType)
+
+export const prepareInitialValue = <GType> ( initialValue:TInitialValue<GType>, oldValue?:GType ) => (
+	typeof initialValue == "function" ? ( initialValue as (oldValue?:GType) => GType )(oldValue) : initialValue as GType
+)
+
 // ----------------------------------------------------------------------------- JSX H / CREATE ELEMENT
 
 export type VNodeDomType = keyof (HTMLElementTagNameMap|SVGElementTagNameMap)
@@ -82,4 +90,4 @@ export interface VTextNode extends VNode<{value:string}> {
 	type		: typeof _TEXT_NODE_TYPE_NAME
 }
 
-export type VNodeOrVNodes = VNode|VNode[]
+// export type VNodeOrVNodes = VNode|VNode[]

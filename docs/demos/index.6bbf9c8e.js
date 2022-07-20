@@ -142,50 +142,7 @@
       this[globalName] = mainExports;
     }
   }
-})({"eJHQY":[function(require,module,exports) {
-// Import it like any other v-dom lib
-var _reflex = require("../src/reflex");
-// Reflex components can be pure functions or factory functions
-function ReflexApp(props) {
-    // How basic state works
-    const counter = (0, _reflex.state)(0);
-    const increment = ()=>counter.set(counter.value + 1);
-    const reset = ()=>counter.set(0);
-    // No need to use ref for locally scoped variables
-    let firstUpdate = true;
-    // Detect changes of states or props
-    (0, _reflex.changed)(()=>[
-            counter.value
-        ], (newValue)=>{
-        console.log(`Counter just updated to ${newValue}`, firstUpdate);
-        firstUpdate = false;
-    });
-    // How refs of dom elements works
-    const title = (0, _reflex.ref)();
-    (0, _reflex.mounted)(()=>console.log(title.dom.innerHTML));
-    // Returns a render function
-    // Classes can be arrays ! Falsy elements of the array will be discarded
-    return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
-            class: [
-                "ReflexApp",
-                props.modifier,
-                false
-            ]
-        }, /*#__PURE__*/ (0, _reflex.h)("h1", {
-            ref: title
-        }, "Hello from Reflex ", props.emoji), /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: increment
-        }, "Increment"), "\xa0", /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: reset
-        }, "Reset"), "\xa0", /*#__PURE__*/ (0, _reflex.h)("span", null, "Counter : ", counter.value));
-}
-// Render it like any other v-dom library
-(0, _reflex.render)(/*#__PURE__*/ (0, _reflex.h)(ReflexApp, {
-    modifier: "ReflexApp-darkMode",
-    emoji: "\uD83D\uDC4B"
-}), document.body);
-
-},{"../src/reflex":"cuBJf"}],"cuBJf":[function(require,module,exports) {
+})({"cuBJf":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /// <reference lib="dom" />
@@ -280,8 +237,7 @@ parcelHelpers.defineInteropFlag(exports);
  * - Advanced Hot Module reloading with state keeping automagically
  */ // NOTE : Avoid glob exports from which insert an helper
 // Unzipped is smaller with glob but bigger when zipped
-parcelHelpers.export(exports, "state", ()=>(0, _state.state));
-parcelHelpers.export(exports, "asyncState", ()=>(0, _state.asyncState));
+parcelHelpers.export(exports, "state", ()=>(0, _states.state));
 parcelHelpers.export(exports, "getHookedComponent", ()=>(0, _diff.getHookedComponent));
 parcelHelpers.export(exports, "ref", ()=>(0, _ref.ref));
 parcelHelpers.export(exports, "refs", ()=>(0, _ref.refs));
@@ -295,39 +251,95 @@ parcelHelpers.export(exports, "invalidateComponent", ()=>(0, _render.invalidateC
 // Also export createElement for JSX pragma React
 parcelHelpers.export(exports, "h", ()=>(0, _jsx.h));
 parcelHelpers.export(exports, "createElement", ()=>(0, _jsx.h));
-var _state = require("./state");
+var _states = require("./states");
 var _diff = require("./diff");
 var _ref = require("./ref");
 var _lifecycle = require("./lifecycle");
 var _render = require("./render");
 var _jsx = require("./jsx");
 
-},{"./state":"5nTfq","./diff":"6sa8r","./ref":"fdaPH","./lifecycle":"8Qw9Y","./render":"krTG7","./jsx":"beq5O","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"5nTfq":[function(require,module,exports) {
+},{"./states":"jPtHd","./diff":"6sa8r","./ref":"fdaPH","./lifecycle":"8Qw9Y","./render":"krTG7","./jsx":"beq5O","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"jPtHd":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-// ----------------------------------------------------------------------------- STATE
 parcelHelpers.export(exports, "state", ()=>state);
-// ----------------------------------------------------------------------------- ASTNC STATE
-parcelHelpers.export(exports, "asyncState", ()=>asyncState);
+var _common = require("./common");
 var _diff = require("./diff");
+// import { addDataListenerForNextNode } from "./jsx";
 var _render = require("./render");
-var _observable = require("./observable");
-function state(initialValue) {
+function state(initialValue, filter, afterChange) {
+    initialValue = (0, _common.prepareInitialValue)(initialValue);
     const component = (0, _diff.getHookedComponent)();
-    const observable = (0, _observable.createStateObservable)(initialValue, ()=>(0, _render.invalidateComponent)(component));
-    component._observables.push(observable);
-    return observable;
-}
-function asyncState(initialValue) {
-    const component = (0, _diff.getHookedComponent)();
-    // TODO : Implement this
-    const observable = (0, _observable.createAsyncObservable)(initialValue, ()=>(0, _render.invalidateComponent)(component));
-    // TODO : We may need cancellable Promises. Maybe just use reject ? And throw errors in legacy mode.
-    component._observables.push(observable);
-    return observable;
+    // const affectedNodesIndex = component._affectedNodesByStates.push([]) - 1
+    return {
+        get value () {
+            // if ( component._isRendering ) {
+            // 	addDataListenerForNextNode( node => {
+            // 		console.log('>', component._affectedNodesByStates[affectedNodesIndex].length, node)
+            // 		component._affectedNodesByStates[affectedNodesIndex].push( node )
+            // 	})
+            // }
+            return initialValue;
+        },
+        set value (newValue){
+            initialValue = filter ? filter(newValue, initialValue) : newValue;
+            (0, _render.invalidateComponent)(component);
+            afterChange && component._afterRenderHandlers.push(()=>afterChange(initialValue));
+        },
+        async set (newValue) {
+            return new Promise((resolve)=>{
+                newValue = (0, _common.prepareInitialValue)(newValue, initialValue);
+                initialValue = filter ? filter(newValue, initialValue) : newValue;
+                component._afterRenderHandlers.push(()=>{
+                    resolve();
+                    afterChange && afterChange(initialValue);
+                });
+                (0, _render.invalidateComponent)(component);
+            });
+        }
+    };
 }
 
-},{"./diff":"6sa8r","./render":"krTG7","./observable":"6ChQY","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"6sa8r":[function(require,module,exports) {
+},{"./common":"8NUdO","./diff":"6sa8r","./render":"krTG7","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"8NUdO":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "_TEXT_NODE_TYPE_NAME", ()=>_TEXT_NODE_TYPE_NAME);
+parcelHelpers.export(exports, "_ROOT_NODE_TYPE_NAME", ()=>_ROOT_NODE_TYPE_NAME);
+parcelHelpers.export(exports, "prepareInitialValue", ()=>prepareInitialValue);
+const _TEXT_NODE_TYPE_NAME = "#T";
+const _ROOT_NODE_TYPE_NAME = "#R";
+const prepareInitialValue = (initialValue, oldValue)=>typeof initialValue == "function" ? initialValue(oldValue) : initialValue;
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"j7FRh":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
+},{}],"6sa8r":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "_DOM_PRIVATE_VIRTUAL_NODE_KEY", ()=>_DOM_PRIVATE_VIRTUAL_NODE_KEY);
@@ -341,6 +353,8 @@ parcelHelpers.export(exports, "_diffElement", ()=>_diffElement);
  * - Very important, avoid loops in loops ! Prefer 4 static loops at top level
  *   rather than 2 nested loops. n*4 is lower than n^n !
  */ parcelHelpers.export(exports, "_diffChildren", ()=>_diffChildren);
+// ----------------------------------------------------------------------------- DIFF NODE
+parcelHelpers.export(exports, "renderComponentNode", ()=>renderComponentNode);
 parcelHelpers.export(exports, "_diffNode", ()=>_diffNode);
 var _common = require("./common");
 var _jsx = require("./jsx");
@@ -532,7 +546,6 @@ function _diffChildren(newParentNode, oldParentNode) {
         parentDom.removeChild(dom);
     }
 }
-// ----------------------------------------------------------------------------- DIFF NODE
 function renderComponentNode(node, component) {
     // Tie component and virtual node
     component.vnode = node;
@@ -542,10 +555,12 @@ function renderComponentNode(node, component) {
     // FIXME: Before render handlers ?
     // FIXME: Optimize rendering with a hook ?
     // Execute rendering
+    component._isRendering = true;
     const render = component._render ? component._render : node.type;
     const result = render.apply(component, [
-        component._propsProxy.value
+        component._propsProxy.proxy
     ]);
+    component._isRendering = false;
     // Unselect hooked component
     _hookedComponent = null;
     return result;
@@ -633,69 +648,60 @@ function _diffNode(newNode, oldNode) {
     component?._renderHandlers.map((h)=>h());
 }
 
-},{"./common":"8NUdO","./jsx":"beq5O","./component":"jK9Qg","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"8NUdO":[function(require,module,exports) {
+},{"./common":"8NUdO","./jsx":"beq5O","./component":"jK9Qg","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"beq5O":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "_TEXT_NODE_TYPE_NAME", ()=>_TEXT_NODE_TYPE_NAME);
-parcelHelpers.export(exports, "_ROOT_NODE_TYPE_NAME", ()=>_ROOT_NODE_TYPE_NAME);
-const _TEXT_NODE_TYPE_NAME = "#T";
-const _ROOT_NODE_TYPE_NAME = "#R";
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"j7FRh":[function(require,module,exports) {
-exports.interopDefault = function(a) {
-    return a && a.__esModule ? a : {
-        default: a
-    };
-};
-exports.defineInteropFlag = function(a) {
-    Object.defineProperty(a, "__esModule", {
-        value: true
-    });
-};
-exports.exportAll = function(source, dest) {
-    Object.keys(source).forEach(function(key) {
-        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
-        Object.defineProperty(dest, key, {
-            enumerable: true,
-            get: function() {
-                return source[key];
-            }
-        });
-    });
-    return dest;
-};
-exports.export = function(dest, destName, get) {
-    Object.defineProperty(dest, destName, {
-        enumerable: true,
-        get: get
-    });
-};
-
-},{}],"beq5O":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "addDataListenerForNextNode", ()=>addDataListenerForNextNode);
 // NOTE : Keep it in a function and do not inline this
 // It seems to be V8 optimized. @see Preact source code
 parcelHelpers.export(exports, "_createVNode", ()=>_createVNode);
 parcelHelpers.export(exports, "_cloneVNode", ()=>_cloneVNode);
-parcelHelpers.export(exports, "h", ()=>h);
+parcelHelpers.export(exports, "h", ()=>h) // TRACKING TEST
+ /*
+let $ = []
+let a = 0
+
+h('div', {}, [
+	h('h1', {className: $}, [ 	// -> h1
+		"Content ", $			// -> h1
+	]),
+	h('ul', {}, $.map( a => a )),// -> ul
+	h('p', {}, [$]),			// -> p
+	a ? $ : null				// -> div
+])
+*/ ;
+// FIXME : Is it an array ? Maybe its working as single prop
+let _dataListenersForNextNode = [];
+function addDataListenerForNextNode(listener) {
+    _dataListenersForNextNode.push(listener);
+}
+function triggerDataListenerForNode(node) {
+    _dataListenersForNextNode.forEach((handler)=>handler(node));
+    _dataListenersForNextNode = [];
+}
 function _createVNode(type, props, key, _ref) {
-    return {
+    const node = {
         type,
         props,
         key,
         _ref
     };
+    // triggerDataListenerForNode( node )
+    return node;
 }
 function _cloneVNode(vnode) {
     const newNode = Object.assign({}, vnode);
     // IMPORTANT : also clone props object
     newNode.props = Object.assign({}, vnode.props);
+    // triggerDataListenerForNode( newNode )
     return newNode;
 }
-function h(type, props = {}, ...children) {
+function h(type, props, ...children) {
+    if (props == null) props = {};
     props.children = props.children ? props.children : children;
-    return _createVNode(type, props, props.key, props.ref);
+    const node = _createVNode(type, props, props.key, props.ref);
+    triggerDataListenerForNode(node);
+    return node;
 }
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"jK9Qg":[function(require,module,exports) {
@@ -709,39 +715,21 @@ parcelHelpers.export(exports, "_mountComponent", ()=>_mountComponent);
 parcelHelpers.export(exports, "_unmountComponent", ()=>_unmountComponent);
 parcelHelpers.export(exports, "_recursivelyUpdateMountState", ()=>_recursivelyUpdateMountState);
 var _common = require("./common");
+var _props = require("./props");
 function _createComponentInstance(vnode) {
     return {
         vnode,
-        _propsProxy: createPropsProxy(vnode.props),
+        _propsProxy: (0, _props.createPropsProxy)(vnode.props),
         _isDirty: false,
         isMounted: false,
         name: vnode.type.name,
         _mountHandlers: [],
         _renderHandlers: [],
         _unmountHandlers: [],
-        _observables: []
-    };
-}
-function createPropsProxy(props) {
-    const proxy = new Proxy({}, {
-        // When request a prop, check on props object if it exists
-        get (target, propName) {
-            return propName in props ? props[propName] : void 0;
-        },
-        // Disallow set on props
-        set () {
-            return false;
-        }
-    });
-    return {
-        // Get the proxy object typed as a GProps object
-        get value () {
-            return proxy;
-        },
-        // This method will set new props object (we override first argument of createPropsProxy)
-        set (newProps) {
-            props = newProps;
-        }
+        // _observables: [],
+        _affectedNodesByStates: [],
+        _isRendering: false,
+        _afterRenderHandlers: []
     };
 }
 function _mountComponent(component) {
@@ -757,14 +745,15 @@ function _mountComponent(component) {
 }
 function _unmountComponent(component) {
     component._unmountHandlers.map((h)=>h.apply(component, []));
-    component._observables.map((o)=>o.dispose());
+    // component._observables.map( o => o.dispose() )
     // FIXME : Do we need to do this ? Is it efficient or is it just noise ?
     //delete component.vnode
     // delete component.propsProxy
     delete component._mountHandlers;
     delete component._renderHandlers;
     delete component._unmountHandlers;
-    delete component._observables;
+    delete component._afterRenderHandlers;
+    // delete component._observables
     component.isMounted = false;
 }
 function _recursivelyUpdateMountState(node, doMount) {
@@ -776,7 +765,27 @@ function _recursivelyUpdateMountState(node, doMount) {
     }
 }
 
-},{"./common":"8NUdO","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"krTG7":[function(require,module,exports) {
+},{"./common":"8NUdO","./props":"bJNzu","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"bJNzu":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "createPropsProxy", ()=>createPropsProxy);
+function createPropsProxy(props) {
+    return {
+        proxy: new Proxy({}, {
+            get (target, propName) {
+                // TODO : Track dependencies like for state
+                return propName in props ? props[propName] : void 0;
+            },
+            set () {
+                return false;
+            }
+        }),
+        // This method will set new props object (we override first argument of createPropsProxy)
+        set: (newProps)=>props = newProps
+    };
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"krTG7":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // ----------------------------------------------------------------------------- RENDER
@@ -814,372 +823,36 @@ let componentsToUpdate = [];
 function updateDirtyComponents() {
     let p;
     // TODO : Update with depth ! Deepest first ? Or last ?
-    componentsToUpdate.map((component)=>{
+    componentsToUpdate.forEach((component)=>{
         (0, _diff._diffNode)(component.vnode, component.vnode);
+        // if ( component._affectedNodesByStates.length == 0 )
+        // 	_diffNode( component.vnode, component.vnode )
+        // else for ( let i = 0; i < component._affectedNodesByStates.length; ++i ) {
+        // 	const oldNodes = component._affectedNodesByStates[ i ]
+        // 	component._affectedNodesByStates[i] = []
+        // 	renderComponentNode( component.vnode, component )
+        // 	const newNodes = component._affectedNodesByStates[ i ]
+        // 	for ( let j = 0; j < newNodes.length; ++j )
+        // 		_diffNode( newNodes[j], oldNodes[j] )
+        // }
+        component._afterRenderHandlers.forEach((handler)=>handler());
+        component._afterRenderHandlers = [];
     });
     componentsToUpdate = [];
     p && p();
 }
 const __microtask = self.queueMicrotask ? self.queueMicrotask : (h)=>self.setTimeout(h, 0);
-function invalidateComponent(component) {
+function invalidateComponent(dirtyComponent) {
     // Queue rendering before end of frame
     if (componentsToUpdate.length === 0) __microtask(updateDirtyComponents);
     // Invalidate this component once
-    if (component._isDirty) return;
-    component._isDirty = true;
+    if (dirtyComponent._isDirty) return;
+    dirtyComponent._isDirty = true;
     // Store it into the list of dirty components
-    componentsToUpdate.push(component);
+    componentsToUpdate.push(dirtyComponent);
 }
 
-},{"./common":"8NUdO","./diff":"6sa8r","./jsx":"beq5O","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"6ChQY":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-/**
- * A bit is a piece of data associated to a signal, a getter and a setter.
- * A raw bit does not dispatch the signal when set on purpose. It's meant to be
- * used by an upper function which holds dispatch as a private member.
- * @param initialValue Initial value or initial value generator.
- */ parcelHelpers.export(exports, "createBit", ()=>createBit);
-parcelHelpers.export(exports, "createStateObservable", ()=>createStateObservable);
-parcelHelpers.export(exports, "createAsyncObservable", ()=>createAsyncObservable);
-var _signal = require("@zouloux/signal");
-const prepareInitialValue = (initialValue)=>// _typeof(initialValue, "f") ? ( initialValue as () => GType )() : initialValue as GType
-    typeof initialValue == "function" ? initialValue() : initialValue;
-const executeSetter = (currentValue, setter)=>// _typeof(setter, "f") ? (setter as ((GType) => GType))( currentValue ) : setter as GType
-    typeof setter == "function" ? setter(currentValue) : setter;
-function createBit(initialValue) {
-    // Init and store the value in this scope
-    let value = prepareInitialValue(initialValue);
-    // Create signal and extract dispatch method from it
-    // So code accessing signal externally would not be able to dispatch and mess
-    const onChanged = (0, _signal.Signal)();
-    const { dispatch  } = onChanged;
-    delete onChanged.dispatch;
-    // Return bit API
-    return {
-        onChanged,
-        dispatch,
-        get () {
-            return value;
-        },
-        set (newValue) {
-            value = executeSetter(value, newValue);
-        },
-        dispose () {
-            onChanged.clear();
-            value = null;
-        }
-    };
-}
-function createStateObservable(initialValue, beforeChanged) {
-    // Create the bit and extract private dispatch and setter
-    // TODO : IMPORTANT : Weirdly, we can destruct like this with tsc
-    // 	get value () { return get() } will not work and always return initial value
-    // const { get, set, dispatch, ...bit } = createBit<GType>( initialValue );
-    const bit = createBit(initialValue);
-    return {
-        // ...bit,
-        onChanged: bit.onChanged,
-        dispose: bit.dispose,
-        // get: bit.get,
-        get value () {
-            return bit.get();
-        },
-        async set (newValue) {
-            const oldValue = bit.get();
-            newValue = executeSetter(oldValue, newValue);
-            bit.set(newValue);
-            if (beforeChanged) {
-                // isLocked = true;
-                const haltChange = await beforeChanged(newValue, oldValue);
-                if (haltChange === true) {
-                    bit.set(oldValue);
-                    // isLocked = false;
-                    return;
-                }
-            }
-            // isLocked = false;
-            bit.dispatch(newValue, oldValue);
-        }
-    };
-}
-function createAsyncObservable(initialValue, beforeChanged) {
-    // Create the bit and extract private dispatch and setter
-    // const { get, set, dispatch, ...bit } = createBit<GType>( initialValue );
-    const bit = createBit(initialValue);
-    let isChanging = false;
-    let wasAlreadyChanging = false;
-    return {
-        // ...bit,
-        onChanged: bit.onChanged,
-        dispose: bit.dispose,
-        // get: bit.get,
-        get value () {
-            return bit.get();
-        },
-        get isChanging () {
-            return isChanging;
-        },
-        get wasAlreadyChanging () {
-            return wasAlreadyChanging;
-        },
-        async set (newValue) {
-            // Keep old to check changes
-            const oldValue = bit.get();
-            newValue = executeSetter(oldValue, newValue);
-            bit.set(newValue);
-            // Call private changed as async (may change state asynchronously)
-            if (beforeChanged) {
-                if (isChanging) wasAlreadyChanging = true;
-                isChanging = true;
-                const haltChange = await beforeChanged(newValue, oldValue);
-                if (haltChange === true) {
-                    bit.set(oldValue);
-                    isChanging = false;
-                    wasAlreadyChanging = false;
-                    return;
-                }
-                isChanging = false;
-                if (wasAlreadyChanging) {
-                    wasAlreadyChanging = false;
-                    return;
-                }
-            }
-            // Call public onChange signal with new and old values
-            bit.dispatch(newValue, oldValue);
-        }
-    };
-}
-
-},{"@zouloux/signal":"kuTKe","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"kuTKe":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-var _signalEs2020Mjs = require("./signal.es2020.mjs");
-parcelHelpers.exportAll(_signalEs2020Mjs, exports);
-var _stateSignalEs2020Mjs = require("./state-signal.es2020.mjs");
-parcelHelpers.exportAll(_stateSignalEs2020Mjs, exports);
-var _observableEs2020Mjs = require("./observable.es2020.mjs");
-parcelHelpers.exportAll(_observableEs2020Mjs, exports);
-
-},{"./signal.es2020.mjs":"kBbw3","./state-signal.es2020.mjs":"74ZV8","./observable.es2020.mjs":"49l5Z","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"kBbw3":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-// TODO v1.1 RC
-// -> Better generic types that can leak from dispatch, without generic set at init
-// -> Better generic types which respect type order for GHP
-// ----------------------------------------------------------------------------- CLASSIC SIGNAL
-parcelHelpers.export(exports, "Signal", ()=>Signal);
-function Signal() {
-    // List of attached listeners
-    let _listeners = [];
-    // Remove a listener by its reference
-    const remove = (handler)=>_listeners = _listeners.filter((l)=>l[0] !== handler);
-    // Add a listener with once and call at init parameters
-    function add(handler, once, callAtInit = false) {
-        // Add listener
-        _listeners.push([
-            handler,
-            once
-        ]);
-        // Call at init with parameters if callAtInit is an array of parameters
-        // Just call without parameters if callAtInit is true
-        callAtInit && handler.apply(null, Array.isArray(callAtInit) ? callAtInit : null);
-        // Return a handler which will remove this listener
-        // Very handy with React hooks like useLayoutEffect
-        return ()=>remove(handler);
-    }
-    // Return public API
-    return {
-        // Add and return a remove thunk
-        add (handler, callAtInit = false) {
-            return add(handler, false, callAtInit);
-        },
-        // Add once and return a remove thunk
-        once (handler) {
-            return add(handler, true);
-        },
-        remove,
-        dispatch: (...rest)=>_listeners.map((listener)=>{
-                // Remove listener if this is a once
-                listener[1] && remove(listener[0]);
-                // Execute with parameters
-                return listener[0](...rest);
-            }),
-        clear () {
-            _listeners = [];
-        },
-        get listeners () {
-            return _listeners.map((l)=>l[0]);
-        }
-    };
-}
-exports.default = Signal;
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"74ZV8":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-// ----------------------------------------------------------------------------- STATE SIGNAL
-parcelHelpers.export(exports, "StateSignal", ()=>StateSignal);
-var _signalEs2020Mjs = require("./signal.es2020.mjs");
-function StateSignal(_state = null, _signal = (0, _signalEs2020Mjs.Signal)()) {
-    return {
-        ..._signal,
-        get state () {
-            return _state;
-        },
-        // Add and return a remove thunk
-        add (handler, callAtInit = false) {
-            // Call at init will dispatch current state and not a configurable array of props
-            return _signal.add(handler, callAtInit === true ? [
-                _state
-            ] : false);
-        },
-        // Add once and return a remove thunk
-        once (handler) {
-            return _signal.once(handler);
-        },
-        dispatch (state) {
-            _state = state;
-            return _signal.dispatch(state);
-        },
-        // Remove listeners and stored state
-        clear () {
-            _signal.clear();
-            _state = null;
-        }
-    };
-}
-
-},{"./signal.es2020.mjs":"kBbw3","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"49l5Z":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-/**
- * A bit is a piece of data associated to a signal, a getter and a setter.
- * A raw bit does not dispatch the signal when set on purpose. It's meant to be
- * used by an upper function which holds dispatch as a private member.
- * @param initialValue Initial value or initial value generator.
- */ parcelHelpers.export(exports, "createBit", ()=>createBit);
-/**
- * The simplest observable, holds a value a	and dispatch when mutated.
- * No shallow check, no invalidation step, not cancellable.
- * Everything is synchronous.
- * Has a private _dispose method to destroy it from memory.
- * @param initialValue Initial value or initial value generator.
- */ parcelHelpers.export(exports, "createBasicObservable", ()=>createBasicObservable);
-parcelHelpers.export(exports, "createStateObservable", ()=>createStateObservable);
-parcelHelpers.export(exports, "createAsyncObservable", ()=>createAsyncObservable);
-var _signalEs2020Mjs = require("./signal.es2020.mjs");
-function prepareInitialValue(initialValue) {
-    return typeof initialValue === "function" ? initialValue() : initialValue;
-}
-function createBit(initialValue) {
-    // Init and store the value in this scope
-    let value = prepareInitialValue(initialValue);
-    // Create signal and extract dispatch method from it
-    // So code accessing signal externally would not be able to dispatch and mess
-    const onChanged = (0, _signalEs2020Mjs.Signal)();
-    const { dispatch  } = onChanged;
-    onChanged.dispatch = null;
-    // Return bit API
-    return {
-        onChanged,
-        dispatch,
-        get () {
-            return value;
-        },
-        set (newValue) {
-            value = newValue;
-        },
-        dispose () {
-            onChanged.clear();
-            value = null;
-        }
-    };
-}
-function createBasicObservable(initialValue) {
-    // Create the bit and extract private dispatch and setter
-    const { get , set , dispatch , ...bit } = createBit(initialValue);
-    return {
-        ...bit,
-        get value () {
-            return get();
-        },
-        set (newValue) {
-            const oldValue = get();
-            set(newValue);
-            dispatch(newValue, oldValue);
-        }
-    };
-}
-function createStateObservable(initialValue, beforeChanged) {
-    // Create the bit and extract private dispatch and setter
-    const { get , set , dispatch , ...bit } = createBit(initialValue);
-    return {
-        ...bit,
-        get value () {
-            return get();
-        },
-        async set (newValue) {
-            const oldValue = get();
-            set(newValue);
-            if (beforeChanged) {
-                // isLocked = true;
-                const haltChange = await beforeChanged(newValue, oldValue);
-                if (haltChange === true) {
-                    set(oldValue);
-                    // isLocked = false;
-                    return;
-                }
-            }
-            // isLocked = false;
-            dispatch(newValue, oldValue);
-        }
-    };
-}
-function createAsyncObservable(initialValue, beforeChanged) {
-    // Create the bit and extract private dispatch and setter
-    const { get , set , dispatch , ...bit } = createBit(initialValue);
-    let isChanging = false;
-    let wasAlreadyChanging = false;
-    return {
-        ...bit,
-        get value () {
-            return get();
-        },
-        get isChanging () {
-            return isChanging;
-        },
-        get wasAlreadyChanging () {
-            return wasAlreadyChanging;
-        },
-        async set (newValue) {
-            // Keep old to check changes
-            const oldValue = get();
-            set(newValue);
-            // Call private changed as async (may change state asynchronously)
-            if (beforeChanged) {
-                if (isChanging) wasAlreadyChanging = true;
-                isChanging = true;
-                const haltChange = await beforeChanged(newValue, oldValue);
-                if (haltChange === true) {
-                    set(oldValue);
-                    isChanging = false;
-                    wasAlreadyChanging = false;
-                    return;
-                }
-                isChanging = false;
-                if (wasAlreadyChanging) {
-                    wasAlreadyChanging = false;
-                    return;
-                }
-            }
-            // Call public onChange signal with new and old values
-            dispatch(newValue, oldValue);
-        }
-    };
-}
-
-},{"./signal.es2020.mjs":"kBbw3","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"fdaPH":[function(require,module,exports) {
+},{"./common":"8NUdO","./diff":"6sa8r","./jsx":"beq5O","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"fdaPH":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ref", ()=>ref);
@@ -1292,5 +965,5 @@ function changed(detectChanges, executeHandler) {
     });
 }
 
-},{"./diff":"6sa8r","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["eJHQY"], "eJHQY", "parcelRequirea1a1")
+},{"./diff":"6sa8r","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},[], null, "parcelRequirea1a1")
 

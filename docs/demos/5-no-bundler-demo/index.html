@@ -2,10 +2,10 @@
 <head>
     <title>Reflex - No Bundler Demo</title>
     <!-- Load locally built bundle for tests purpose -->
-<!--    <script src="../../dist/reflex+signal.es2017.min.js"></script>-->
+    <script src="../../dist/reflex.es2017.min.js"></script>
     <!-- This is how to load Reflex bundle from UNPKG -->
     <!-- Note : It's better to set version to avoid long load time -->
-    <script src="https://unpkg.com/@zouloux/reflex"></script>
+<!--    <script src="https://unpkg.com/@zouloux/reflex"></script>-->
 </head>
 <body>
     <script>
@@ -21,16 +21,16 @@
 			const _s = state( 0 );
 			const _r = ref()
             // Signal test
-            _s.onChanged.add( (newValue, oldValue) => {
-				console.log('Signal state changed', {newValue, oldValue})
-            })
+            // _s.onChanged.add( (newValue, oldValue) => {
+			// 	console.log('Signal state changed', {newValue, oldValue})
+            // })
             // Render some html
 			return () => h('div', {}, [
 				// A button, which will increase the state when clicked
                 h('button', {
 					onClick: async e => {
 						// Increment state, we await so the DOM is ready after
-						await _s.set( _s.value + 1 )
+						await _s.value += 1
                         // Show passed event and show updated dom
                         console.log('Event', e)
 						console.log('Ref test:', _r.dom.innerHTML)

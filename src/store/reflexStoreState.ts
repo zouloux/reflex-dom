@@ -1,12 +1,13 @@
 import { IStore } from "./store";
-import { state } from "../reflex";
-import { IStateObservable } from "@zouloux/signal";
+import { mounted, state } from "../reflex";
+import { IState } from "../reflex/states";
 
 
-export function storeState <GType extends object> ( store:IStore<GType> ) : IStateObservable<GType>
+export function storeState <GType extends object> ( store:IStore<GType> ) : IState<GType>
 {
-	const bit = state<GType>( store.getState() )
-	store.onAfter.add( () => bit.set( store.getState() ) )
-	// TODO : When component is removed, remove onAfter listener
-	return bit;
+	const data = state<GType>( store.getState() )
+	mounted( () =>
+		store.onAfter.add( () => data.set( store.getState() ) )
+	)
+	return data;
 }

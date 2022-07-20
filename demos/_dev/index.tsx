@@ -1,7 +1,6 @@
-import { h, render } from "../../src/reflex";
+import { h, render, state } from "../../src/reflex";
 import { trackPerformances, setReflexDebug } from "../../src/reflex/debug";
 import { colorList, createUID, foodList, pickRandom } from "../common/demoHelpers";
-import { state } from "../../src/reflex/atomic-bit"
 
 // -----------------------------------------------------------------------------
 
@@ -63,7 +62,7 @@ setReflexDebug( true )
 export function init () {
 	const p = trackPerformances("Root rendering")
 	const a = <DevApp />
-	// console.log('A', a );
+	console.log('A', a );
 	render( a, document.getElementById('App') )
 	// render( a, document.getElementById('App') )
 	p();
