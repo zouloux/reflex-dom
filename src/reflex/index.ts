@@ -95,7 +95,7 @@
 
 // NOTE : Avoid glob exports from which insert an helper
 // Unzipped is smaller with glob but bigger when zipped
-export { state } from "./states"
+export { state, syncState } from "./states"
 export { getHookedComponent } from "./diff"
 export { ref, refs, IRef, IRefs } from "./ref"
 export { mounted, unmounted, changed } from "./lifecycle"
