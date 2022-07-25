@@ -2,7 +2,6 @@ import { ComponentFunction, ComponentReturn, RenderDom, RenderFunction, VNode, V
 import { _cloneVNode } from "./jsx";
 import { IInternalRef } from "./ref";
 import { _createComponentInstance, _recursivelyUpdateMountState, ComponentInstance } from "./component";
-import { propsProxy } from "./props";
 
 /**
  * TODO : Errors
@@ -333,7 +332,10 @@ export function renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any
 	// Execute rendering
 	node._component._isRendering = true
 	// TODO : Add ref as second argument ? Is it useful ?
-	const result = node._component._render.apply( node._component, [ propsProxy ])
+	node._component._propsProxy.set( node.props )
+	const result = node._component._render.apply( node._component, [
+		node._component._propsProxy.proxy
+	])
 	node._component._isRendering = false
 	// Unselect current component
 	_currentComponent = null

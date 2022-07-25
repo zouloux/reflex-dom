@@ -1,4 +1,5 @@
 import { ComponentFunction, LifecycleHandler, MountHandler, RenderFunction, VNode, VNodeTypes } from "./common";
+import { createPropsProxy, IPropsProxy } from "./props";
 
 // ----------------------------------------------------------------------------- TYPES
 
@@ -8,6 +9,7 @@ export interface ComponentInstance <GProps extends object = object> { // FIXME :
 	isFactory			?:boolean
 	isMounted			:boolean;
 	_isDirty			?:boolean
+	_propsProxy			:IPropsProxy<GProps>
 	_render				:RenderFunction
 	_mountHandlers		:MountHandler[]
 	_renderHandlers		:LifecycleHandler[]
@@ -29,6 +31,7 @@ export function _createComponentInstance
 {
 	return {
 		vnode,
+		_propsProxy: createPropsProxy( vnode.props ),
 		name: (vnode.value as RenderFunction).name,
 		isMounted: false,
 		_isDirty: false,
