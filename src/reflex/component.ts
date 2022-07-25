@@ -1,19 +1,14 @@
-import {
-	ComponentFunction, LifecycleHandler, MountHandler, RenderFunction,
-	_TEXT_NODE_TYPE_NAME, VNode
-} from "./common";
-import { createPropsProxy, IPropsProxy } from "./props";
+import { ComponentFunction, LifecycleHandler, MountHandler, RenderFunction, VNode, VNodeTypes } from "./common";
 
 // ----------------------------------------------------------------------------- TYPES
 
 export interface ComponentInstance <GProps extends object = object> { // FIXME : Generics ?
-	vnode				:VNode<null, ComponentFunction>
+	vnode				:VNode<GProps, ComponentFunction>
 	name				:string
 	isFactory			?:boolean
 	isMounted			:boolean;
 	_isDirty			?:boolean
-	_render				?:RenderFunction
-	_propsProxy			?:IPropsProxy<GProps>
+	_render				:RenderFunction
 	_mountHandlers		:MountHandler[]
 	_renderHandlers		:LifecycleHandler[]
 	_unmountHandlers	:LifecycleHandler[]
@@ -27,13 +22,17 @@ export interface ComponentInstance <GProps extends object = object> { // FIXME :
 // ----------------------------------------------------------------------------- CREATE COMPONENT INSTANCE
 
 // Optimize it in a function @see jsx.ts/createVNode()
-export function _createComponentInstance ( vnode:VNode<null, ComponentFunction> ):ComponentInstance {
+export function _createComponentInstance
+	<GProps extends object = object>
+	( vnode:VNode<GProps, ComponentFunction> )
+	:ComponentInstance
+{
 	return {
 		vnode,
-		_propsProxy: createPropsProxy( vnode.props ),
-		_isDirty: false,
+		name: (vnode.value as RenderFunction).name,
 		isMounted: false,
-		name: vnode.type.name,
+		_isDirty: false,
+		_render: vnode.value as RenderFunction,
 		_mountHandlers: [],
 		_renderHandlers: [],
 		_unmountHandlers: [],
@@ -49,7 +48,6 @@ export function _mountComponent ( component:ComponentInstance ) {
 	// Call every mount handler and store returned unmount handlers
 	component._mountHandlers.map( handler => {
 		const mountedReturn = handler.apply( component, [] );
-		// if ( _typeof(mountedReturn, "f") )
 		if ( typeof mountedReturn == "function" )
 			component._unmountHandlers.push( mountedReturn )
 	})
@@ -59,10 +57,11 @@ export function _mountComponent ( component:ComponentInstance ) {
 }
 
 export function _unmountComponent ( component:ComponentInstance ) {
-	component._unmountHandlers.map( h => h.apply( component, [] ) )
+	// TODO : While optim ? Do bench !
+	component._unmountHandlers.forEach( h => h.apply( component, [] ) )
 	// component._observables.map( o => o.dispose() )
 	// FIXME : Do we need to do this ? Is it efficient or is it just noise ?
-	//delete component.vnode
+	// delete component.vnode
 	// delete component.propsProxy
 	delete component._mountHandlers;
 	delete component._renderHandlers;
@@ -73,7 +72,8 @@ export function _unmountComponent ( component:ComponentInstance ) {
 }
 
 export function _recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
-	if ( node.type != _TEXT_NODE_TYPE_NAME ) {
+	if ( node.type > VNodeTypes._NEXT_ARE_CONTAINERS ) {
+		// TODO : While optim ? Do bench !
 		node.props.children.forEach( c => {
 			if ( c )
 				_recursivelyUpdateMountState(c, doMount)

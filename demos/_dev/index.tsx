@@ -39,7 +39,7 @@ function TestComponent () {
 				/>
 			)}
 		</ul>
-		<span>{list.value.length}</span>
+		<span>Length: {list.value.length}</span>
 		{
 			list.value.length > 0
 			? <span>YES</span>
@@ -61,8 +61,9 @@ setReflexDebug( true )
 
 export function init () {
 	const p = trackPerformances("Root rendering")
+	// console.log(<div><h1>Test</h1></div>)
 	const a = <DevApp />
-	console.log('A', a );
+	// console.log('A', a );
 	render( a, document.getElementById('App') )
 	// render( a, document.getElementById('App') )
 	p();

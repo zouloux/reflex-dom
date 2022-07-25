@@ -10,13 +10,6 @@ import { ComponentInstance } from "./component";
 // 	}
 // }
 
-// ----------------------------------------------------------------------------- CONSTANTS
-
-// Name of private node types which should not be created with JSX
-
-export const _TEXT_NODE_TYPE_NAME = "#T"
-export const _ROOT_NODE_TYPE_NAME = "#R"
-
 // ----------------------------------------------------------------------------- POLYFILLS
 
 // export const _microtask = ( window.queueMicrotask ?? ( h => window.setTimeout( h, 0 )) )
@@ -38,7 +31,7 @@ export const _ROOT_NODE_TYPE_NAME = "#R"
 
 // ----------------------------------------------------------------------------- INTERNAL - CREATE COMPONENT
 
-export type RenderDom = Element|Text
+export type RenderDom = Element|Text|Comment
 
 // FIXME : Cannot be VNode[] in current implementation.
 // FIXME : Cannot be string in current implementation.
@@ -46,7 +39,7 @@ export type RenderFunction = () => VNode
 export type FunctionalComponent = RenderFunction
 export type ComponentReturn = RenderFunction|VNode
 export type FactoryComponent = () => RenderFunction
-export type ComponentFunction = FunctionalComponent|FactoryComponent
+export type ComponentFunction = FunctionalComponent | FactoryComponent
 
 export type LifecycleHandler <GReturn = void> = (...rest) => GReturn
 export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler>
@@ -61,8 +54,19 @@ export const prepareInitialValue = <GType> ( initialValue:TInitialValue<GType>, 
 
 // ----------------------------------------------------------------------------- JSX H / CREATE ELEMENT
 
-export type VNodeDomType = keyof (HTMLElementTagNameMap|SVGElementTagNameMap)
-export type InternalVNodeTypes = typeof _ROOT_NODE_TYPE_NAME | typeof _TEXT_NODE_TYPE_NAME
+export const enum VNodeTypes {
+	TEXT		= 1,
+	NULL		= 0,
+	_NEXT_ARE_CONTAINERS = 4,
+	ROOT		= 5,
+	ELEMENT		= 6,
+	COMPONENT	= 7,
+	LIST		= 8,
+}
+
+export type VNodeElementValue = keyof (HTMLElementTagNameMap|SVGElementTagNameMap)
+export type VNodeTextValue = string
+export type VNodeValue = VNodeElementValue | VNodeTextValue | ComponentFunction
 
 export interface VNodeBaseProps {
 	children	?:VNode[],
@@ -72,10 +76,20 @@ export interface VNodeBaseProps {
 }
 
 export interface VNode <
-	GProps 	= VNodeBaseProps,
-	GType 	= ( VNodeDomType | InternalVNodeTypes | ComponentFunction ),
+	GProps extends VNodeBaseProps	= VNodeBaseProps,
+	GValue extends VNodeValue 		= VNodeValue,
 > {
-	type			:GType
+	// Type of virtual node, as const
+	// Not the JSX type, which is named value here
+	type			:VNodeTypes
+	// Virtual node value can be derived from type :
+	// ROOT -> null
+	// ELEMENT -> string like "div", "ul" ...
+	// TEXT -> string like "I'm a text"
+	// COMPONENT -> Function which create the component
+	// NULL -> null (this node is a certainly a condition, so we keep it in the structure)
+	// LIST -> null (elements of list are in props.children)
+	value			:GValue
 	props			:GProps
 	key				:string	// Allow numbers ?
 	dom				?:RenderDom
@@ -85,9 +99,3 @@ export interface VNode <
 	_keep			?:boolean
 	_id				?:number
 }
-
-export interface VTextNode extends VNode<{value:string}> {
-	type		: typeof _TEXT_NODE_TYPE_NAME
-}
-
-// export type VNodeOrVNodes = VNode|VNode[]

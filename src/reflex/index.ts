@@ -96,9 +96,21 @@
 // NOTE : Avoid glob exports from which insert an helper
 // Unzipped is smaller with glob but bigger when zipped
 export { state, syncState } from "./states"
-export { getHookedComponent } from "./diff"
+export { getCurrentComponent } from "./diff"
 export { ref, refs, IRef, IRefs } from "./ref"
 export { mounted, unmounted, changed } from "./lifecycle"
 export { render, invalidateComponent } from "./render"
 // Also export createElement for JSX pragma React
 export { h, h as createElement } from "./jsx"
+
+/**
+ * http://localhost:1234/4-store-list-demo/index.html
+ * plugged
+ * Root rendering 0ms
+ * index.4f0fe1bd.js:1317 Update dirty components 730ms
+ * index.4f0fe1bd.js:1317 Update dirty components 170ms
+ * index.4f0fe1bd.js:1317 Update dirty components 660ms
+ * index.4f0fe1bd.js:1317 Update dirty components 150ms
+ * index.4f0fe1bd.js:1317 Update dirty components 640ms
+ * index.4f0fe1bd.js:1317 Update dirty components 150ms
+ */

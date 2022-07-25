@@ -1,5 +1,5 @@
 import { prepareInitialValue, TInitialValue } from "./common";
-import { _diffNode, getHookedComponent } from "./diff";
+import { _diffNode, getCurrentComponent } from "./diff";
 // import { addDataListenerForNextNode } from "./jsx";
 import { invalidateComponent } from "./render";
 
@@ -16,7 +16,7 @@ export function state <GType> (
 	afterChange		?:(newValue:GType) => void,
 ):IAsyncState<GType> {
 	initialValue = prepareInitialValue( initialValue )
-	const component = getHookedComponent()
+	const component = getCurrentComponent()
 	// const affectedNodesIndex = component._affectedNodesByStates.push([]) - 1
 	return {
 		get value () {
@@ -59,7 +59,7 @@ export function syncState <GType> (
 	filter			?:(newValue:GType, oldValue:GType) => GType,
 ):ISyncState<GType> {
 	initialValue = prepareInitialValue( initialValue )
-	const component = getHookedComponent()
+	const component = getCurrentComponent()
 	// const affectedNodesIndex = component._affectedNodesByStates.push([]) - 1
 	return {
 		get value () {

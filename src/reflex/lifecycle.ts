@@ -1,16 +1,16 @@
-import { getHookedComponent } from "./diff";
+import { getCurrentComponent } from "./diff";
 import { LifecycleHandler, MountHandler } from "./common";
 
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 
 export function mounted ( handler:MountHandler ) {
 	// FIXME : In dev mode, maybe check if component is mounted ?
-	getHookedComponent()._mountHandlers.push( handler )
+	getCurrentComponent()._mountHandlers.push( handler )
 }
 
 export function unmounted ( handler:LifecycleHandler ) {
 	// FIXME : In dev mode, maybe check if component is mounted ?
-	getHookedComponent()._unmountHandlers.push( handler )
+	getCurrentComponent()._unmountHandlers.push( handler )
 }
 
 // ----------------------------------------------------------------------------- TRACK CHANGE AFTER RENDER
@@ -24,7 +24,7 @@ type TrackHandler 			<GState extends TChangeDetector>	= (...newState:GState) => 
 type DetectChanges 			<GState extends TChangeDetector>	= () => GState
 
 export function changed <GState extends TChangeDetector> ( detectChanges:DetectChanges<GState>|TrackHandler<GState>, executeHandler?:TrackHandler<GState> ) {
-	const component = getHookedComponent()
+	const component = getCurrentComponent()
 	// No executeHandler function means detectChanges has been omitted.
 	// Do not check any change, just call executeHandler after every render.
 	if ( !executeHandler ) {
