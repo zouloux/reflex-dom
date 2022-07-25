@@ -54,6 +54,8 @@ export const prepareInitialValue = <GType> ( initialValue:TInitialValue<GType>, 
 
 // ----------------------------------------------------------------------------- JSX H / CREATE ELEMENT
 
+// FIXME : const enum not working !
+// FIXME : https://ncjamieson.com/dont-export-const-enums/
 export const enum VNodeTypes {
 	TEXT		= 1,
 	NULL		= 0,

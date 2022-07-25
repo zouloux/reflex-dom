@@ -12,7 +12,7 @@ export type IPropsProxy <GProps extends object> = {
 
 export function createPropsProxy <GProps extends object = object> ( props:GProps ) : IPropsProxy<GProps> {
 	return {
-		proxy: new Proxy({}, {
+		proxy: new Proxy(props, {
 			get ( target:{}, propName:string|symbol ):any {
 				// TODO : Track dependencies like for state
 				return propName in props ? props[ propName ] : void 0

@@ -1,5 +1,6 @@
 import { ComponentFunction, LifecycleHandler, MountHandler, RenderFunction, VNode, VNodeTypes } from "./common";
 import { createPropsProxy, IPropsProxy } from "./props";
+import { _DOM_PRIVATE_LISTENERS_KEY } from "./diff";
 
 // ----------------------------------------------------------------------------- TYPES
 
@@ -72,14 +73,23 @@ export function _unmountComponent ( component:ComponentInstance ) {
 	delete component._afterRenderHandlers;
 	// delete component._observables
 	component.isMounted = false;
+	// TODO : Remove all listeners
 }
 
 export function _recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 	if ( node.type > VNodeTypes._NEXT_ARE_CONTAINERS ) {
 		// TODO : While optim ? Do bench !
-		node.props.children.forEach( c => {
-			if ( c )
-				_recursivelyUpdateMountState(c, doMount)
+		node.props.children.forEach( child => {
+			// FIXME : Is it necessary ?
+			// Remove all event listeners
+			// if ( child.type === VNodeTypes.ELEMENT ) {
+			// 	const listeners = child.dom[ _DOM_PRIVATE_LISTENERS_KEY ]
+			// 	Object.keys( listeners ).forEach( event => {
+			// 		console.log( event )
+			// 		child.dom.removeEventListener
+			// 	})
+			// }
+			_recursivelyUpdateMountState( child, doMount )
 		})
 		if ( node._component )
 			doMount ? _mountComponent( node._component ) : _unmountComponent( node._component )

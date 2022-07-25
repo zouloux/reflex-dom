@@ -173,6 +173,14 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 
 // ----------------------------------------------------------------------------- DIFF CHILDREN
 
+function registerKey ( parentNode:VNode, childNode:VNode) {
+	if ( childNode.key ) {
+		if ( !parentNode._keys )
+			parentNode._keys = new Map<string, VNode>()
+		parentNode._keys.set( childNode.key, childNode )
+	}
+}
+
 export function injectChildren ( parentDom:Element, node:VNode ) {
 	// Faster for each loop
 	let childIndex = -1
@@ -180,6 +188,7 @@ export function injectChildren ( parentDom:Element, node:VNode ) {
 	while ( ++childIndex < totalChildren ) {
 		const child = node.props.children[ childIndex ]
 		_diffNode( child, null )
+		registerKey( node, child )
 		if ( child.dom )
 			parentDom.appendChild( child.dom )
 	}
@@ -187,6 +196,7 @@ export function injectChildren ( parentDom:Element, node:VNode ) {
 
 let previousParentContainer:VNode
 let previousParentContainerDom:Element
+
 
 export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// TODO : DOC
@@ -196,26 +206,35 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	previousParentContainer = newParentNode
 	previousParentContainerDom = previousParentContainer.dom as Element
 
+
 	// TODO : DOC
 	// No old parent node, or empty old parent node, we inject directly without checks.
+	// FIXME : This optim may not work if list not only child
+	// if ( !oldParentNode )
 	if ( !oldParentNode || oldParentNode.props.children.length === 0 )
 		return injectChildren( parentDom, newParentNode )
 
 	const newChildren = newParentNode.props.children
+	const oldChildren = oldParentNode.props.children
 
 	// If we are on a list which has been cleared
 	// And this list is the only child of its parent node
 	// We can take a shortcut and clear dom with innerHTML
 	if (
 		newParentNode.type === VNodeTypes.LIST
-		&& newChildren.length === 0
+		&& oldParentNode
 		&& previousParentContainer.props.children.length === 0
+		&& newChildren.length === 0
+		&& oldChildren.length > 0
 	) {
 		// TODO : Unmount everything (components / events)
 		//  without removing elements
+		_recursivelyUpdateMountState( oldParentNode, false )
 		parentDom.innerHTML = ''
 		return;
 	}
+
+	// FIXME : Diff does not work, move seems to recreate everything ?
 
 	// let newStart = 0,
 	// 	oldStart = 0,
@@ -236,7 +255,6 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// Next, we check differences with old node.
 	// So do not continue if there are no changes to check
 	// if ( !oldParentNode ) return
-	const oldChildren = oldParentNode.props.children
 	// Otherwise we need to compare between old and new tree
 	const oldParentKeys = oldParentNode._keys
 	// if (oldParentKeys)
@@ -251,15 +269,15 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		// if ( lostIndexes[i] )
 		const newChildNode = newParentNode.props.children[ i ]
 
-		if ( newChildNode.key ) {
-			if ( !newParentNode._keys ) {
-				newParentNode._keys = new Map()
-			}
-			newParentNode._keys.set( newChildNode.key, newChildNode )
-		}
+		registerKey( newParentNode, newChildNode )
 
 		const oldAtSameIndex = oldChildren[ i ]
-		if ( oldAtSameIndex && newParentNode._keys && oldAtSameIndex.key && !newParentNode._keys[ oldAtSameIndex.key ] )
+		if (
+			oldAtSameIndex
+			&& oldAtSameIndex.key
+			&& newParentNode._keys
+			&& !newParentNode._keys.get( oldAtSameIndex.key )
+		)
 			collapseCount ++
 		/** REMOVED **/
 		// If falsy, it's surely a child that has been removed with a ternary or a boolean
@@ -271,10 +289,11 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		if (
 			newChildNode.key
 			&& oldParentKeys
-			&& oldParentKeys[ newChildNode.key ]
-			&& oldParentKeys[ newChildNode.key ].value == newChildNode.value
+			&& oldParentKeys.get( newChildNode.key )
+			&& oldParentKeys.get( newChildNode.key ).value == newChildNode.value
 		) {
-			const oldNode = oldParentKeys[ newChildNode.key ]
+			// console.log( "move" );
+			const oldNode = oldParentKeys.get( newChildNode.key )
 			_diffNode( newChildNode, oldNode )
 			oldNode._keep = true;
 			// Check if index changed, compare with collapsed index to detect moves
@@ -286,7 +305,8 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		}
 		// Has key, but not found in old
 		/** CREATE **/
-		else if ( oldParentKeys && newChildNode.key && !oldParentKeys[ newChildNode.key ] ) {
+		else if ( newChildNode.key && oldParentKeys && !oldParentKeys.get( newChildNode.key ) ) {
+			// console.log( "create" );
 			_diffNode( newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
@@ -295,6 +315,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		// Old node does not have a key.
 		/** UPDATE IN PLACE **/
 		else if ( i in oldChildren && oldChildren[ i ] && oldChildren[ i ].value == newChildNode.value ) {
+			// console.log( "up in place" );
 			const oldNode = oldChildren[ i ]
 			_diffNode( newChildNode, oldNode )
 			oldNode._keep = true;
