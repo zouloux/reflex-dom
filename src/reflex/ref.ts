@@ -1,4 +1,4 @@
-import { VNode, VNodeBaseProps } from "./common";
+import { ComponentFunction, VNode, VNodeBaseProps } from "./common";
 import { ComponentInstance } from "./component";
 
 // ----------------------------------------------------------------------------- REF
@@ -15,7 +15,7 @@ export interface IInternalRef <
 	GDom extends Element = Element,
 	GComponent extends ComponentInstance = ComponentInstance,
 > extends IRef {
-	_setFromVNode	: ( vnode:VNode<VNodeBaseProps, GComponent> ) => void
+	_setFromVNode	: ( vnode:VNode<VNodeBaseProps, ComponentFunction> ) => void
 }
 
 export function ref <
@@ -25,7 +25,7 @@ export function ref <
 	const value:IInternalRef<GDom, GComponent> = {
 		component: null,
 		dom: null,
-		_setFromVNode ( vnode:VNode<VNodeBaseProps, GComponent> ) {
+		_setFromVNode ( vnode:VNode<VNodeBaseProps, ComponentFunction> ) {
 			value.dom 		= vnode.dom as GDom;
 			value.component = vnode._component as GComponent;
 		}
@@ -47,7 +47,7 @@ export interface IInternalRefs <
 	GDom extends Element = Element,
 	GComponent extends ComponentInstance = ComponentInstance,
 > extends IRefs {
-	_setFromVNode	: ( vnode:VNode<VNodeBaseProps, GComponent> ) => void
+	_setFromVNode	: ( vnode:VNode<VNodeBaseProps, ComponentFunction> ) => void
 }
 
 export function refs <
@@ -74,7 +74,7 @@ export function refs <
 	}
 	const value:IInternalRefs<GDom, GComponent> = {
 		get list () { return _list },
-		_setFromVNode ( vnode:VNode<VNodeBaseProps, GComponent> ) {
+		_setFromVNode ( vnode:VNode<VNodeBaseProps, ComponentFunction> ) {
 			// Set vnode id from counter.
 			// Node ids starts from 1 to be able to compress a bit
 			if ( !vnode._id )
@@ -86,7 +86,7 @@ export function refs <
 		atIndex ( index:number ) {
 			return {
 				// TODO : Check if terser uses same mangled name
-				_setFromVNode ( vnode:VNode<VNodeBaseProps, GComponent> ) {
+				_setFromVNode ( vnode:VNode<VNodeBaseProps, ComponentFunction> ) {
 					registerAtIndex( vnode, index )
 				}
 			}

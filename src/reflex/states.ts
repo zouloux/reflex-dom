@@ -10,6 +10,8 @@ export type IAsyncState<GType> = {
 }
 
 
+// TODO : Merge async and sync states with an option second argument
+
 export function state <GType> (
 	initialValue	?:TInitialValue<GType>,
 	filter			?:(newValue:GType, oldValue:GType) => GType,

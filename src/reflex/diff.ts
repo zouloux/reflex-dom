@@ -174,53 +174,74 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 
 // ----------------------------------------------------------------------------- DIFF CHILDREN
 
-let previousParent
-
-/**
- * Note about performances
- * - Very important, avoid loops in loops ! Prefer 4 static loops at top level
- *   rather than 2 nested loops. n*4 is lower than n^n !
- */
-export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
-	// Create key array on parent node to register keyed children
-	// This will allow us to find any child by its key directly without
-	// having to search for it
-	function registerKey ( c:VNode ) {
-		if ( !newParentNode._keys )
-			newParentNode._keys = new Map()
-		newParentNode._keys[ c.key ] = c
-	}
-	let parentDom = newParentNode.dom as Element ?? previousParent
-	previousParent = parentDom
+export function injectChildren ( parentDom:Element, node:VNode ) {
 	// Faster for each loop
 	let childIndex = -1
-	const totalChildren = newParentNode.props.children.length
+	const totalChildren = node.props.children.length
 	while ( ++childIndex < totalChildren ) {
-		let child = newParentNode.props.children[ childIndex ]
-		// Convert string and numbers to text type nodes
-		// We do it here because this is the first time we have to browse children
-		// So it's not made into h() (later is better)
-		// if ( typeof child == "string" || typeof child == "number" )
-		// 	newParentNode.props.children[ childIndex ] = child = _createVNode( _TEXT_NODE_TYPE_NAME, { value: '' + child } )
-		// If child is valid, register its keys
-		if ( child ) {
-			child.key && registerKey( child )
-			// If no old parent node, add right now into dom
-			if ( !oldParentNode ) {
-				_diffNode( child, null )
-				// FIXME : Useless
-				if ( child.dom ) {
-					parentDom.appendChild( child.dom )
-				}
-			}
-		}
+		const child = node.props.children[ childIndex ]
+		_diffNode( child, null )
+		if ( child.dom )
+			parentDom.appendChild( child.dom )
 	}
+}
+
+let previousParentContainer:VNode
+let previousParentContainerDom:Element
+
+export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
+	// TODO : DOC
+	let parentDom = (newParentNode.dom ?? previousParentContainerDom) as Element
+	// TODO : DOC
+	// FIXME : Why do we have to keep both node and dom ?
+	previousParentContainer = newParentNode
+	previousParentContainerDom = previousParentContainer.dom as Element
+
+	// TODO : DOC
+	// No old parent node, or empty old parent node, we inject directly without checks.
+	if ( !oldParentNode || oldParentNode.props.children.length === 0 )
+		return injectChildren( parentDom, newParentNode )
+
+	const newChildren = newParentNode.props.children
+
+	// If we are on a list which has been cleared
+	// And this list is the only child of its parent node
+	// We can take a shortcut and clear dom with innerHTML
+	if (
+		newParentNode.type === VNodeTypes.LIST
+		&& newChildren.length === 0
+		&& previousParentContainer.props.children.length === 0
+	) {
+		// TODO : Unmount everything (components / events)
+		//  without removing elements
+		parentDom.innerHTML = ''
+		return;
+	}
+
+	// let newStart = 0,
+	// 	oldStart = 0,
+	// 	newEnd = newParentNode.props.children.length - 1,
+	// 	oldEnd = oldParentNode.props.children.length - 1;
+	// let oldVNode, newVNode, oldRef, newRef, refMap;
+
+	// while (newStart <= newEnd && oldStart <= oldEnd) {
+	//
+	// }
+
+	// function registerKey ( c:VNode ) {
+	// 	if ( !newParentNode._keys )
+	// 		newParentNode._keys = new Map()
+	// 	newParentNode._keys[ c.key ] = c
+	// }
+
 	// Next, we check differences with old node.
 	// So do not continue if there are no changes to check
-	if ( !oldParentNode ) return
+	// if ( !oldParentNode ) return
 	const oldChildren = oldParentNode.props.children
 	// Otherwise we need to compare between old and new tree
 	const oldParentKeys = oldParentNode._keys
+	// if (oldParentKeys)
+	// 	console.log( oldParentKeys );
 	let collapseCount = 0
 	// newParentNode.props.children.forEach( (newChildNode, i) => {
 	const total = newParentNode.props.children.length
@@ -230,6 +251,14 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		// has been removed
 		// if ( lostIndexes[i] )
 		const newChildNode = newParentNode.props.children[ i ]
+
+		if ( newChildNode.key ) {
+			if ( !newParentNode._keys ) {
+				newParentNode._keys = new Map()
+			}
+			newParentNode._keys.set( newChildNode.key, newChildNode )
+		}
+
 		const oldAtSameIndex = oldChildren[ i ]
 		if ( oldAtSameIndex && newParentNode._keys && oldAtSameIndex.key && !newParentNode._keys[ oldAtSameIndex.key ] )
 			collapseCount ++
@@ -237,14 +266,14 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		// If falsy, it's surely a child that has been removed with a ternary or a boolean
 		// Do nothing else and do not mark old node to keep, so it will be removed
 		if ( !newChildNode )
-			return;
+			continue;
 		// Has key, same key found in old, same type on both
 		/** MOVE & UPDATE KEYED CHILD **/
 		if (
 			newChildNode.key
 			&& oldParentKeys
 			&& oldParentKeys[ newChildNode.key ]
-			&& oldParentKeys[ newChildNode.key ].type == newChildNode.type
+			&& oldParentKeys[ newChildNode.key ].value == newChildNode.value
 		) {
 			const oldNode = oldParentKeys[ newChildNode.key ]
 			_diffNode( newChildNode, oldNode )
@@ -266,7 +295,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		// Found at same index, with same type.
 		// Old node does not have a key.
 		/** UPDATE IN PLACE **/
-		else if ( i in oldChildren && oldChildren[ i ] && oldChildren[ i ].type == newChildNode.type ) {
+		else if ( i in oldChildren && oldChildren[ i ] && oldChildren[ i ].value == newChildNode.value ) {
 			const oldNode = oldChildren[ i ]
 			_diffNode( newChildNode, oldNode )
 			oldNode._keep = true;
@@ -280,6 +309,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		}
 	}
 	// Remove old children which are not reused
+	// FIXME : Faster loop
 	for ( const oldChildNode of oldChildren ) {
 		if ( oldChildNode && !oldChildNode._keep ) {
 			// Call unmount handlers
@@ -292,10 +322,6 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		}
 	}
 }
-
-// export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
-//
-// }
 
 // ----------------------------------------------------------------------------- DIFF NODE
 
@@ -364,6 +390,7 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 			newNode._component = component
 			component.vnode = newNode as VNode<object, ComponentFunction>
 		}
+
 		/*// FIXME : Is it a good idea to shallow compare props on every changes by component ?
 		// 			-> It seems to be faster than preact + memo with this 👀, check other cases
 		// TODO : Maybe do not shallow by default but check if component got an "optimize" function
@@ -397,65 +424,25 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 		// If this component needs a render (factory function), render it
 		if ( !renderResult )
 			renderResult = renderComponentNode<VNode>( newNode as VNode<object, ComponentFunction> )
-
-
-
 		// TODO : Cross assign node to component
-
 		// We rendered something (not reusing old component)
 		if ( renderResult ) {
 			_diffNode( renderResult, oldNode?.props.children[0] )
 			newNode.dom = renderResult.dom
 			newNode.props.children = [ renderResult ]
-			//newNode.dom = _diffElement( renderResult, oldNode )
-			// TODO : DOM
-			// TODO : REF
-			//_diffChildren( newNode, oldNode )
-			return;
 		}
-		/*
-		// Not already rendered, and no optimization possible. Render now.
-		else if ( !renderResult ) {
-			renderResult = renderComponentNode<VNode>( newNode as VNode<null, ComponentFunction>, component )
-		}
-		// We rendered something (not reusing old component)
-		if ( renderResult ) {
-			// Apply new children list to the parent component node
-			// FIXME :
-			newNode.props.children = renderResult.props.children
-			// newNode.props.children = _flattenChildren( renderResult )
-			// Diff rendered element
-			newNode.dom = dom = _diffElement( renderResult, oldNode )
-			// Assign ref of first virtual node to the component's virtual node
-			newNode._ref = renderResult._ref
-		}
-		// Tie up node and component
-		newNode._component = component
-		component.vnode = newNode as any
-		// Component is clean and rendered now
-		component._isDirty = false
-		*/
 	}
-
-	// Diff children for node that are containers
-	if ( newNode.type > VNodeTypes._NEXT_ARE_CONTAINERS ) {
-		_diffChildren( newNode, oldNode )
-	}
-
-	// TODO : UPDATE REF
 	// Update ref on node
-	// updateNodeRef( newNode )
-
-	// Diff children of this element (do not process text nodes)
-	// if ( dom instanceof Element )
-	// 	_diffChildren( newNode, oldNode )
-	// If component is not mounted yet, mount it recursively
-
-	// TODO
-	// if ( component && !component.isMounted )
-	// 	_recursivelyUpdateMountState( newNode, true )
-
-	// TODO
-	// Execute after render handlers
-	// component?._renderHandlers.map( h => h() )
+	updateNodeRef( newNode )
+	// Now that component and its children are ready
+	if ( newNode.type === VNodeTypes.COMPONENT ) {
+		// If component is not mounted yet, mount it recursively
+		if ( !newNode._component.isMounted )
+			_recursivelyUpdateMountState( newNode, true )
+		// Execute after render handlers
+		newNode._component._renderHandlers.forEach( h => h() )
+	}
+	// Diff children for node that are containers and not components
+	else if ( newNode.type > VNodeTypes._NEXT_ARE_CONTAINERS )
+		_diffChildren( newNode, oldNode )
 }

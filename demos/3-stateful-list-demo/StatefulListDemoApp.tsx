@@ -104,7 +104,8 @@ export function StatefulDemoApp () {
 		return <div className="StatefulDemoApp_controls">
 			<table>
 				<button onClick={ e => addRandomItems() }>Add random items to bottom</button>
-				<button onClick={ e => addRandomItems( 1000 ) }>Add 1000 items to bottom</button>
+				<button onClick={ e => addRandomItems( 1_000 ) }>Add 1_000 items to bottom</button>
+				<button onClick={ e => addRandomItems( 10_000 ) }>Add 10_000 items to bottom</button>
 				<button onClick={ e => removeRandomItems() }>Remove random items</button>
 				<button onClick={ e => clearList() }>Clear list</button>
 			</table>

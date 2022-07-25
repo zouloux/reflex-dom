@@ -36,6 +36,7 @@ function updateDirtyComponents () {
 		// }
 		component._afterRenderHandlers.forEach( handler => handler() )
 		component._afterRenderHandlers = []
+		component._isDirty = false
 	})
 	componentsToUpdate = []
 	p && p();
