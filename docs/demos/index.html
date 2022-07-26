@@ -1,0 +1,32 @@
+<html>
+<head>
+    <title>Reflex - Demos</title>
+    <script src="/reflex/demos/index.e72b2ab0.js"></script><script src="/reflex/demos/index.1828185c.js" defer=""></script>
+</head>
+<body>
+    <ul>
+        <li hidden=""><a href="/reflex/demos/_dev/index.html">Dev</a></li>
+        <li><a href="/reflex/demos/0-life-cycle-demo/index.html">Life Cycle</a></li>
+        <li><a href="/reflex/demos/1-props-demo/index.html">Props</a></li>
+        <li><a href="/reflex/demos/3-stateful-list-demo/index.html">Stateful list</a></li>
+        <li><a href="/reflex/demos/4-store-list-demo/index.html">Store list</a></li>
+        <li><a data-href="./5-no-bundler-demo/index.html">No bundler demo</a></li>
+    </ul>
+    <script>(function() {
+    // Parcel will try to compile "no bundler demo" if we link it
+    // directly with a href attribute. To patch this :
+    // Replace all href links from data-href if existing
+    // File is copied from build-parcel-demo.sh
+    const links = document.getElementsByTagName("a");
+    for(let i in links){
+        const link = links[i];
+        if (link.dataset && "href" in link.dataset) {
+            link.setAttribute("href", link.dataset.href);
+            delete link.dataset.href;
+        }
+    }
+})();
+
+</script>
+</body>
+</html>
