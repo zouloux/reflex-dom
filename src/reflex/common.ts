@@ -1,5 +1,5 @@
 import { IRef, IRefs } from "./ref";
-import { ComponentInstance } from "./component";
+import { ComponentInstance, IComponentAPI } from "./component";
 
 // ----------------------------------------------------------------------------- TYPES
 
@@ -35,7 +35,7 @@ export type RenderDom = Element | Text | Comment
 
 // FIXME : Cannot be VNode[] in current implementation.
 // FIXME : Cannot be string in current implementation.
-export type RenderFunction <GProps extends object = object> = ( props?:GProps ) => VNode
+export type RenderFunction <GProps extends object = object> = ( props?:GProps, componentAPI?:IComponentAPI ) => VNode
 export type ComponentReturn <GProps extends object = object> = RenderFunction<GProps> | VNode
 export type FactoryComponent <GProps extends object = object> = ( props?:GProps ) => RenderFunction
 export type ComponentFunction <GProps extends object = object> = RenderFunction<GProps> | FactoryComponent<GProps>

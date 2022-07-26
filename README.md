@@ -71,6 +71,7 @@ Also, hooks dependencies array to keep state scopes ([#1](https://itnext.io/how-
 - [x] Ref
 - [x] Refs
 - [x] State
+- [ ] Better performances performances 
 - [ ] Atomic rendering
 - [ ] Crazy performances 
 - [ ] JSX Types and runtime
@@ -160,9 +161,6 @@ function StatefulComponent ( props ) {
     </div>
 }
 ```
-
-> States are based on [Observable](./src/reflex/observable.ts), which is an internal dependency of Reflex. __Observable__ is based on [Signal](https://github.com/zouloux/signal), which is the only external dependency of Reflex (~300 bytes). [The UNPKG bundle](https://unpkg.com/@zouloux/reflex) inlines the __Signal__ package as an internal dependency to be standalone.
-
 
 ### Props
 

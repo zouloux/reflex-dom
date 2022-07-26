@@ -27,11 +27,12 @@ export const shallowPropsCompare = ( a:object, b:object, skipChildren = true ) =
 export type IPropsProxy <GProps extends object> = {
 	proxy: GProps,
 	set: ( newData:GProps ) => void
+	get: () => GProps
 }
 
 export const _proxyPrivateAccess = '_$'
 
-export function _getPropsFromProxy <GProps extends object = object> ( propsOrProxy:GProps ) {
+export function _getBrowsablePropsFromProxy <GProps extends object = object> ( propsOrProxy:GProps ):GProps {
 	return (
 		// ( propsOrProxy instanceof Proxy )
 		typeof propsOrProxy[ _proxyPrivateAccess ] === "object"
@@ -41,7 +42,7 @@ export function _getPropsFromProxy <GProps extends object = object> ( propsOrPro
 }
 
 export function _createPropsProxy <GProps extends object = object> ( props:GProps ) : IPropsProxy<GProps> {
-	console.log("_createPropsProxy", props)
+	// console.log("_createPropsProxy", props)
 	return {
 		proxy: new Proxy(props, {
 			get ( target:{}, propName:string|symbol ):any {
@@ -56,6 +57,7 @@ export function _createPropsProxy <GProps extends object = object> ( props:GProp
 			}
 		}) as GProps,
 		// This method will set new props object (we override first argument of createPropsProxy)
-		set: ( newProps:GProps ) => props = newProps
+		set ( newProps:GProps ) { props = newProps },
+		get () { return props }
 	}
 }

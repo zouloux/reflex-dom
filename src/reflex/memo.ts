@@ -1,5 +1,5 @@
 import { RenderFunction } from "./common";
-import { _getPropsFromProxy, shallowPropsCompare } from "./props";
+import { _getBrowsablePropsFromProxy, shallowPropsCompare } from "./props";
 
 
 type MemoCheckHandler <GProps extends object = object> = (newProps:GProps, oldProps:GProps) => boolean
@@ -19,7 +19,7 @@ export function Memo
 
 
 	function _MemoizedComponent ( newProps:GProps ) {
-		newProps = _getPropsFromProxy( newProps )
+		newProps = _getBrowsablePropsFromProxy( newProps )
 		const shouldUpdate = (
 			compareShouldUpdateHandler
 			? compareShouldUpdateHandler( newProps, oldProps )

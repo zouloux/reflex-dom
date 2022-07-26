@@ -1,5 +1,5 @@
 import { ComponentFunction, LifecycleHandler, MountHandler, RenderFunction, VNode, VNodeTypes } from "./common";
-import { _createPropsProxy, IPropsProxy } from "./props";
+import { _createPropsProxy, _getBrowsablePropsFromProxy, IPropsProxy } from "./props";
 import { _DOM_PRIVATE_LISTENERS_KEY } from "./diff";
 
 // ----------------------------------------------------------------------------- TYPES
@@ -19,7 +19,14 @@ export interface ComponentInstance <GProps extends object = object> { // FIXME :
 	_affectedNodesByStates	:VNode[][]
 	_isRendering			:boolean
 	_afterRenderHandlers	:any[]
+	_defaultProps		?:Partial<GProps>
 	// TODO : Imperative handlers ?
+	_componentAPI : IComponentAPI<GProps>
+}
+
+export interface IComponentAPI <GProps extends object = object> {
+	defaultProps		?:Partial<GProps>
+	shouldUpdate		?: (newProps:GProps, oldProps:GProps) => boolean
 }
 
 // ----------------------------------------------------------------------------- CREATE COMPONENT INSTANCE
@@ -30,7 +37,7 @@ export function _createComponentInstance
 	( vnode:VNode<GProps, ComponentFunction> )
 	:ComponentInstance
 {
-	return {
+	const component = {
 		vnode,
 		_propsProxy: (
 			// @ts-ignore - FIXME Type
@@ -48,8 +55,37 @@ export function _createComponentInstance
 		// _observables: [],
 		_affectedNodesByStates: [],
 		_isRendering: false,
-		_afterRenderHandlers: []
+		_afterRenderHandlers: [],
+		_defaultProps: {},
+		_componentAPI: {
+			get defaultProps () {
+				return component._defaultProps
+			},
+			set defaultProps ( value:Partial<GProps> ) {
+				// Register default props for the getter
+				component._defaultProps = value
+				// If we have a proxy
+				if ( component._propsProxy ) {
+					// Get current props from proxy as plain browsable object
+					// Override props on proxy with defaults on a new object
+					component._propsProxy.set(
+						Object.assign({}, value as GProps, component._propsProxy.get())
+					)
+				}
+				// Otherwise, we are on a plain object that we'll have to mutate
+				else {
+					// Get props object instance from current virtual node
+					const { props } = component.vnode
+					// Browse default, and inject them if it does not exist on props
+					for ( let i in value )
+						if ( !props.hasOwnProperty(i) )
+							// @ts-ignore - FIXME : Type error
+							props[ i ] = value[ i ]
+				}
+			}
+		}
 	}
+	return component;
 }
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 

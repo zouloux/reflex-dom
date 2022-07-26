@@ -2,6 +2,7 @@ import { ComponentFunction, ComponentReturn, RenderDom, RenderFunction, VNode, V
 import { _cloneVNode } from "./jsx";
 import { IInternalRef } from "./ref";
 import { _createComponentInstance, _recursivelyUpdateMountState, ComponentInstance } from "./component";
+import { shallowPropsCompare } from "./props";
 
 /**
  * TODO : Errors
@@ -266,18 +267,16 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		const newChildNode = newChildren[ i ]
 
 		let oldChildNode:VNode = oldChildren[ i ]
-		// const oldAtSameIndex = oldChildren[ i ]
-		// FIXME : Check this
 		if (
 			oldChildNode
 			&& oldChildNode.key
 			&& newParentNode._keys
 			&& !newParentNode._keys.has( oldChildNode.key )
 		) {
-			console.log(
-				"collapse old not found in new",
-				oldChildNode.key, newParentNode._keys, newParentNode._keys.has( oldChildNode.key )
-			)
+			// console.log(
+			// 	"collapse old not found in new",
+			// 	oldChildNode.key, newParentNode._keys, newParentNode._keys.has( oldChildNode.key )
+			// )
 			collapseCount ++
 		}
 		/** REMOVED **/
@@ -310,7 +309,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		// Has key, but not found in old
 		/** CREATE HAS KEY**/
 		else if ( newChildNode.key && oldParentKeys && !oldParentKeys.get( newChildNode.key ) ) {
-			console.log("create from key", newChildNode)
+			// console.log("create from key", newChildNode)
 			_diffNode( newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
@@ -374,12 +373,19 @@ export function renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any
 	// Use regular ref and do not use proxy if we are sure we are on a functional component
 	let props = node.props
 	// @ts-ignore - FIXME : Type
-	if ( !node.value.isFunctional ) {
+	// if ( !node.value.isFunctional && _currentComponent.isFactory ) {
+	if ( _currentComponent._propsProxy ) {
 		_currentComponent._propsProxy.set( node.props )
 		props = _currentComponent._propsProxy.proxy
 	}
+	// else if ( _currentComponent._defaultProps ) {
+	// 	console.log('DEFAULT PROPS')
+	// 	props = Object.assign({}, _currentComponent._defaultProps, props)
+	// }
 	// TODO : Add ref as second argument ? Is it useful ?
-	const result = _currentComponent._render.apply( _currentComponent, [ props ])
+	const result = _currentComponent._render.apply(
+		_currentComponent, [ props, _currentComponent._componentAPI ]
+	)
 	_currentComponent._isRendering = false
 	// Unselect current component
 	_currentComponent = null
@@ -399,7 +405,7 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 
 	// Create / update DOM element for those node types
 	if (
-		// FIXME : Create a set of number ? Or bitwise checking ?
+		// FIXME : Create a set of number ? Or bitwise checking ? check perfs
 		newNode.type === VNodeTypes.TEXT
 		|| newNode.type === VNodeTypes.ELEMENT
 		// || newNode.type === VNodeTypes.LIST
@@ -436,43 +442,29 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 				renderResult = result
 			}
 		}
+
+		// TODO : DOC
 		else {
 			newNode._component = component
 			component.vnode = newNode as VNode<object, ComponentFunction>
 		}
 
-		/*// FIXME : Is it a good idea to shallow compare props on every changes by component ?
-		// 			-> It seems to be faster than preact + memo with this 👀, check other cases
-		// TODO : Maybe do not shallow by default but check if component got an "optimize" function
-		//			which can be implemented with hooks. We can skip a lot with this !
-		// FIXME : Does not work if props contain dynamic arrow functions :(
-		//			<Sub onEvent={ e => handler(e, i) } />
-		//			Here the handler is a different ref at each render
-		// If props did not changed between old and new
-		// Only optimize pure components, factory components mau have state so are not pure
-		if (
-			// If pure functional component has not already been rendered
-			!renderResult
-			// Need to be a component update, on a pure functional component,
-			&& oldNode && !component.isFactory // && !component.isDirty
-			// New component isn't marked as not pure
-			&& newNode.props.pure !== false // FIXME : Rename it forceRefresh={ true } ?
-			// Cannot optimize components which have children properties
-			// Because parent component may have altered rendering of injected children
-			&& newNode.props.children.length === 0
-			// Do shallow compare
-			&& shallowPropsCompare( newNode.props, oldNode.props )
-		) {
-			// FIXME : Weirdly, it seems to optimize not all components
-			//			Ex : click on create 1000 several times and watch next console log
-			// console.log("OPTIMIZE")
-			// Do not re-render, just get children and dom from old node
-			// newNode.props.children = [ ...oldNode.props.children ]
-			newNode.props.children = oldNode.props.children
-			newNode.dom = dom = oldNode.dom
-		}*/
+		// TODO : DOC - Optim should update
+		let shouldUpdate = true
+		if ( !renderResult && oldNode && !component.isFactory ) {
+			shouldUpdate = (
+				( component._componentAPI.shouldUpdate )
+				? component._componentAPI.shouldUpdate( newNode.props, oldNode.props )
+				: !shallowPropsCompare( newNode.props, oldNode.props )
+			)
+			if ( !shouldUpdate ) {
+				newNode.props.children = oldNode.props.children
+				newNode.dom = oldNode.dom
+			}
+		}
+
 		// If this component needs a render (factory function), render it
-		if ( !renderResult )
+		if ( !renderResult && shouldUpdate )
 			renderResult = renderComponentNode<VNode>( newNode as VNode<object, ComponentFunction> )
 		// TODO : Cross assign node to component
 		// We rendered something (not reusing old component)

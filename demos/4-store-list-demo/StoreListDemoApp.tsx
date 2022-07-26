@@ -3,6 +3,7 @@ import { createStore } from "../../src/store/store";
 import { storeState } from "../../src/store/reflexStoreState";
 import { colorList, createUID, foodList, pickRandom, rand } from "../common/demoHelpers";
 import { Memo } from "../../src/reflex/memo";
+import { IComponentAPI } from "../../src/reflex/component";
 
 // ----------------------------------------------------------------------------- STORE
 
@@ -68,11 +69,14 @@ const listItemStyle = {
 interface IListItemProps {
 	item	: IListItem
 	key		?
+	testDefault?:number
 }
 
 
-function _ListItem ( props:IListItemProps ) {
-	// console.log("ListItem")
+ListItem.isFunctional = true
+function ListItem ( props:IListItemProps, component:IComponentAPI<IListItemProps> ) {
+	// console.log("ListItem");
+	component.shouldUpdate = (n, o) => n.item !== o.item
 	const { item } = props;
 	return <tr class="ListItem" data-id={ item.id } style={ listItemStyle }>
 		<td>{ item.name }</td>
@@ -82,9 +86,9 @@ function _ListItem ( props:IListItemProps ) {
 	</tr>
 }
 
-const ListItem = Memo( _ListItem, (n, o) => {
-	return n.item !== o.item
-})
+// const ListItem = Memo( _ListItem, (n, o) => {
+// 	return n.item !== o.item
+// })
 
 // ----------------------------------------------------------------------------- LIST APP
 
