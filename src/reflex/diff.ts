@@ -50,9 +50,9 @@ function getEventNameAndKey ( name:string, dom:Element ) {
 
 // Stolen from Preact, attach some style à key / value to a dom element
 function setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) {
-	if (key[0] === '-')
+	if ( key[0] === '-' )
 		style.setProperty(key, value);
-	else if (value == null)
+	else if ( value == null )
 		style[key] = '';
 	// FIXME : IS_NON_DIMENSIONAL_REGEX -> Is it really necessary ?
 	// else if ( !_typeof(value, "n") || _IS_NON_DIMENSIONAL_REGEX.test(key) )
@@ -66,25 +66,13 @@ function updateNodeRef ( node:VNode ) {
 	node._ref && ( node._ref as IInternalRef )._setFromVNode( node as any )
 }
 
-// Shallow compare two objects, applied only for props between new and old virtual nodes.
-// Will not compare "children" which is always different
-// https://esbench.com/bench/62a138846c89f600a5701904
-// TODO : Bench against with for i in loop (test small and huge props)
-const shallowPropsCompare = ( a:object, b:object ) => (
-	// Same amount of properties ?
-	Object.keys(a).length === Object.keys(b).length
-	// Every property exists in other object ?
-	// Never test "children" property which is always different
-	&& Object.keys(a).every( key => key === "children" || (b.hasOwnProperty(key) && a[key] === b[key]) )
-)
-
 // ----------------------------------------------------------------------------- DIFF ELEMENT
 
 export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 	let dom:RenderDom
 	if ( oldNode ) {
 		dom = oldNode.dom
-		if ( newNode.type === VNodeTypes.TEXT )
+		if ( newNode.type === VNodeTypes.TEXT && oldNode.value !== newNode.value )
 			dom.nodeValue = newNode.value as string
 	}
 	else {
@@ -159,7 +147,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 			// else if ( name == "style" && _typeof(value, "o") )
 			else if ( name == "style" && typeof value == "object" ) {
 				// FIXME : Can it be optimized ? Maybe only setStyle when needed ?
-				Object.keys( value ).map(
+				Object.keys( value ).forEach(
 					k => setStyle( (dom as HTMLElement).style, k, value[k] )
 				);
 				continue;
@@ -199,13 +187,13 @@ let previousParentContainerDom:Element
 
 
 export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
+	// console.log( "_diffChildren", newParentNode, oldParentNode );
 	// TODO : DOC
 	let parentDom = (newParentNode.dom ?? previousParentContainerDom) as Element
 	// TODO : DOC
 	// FIXME : Why do we have to keep both node and dom ?
 	previousParentContainer = newParentNode
 	previousParentContainerDom = previousParentContainer.dom as Element
-
 
 	// TODO : DOC
 	// No old parent node, or empty old parent node, we inject directly without checks.
@@ -252,6 +240,13 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// 	newParentNode._keys[ c.key ] = c
 	// }
 
+	const total = newChildren.length
+	if ( total === 0 ) return;
+	let i = 0
+	do {
+		registerKey( newParentNode, newChildren[ i ] )
+	} while ( ++i < total )
+
 	// Next, we check differences with old node.
 	// So do not continue if there are no changes to check
 	// if ( !oldParentNode ) return
@@ -260,53 +255,62 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// if (oldParentKeys)
 	// 	console.log( oldParentKeys );
 	let collapseCount = 0
-	// newParentNode.props.children.forEach( (newChildNode, i) => {
-	const total = newParentNode.props.children.length
-	for ( let i = 0; i < total; ++i ) {
+	// newChildren.forEach( (newChildNode, i) => {
+	i = 0
+	do {
+	// for ( let i = 0; i < total; ++i ) {
 		// Collapsed corresponding index between old and new nodes
 		// To be able to detect moves or if just collapsing because a top sibling
 		// has been removed
 		// if ( lostIndexes[i] )
-		const newChildNode = newParentNode.props.children[ i ]
+		const newChildNode = newChildren[ i ]
 
-		registerKey( newParentNode, newChildNode )
-
-		const oldAtSameIndex = oldChildren[ i ]
+		let oldChildNode:VNode = oldChildren[ i ]
+		// const oldAtSameIndex = oldChildren[ i ]
+		// FIXME : Check this
 		if (
-			oldAtSameIndex
-			&& oldAtSameIndex.key
+			oldChildNode
+			&& oldChildNode.key
 			&& newParentNode._keys
-			&& !newParentNode._keys.get( oldAtSameIndex.key )
-		)
+			&& !newParentNode._keys.has( oldChildNode.key )
+		) {
+			console.log(
+				"collapse old not found in new",
+				oldChildNode.key, newParentNode._keys, newParentNode._keys.has( oldChildNode.key )
+			)
 			collapseCount ++
+		}
 		/** REMOVED **/
 		// If falsy, it's surely a child that has been removed with a ternary or a boolean
 		// Do nothing else and do not mark old node to keep, so it will be removed
-		if ( !newChildNode )
-			continue;
+		// if ( !newChildNode )
+		// 	continue;
 		// Has key, same key found in old, same type on both
 		/** MOVE & UPDATE KEYED CHILD **/
 		if (
 			newChildNode.key
-			&& oldParentKeys
-			&& oldParentKeys.get( newChildNode.key )
-			&& oldParentKeys.get( newChildNode.key ).value == newChildNode.value
+			&& ( oldChildNode = oldParentKeys?.get( newChildNode.key ) )
+			&& oldChildNode.type === newChildNode.type
+			&& (
+				newChildNode.type === VNodeTypes.ELEMENT
+				? oldChildNode.value === newChildNode.value
+				: true
+			)
 		) {
-			// console.log( "move" );
-			const oldNode = oldParentKeys.get( newChildNode.key )
-			_diffNode( newChildNode, oldNode )
-			oldNode._keep = true;
+			// console.log("move keyed", newChildNode, oldChildNode)
+			_diffNode( newChildNode, oldChildNode )
+			oldChildNode._keep = true;
 			// Check if index changed, compare with collapsed index to detect moves
 			const collapsedIndex = i + collapseCount
 			// FIXME : Should do 1 operation when swapping positions, not 2
 			// FIXME : Perf, is indexOf quick ? Maybe store every indexes in an array ?
-			if ( oldChildren.indexOf( oldNode ) != collapsedIndex )
+			if ( oldChildren.indexOf( oldChildNode ) != collapsedIndex )
 				parentDom.insertBefore( newChildNode.dom, parentDom.children[ collapsedIndex + 1 ] )
 		}
 		// Has key, but not found in old
-		/** CREATE **/
+		/** CREATE HAS KEY**/
 		else if ( newChildNode.key && oldParentKeys && !oldParentKeys.get( newChildNode.key ) ) {
-			// console.log( "create" );
+			console.log("create from key", newChildNode)
 			_diffNode( newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
@@ -314,23 +318,38 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		// Found at same index, with same type.
 		// Old node does not have a key.
 		/** UPDATE IN PLACE **/
-		else if ( i in oldChildren && oldChildren[ i ] && oldChildren[ i ].value == newChildNode.value ) {
-			// console.log( "up in place" );
-			const oldNode = oldChildren[ i ]
-			_diffNode( newChildNode, oldNode )
-			oldNode._keep = true;
+		else if (
+			i in oldChildren
+			&& ( oldChildNode = oldChildren[ i ] )
+			&& oldChildNode.type === newChildNode.type
+			&& (
+				newChildNode.type === VNodeTypes.ELEMENT
+				? oldChildNode.value === newChildNode.value
+				: true
+			)
+		) {
+			// console.log("update in place", newChildNode, oldChildNode)
+			_diffNode( newChildNode, oldChildNode )
+			oldChildNode._keep = true;
 		}
 		// Not found
 		/** CREATE **/
 		else {
+			// console.log("create no key", newChildNode)
 			_diffNode( newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
 		}
-	}
+	} while ( ++i < total )
+
 	// Remove old children which are not reused
 	// FIXME : Faster loop
-	for ( const oldChildNode of oldChildren ) {
+	// for ( const oldChildNode of oldChildren ) {
+	const totalOld = oldChildren.length
+	if ( total === 0 ) return;
+	i = 0
+	do {
+		const oldChildNode = oldChildren[ i ]
 		if ( oldChildNode && !oldChildNode._keep ) {
 			// Call unmount handlers
 			_recursivelyUpdateMountState( oldChildNode, false );
@@ -340,7 +359,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 			updateNodeRef( oldChildNode )
 			parentDom.removeChild( dom )
 		}
-	}
+	} while ( ++i < totalOld )
 }
 
 // ----------------------------------------------------------------------------- DIFF NODE

@@ -1,5 +1,5 @@
 import { h, render } from "../../src/reflex";
-import { trackPerformances, setReflexDebug } from "../../src/reflex/debug";
+import { trackPerformances, setReflexDebug } from "../../src/reflex-more/debug";
 import { StatefulDemoApp } from "./StatefulListDemoApp";
 
 

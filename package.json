@@ -55,7 +55,7 @@
 				"input": "./src/reflex/index.ts"
 			},
 			{
-				"input": "./src/reflex/debug.ts"
+				"input": "./src/reflex-more/debug.ts"
 			}
 		]
 	}

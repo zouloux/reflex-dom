@@ -1,5 +1,5 @@
 import { ComponentFunction, LifecycleHandler, MountHandler, RenderFunction, VNode, VNodeTypes } from "./common";
-import { createPropsProxy, IPropsProxy } from "./props";
+import { _createPropsProxy, IPropsProxy } from "./props";
 import { _DOM_PRIVATE_LISTENERS_KEY } from "./diff";
 
 // ----------------------------------------------------------------------------- TYPES
@@ -32,7 +32,7 @@ export function _createComponentInstance
 {
 	return {
 		vnode,
-		_propsProxy: createPropsProxy( vnode.props ),
+		_propsProxy: _createPropsProxy( vnode.props ),
 		name: (vnode.value as RenderFunction).name,
 		isMounted: false,
 		_isDirty: false,

@@ -2,6 +2,7 @@ import { h, ref } from "../../src/reflex";
 import { createStore } from "../../src/store/store";
 import { storeState } from "../../src/store/reflexStoreState";
 import { colorList, createUID, foodList, pickRandom, rand } from "../common/demoHelpers";
+import { Memo } from "../../src/reflex/memo";
 
 // ----------------------------------------------------------------------------- STORE
 
@@ -69,8 +70,8 @@ interface IListItemProps {
 	key		?
 }
 
-function ListItem ( props:IListItemProps ) {
-	// console.log("ListItem")
+function _ListItem ( props:IListItemProps ) {
+	console.log("ListItem")
 	const { item } = props;
 	return <tr class="ListItem" data-id={ item.id } style={ listItemStyle }>
 		<td>{ item.name }</td>
@@ -79,6 +80,10 @@ function ListItem ( props:IListItemProps ) {
 		<td><button onClick={ e => listStore.dispatch("removeItem", item ) }>Remove</button></td>
 	</tr>
 }
+
+const ListItem = Memo( _ListItem, (n, o) => {
+	return n.item !== o.item
+})
 
 // ----------------------------------------------------------------------------- LIST APP
 
@@ -98,6 +103,7 @@ export function StoreListDemoApp ( props ) {
 	}
 
 	function Controls () {
+		console.log("Controls");
 		return <div className="StatefulDemoApp_controls">
 			<table>
 				<button onClick={ e => listStore.dispatch("addRandomItems") }>Add random items to bottom</button>

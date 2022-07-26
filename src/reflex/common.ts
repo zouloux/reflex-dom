@@ -31,15 +31,14 @@ import { ComponentInstance } from "./component";
 
 // ----------------------------------------------------------------------------- INTERNAL - CREATE COMPONENT
 
-export type RenderDom = Element|Text|Comment
+export type RenderDom = Element | Text | Comment
 
 // FIXME : Cannot be VNode[] in current implementation.
 // FIXME : Cannot be string in current implementation.
-export type RenderFunction = () => VNode
-export type FunctionalComponent = RenderFunction
-export type ComponentReturn = RenderFunction|VNode
-export type FactoryComponent = () => RenderFunction
-export type ComponentFunction = FunctionalComponent | FactoryComponent
+export type RenderFunction <GProps extends object = object> = ( props?:GProps ) => VNode
+export type ComponentReturn <GProps extends object = object> = RenderFunction<GProps> | VNode
+export type FactoryComponent <GProps extends object = object> = ( props?:GProps ) => RenderFunction
+export type ComponentFunction <GProps extends object = object> = RenderFunction<GProps> | FactoryComponent<GProps>
 
 export type LifecycleHandler <GReturn = void> = (...rest) => GReturn
 export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler>

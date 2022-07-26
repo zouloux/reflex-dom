@@ -20,7 +20,7 @@ let componentsToUpdate:ComponentInstance[] = []
 function updateDirtyComponents () {
 	let p
 	if ( process.env.NODE_ENV !== "production" )
-		p = require("./debug").trackPerformances("Update dirty components")
+		p = require("../reflex-more/debug").trackPerformances("Update dirty components")
 	// TODO : Update with depth ! Deepest first ? Or last ?
 	componentsToUpdate.forEach( component => {
 		_diffNode( component.vnode, component.vnode )
