@@ -41,6 +41,7 @@ export function _getPropsFromProxy <GProps extends object = object> ( propsOrPro
 }
 
 export function _createPropsProxy <GProps extends object = object> ( props:GProps ) : IPropsProxy<GProps> {
+	console.log("_createPropsProxy", props)
 	return {
 		proxy: new Proxy(props, {
 			get ( target:{}, propName:string|symbol ):any {

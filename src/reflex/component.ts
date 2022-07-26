@@ -32,7 +32,12 @@ export function _createComponentInstance
 {
 	return {
 		vnode,
-		_propsProxy: _createPropsProxy( vnode.props ),
+		_propsProxy: (
+			// @ts-ignore - FIXME Type
+			vnode.value.isFunctional
+			? null
+			: _createPropsProxy( vnode.props )
+		),
 		name: (vnode.value as RenderFunction).name,
 		isMounted: false,
 		_isDirty: false,

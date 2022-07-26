@@ -370,13 +370,17 @@ export function renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any
 	// FIXME: Before render handlers ?
 	// FIXME: Optimize rendering with a hook ?
 	// Execute rendering
-	node._component._isRendering = true
+	_currentComponent._isRendering = true
+	// Use regular ref and do not use proxy if we are sure we are on a functional component
+	let props = node.props
+	// @ts-ignore - FIXME : Type
+	if ( !node.value.isFunctional ) {
+		_currentComponent._propsProxy.set( node.props )
+		props = _currentComponent._propsProxy.proxy
+	}
 	// TODO : Add ref as second argument ? Is it useful ?
-	node._component._propsProxy.set( node.props )
-	const result = node._component._render.apply( node._component, [
-		node._component._propsProxy.proxy
-	])
-	node._component._isRendering = false
+	const result = _currentComponent._render.apply( _currentComponent, [ props ])
+	_currentComponent._isRendering = false
 	// Unselect current component
 	_currentComponent = null
 	return result as GReturn
@@ -420,11 +424,15 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 			if ( typeof result == "function" ) {
 				component._render = result as RenderFunction
 				component.isFactory = true
+				// @ts-ignore - FIXME : Type
+				newNode.value.isFunctional = false
 			}
 			// This is pure functional component which returns a virtual node
 			else if ( typeof result == "object" && "type" in result ) {
 				component._render = newNode.value as RenderFunction
 				component.isFactory = false
+				// @ts-ignore - FIXME : Type
+				newNode.value.isFunctional = true
 				renderResult = result
 			}
 		}

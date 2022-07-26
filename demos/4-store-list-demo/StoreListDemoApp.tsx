@@ -70,8 +70,9 @@ interface IListItemProps {
 	key		?
 }
 
+
 function _ListItem ( props:IListItemProps ) {
-	console.log("ListItem")
+	// console.log("ListItem")
 	const { item } = props;
 	return <tr class="ListItem" data-id={ item.id } style={ listItemStyle }>
 		<td>{ item.name }</td>

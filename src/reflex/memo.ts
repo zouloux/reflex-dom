@@ -17,6 +17,7 @@ export function Memo
 	let oldProps:GProps = {} as GProps
 	let previousRender;
 
+
 	function _MemoizedComponent ( newProps:GProps ) {
 		newProps = _getPropsFromProxy( newProps )
 		const shouldUpdate = (
@@ -24,7 +25,7 @@ export function Memo
 			? compareShouldUpdateHandler( newProps, oldProps )
 			: !shallowPropsCompare( newProps, oldProps )
 		)
-		console.log('Memo', 'shouldUpdate', shouldUpdate, newProps, oldProps)
+		// console.log('Memo', 'shouldUpdate', shouldUpdate, newProps, oldProps)
 		if ( shouldUpdate || !previousRender )
 			previousRender = componentFunction( newProps )
 		oldProps = newProps
@@ -33,6 +34,8 @@ export function Memo
 
 	// FIXME : Useful ?
 	_MemoizedComponent['name'] = componentFunction.name
+	// @ts-ignore
+	_MemoizedComponent.isFunctional = true;
 
 	return _MemoizedComponent
 }
