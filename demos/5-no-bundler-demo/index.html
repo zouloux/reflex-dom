@@ -30,7 +30,7 @@
                 h('button', {
 					onClick: async e => {
 						// Increment state, we await so the DOM is ready after
-						await _s.value += 1
+						await _s.set( v => v + 1)
                         // Show passed event and show updated dom
                         console.log('Event', e)
 						console.log('Ref test:', _r.dom.innerHTML)

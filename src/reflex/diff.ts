@@ -77,20 +77,20 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 	let dom:RenderDom
 	if ( oldNode ) {
 		dom = oldNode.dom
-		if ( newNode.type === VNodeTypes.TEXT && oldNode.value !== newNode.value )
+		if ( newNode.type === (VNodeTypes.TEXT as const) && oldNode.value !== newNode.value )
 			dom.nodeValue = newNode.value as string
 	}
 	else {
-		if ( newNode.type === VNodeTypes.NULL )
+		if ( newNode.type === (VNodeTypes.NULL as const) )
 			dom = document.createComment('')
-		else if ( newNode.type === VNodeTypes.TEXT )
+		else if ( newNode.type === (VNodeTypes.TEXT as const) )
 			dom = document.createTextNode( newNode.value as string )
-		else if ( newNode.type === VNodeTypes.ELEMENT )
+		else if ( newNode.type === (VNodeTypes.ELEMENT as const) )
 			dom = document.createElement( newNode.value as string )
 	}
-	if ( newNode.type === VNodeTypes.TEXT || newNode.type === VNodeTypes.NULL )
+	if ( newNode.type === (VNodeTypes.TEXT as const) || newNode.type === (VNodeTypes.NULL as const) )
 		return dom
-	else if ( newNode.type === VNodeTypes.LIST ) {
+	else if ( newNode.type === (VNodeTypes.LIST as const) ) {
 		// FIXME : Check ?
 		_diffChildren( newNode, oldNode )
 		return dom
@@ -226,7 +226,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// And this list is the only child of its parent node
 	// We can take a shortcut and clear dom with innerHTML
 	if (
-		newParentNode.type === VNodeTypes.LIST
+		newParentNode.type === (VNodeTypes.LIST as const)
 		&& oldParentNode
 		&& previousParentContainer.props.children.length === 0
 		&& newChildren.length === 0
@@ -273,7 +273,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 			&& ( oldChildNode = oldParentKeys?.get( newChildNode.key ) )
 			&& oldChildNode.type === newChildNode.type
 			&& (
-				newChildNode.type === VNodeTypes.ELEMENT
+				newChildNode.type === (VNodeTypes.ELEMENT as const)
 				? oldChildNode.value === newChildNode.value
 				: true
 			)
@@ -304,7 +304,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 			&& ( oldChildNode = oldChildren[ i ] )
 			&& oldChildNode.type === newChildNode.type
 			&& (
-				newChildNode.type === VNodeTypes.ELEMENT
+				newChildNode.type === (VNodeTypes.ELEMENT as const)
 				? oldChildNode.value === newChildNode.value
 				: true
 			)
@@ -383,15 +383,15 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 	// Create / update DOM element for those node types
 	if (
 		// FIXME : Create a set of number ? Or bitwise checking ? check perfs
-		newNode.type === VNodeTypes.TEXT
-		|| newNode.type === VNodeTypes.ELEMENT
-		// || newNode.type === VNodeTypes.LIST
-		|| newNode.type === VNodeTypes.NULL
+		newNode.type === (VNodeTypes.TEXT as const)
+		|| newNode.type === (VNodeTypes.ELEMENT as const)
+		// || newNode.type === (VNodeTypes.LIST as const)
+		|| newNode.type === (VNodeTypes.NULL as const)
 	)
 		newNode.dom = _diffElement( newNode, oldNode )
 
 	// Diff component node
-	else if ( newNode.type === VNodeTypes.COMPONENT ) {
+	else if ( newNode.type === (VNodeTypes.COMPONENT as const) ) {
 		// Transfer component instance from old node to new node
 		let component:ComponentInstance = oldNode?._component
 		// Check if we need to instantiate component
@@ -459,7 +459,7 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 	// Update ref on node
 	updateNodeRef( newNode )
 	// Now that component and its children are ready
-	if ( newNode.type === VNodeTypes.COMPONENT ) {
+	if ( newNode.type === (VNodeTypes.COMPONENT as const) ) {
 		// If component is not mounted yet, mount it recursively
 		if ( !newNode._component.isMounted )
 			_recursivelyUpdateMountState( newNode, true )
@@ -467,6 +467,6 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 		newNode._component._renderHandlers.forEach( h => h() )
 	}
 	// Diff children for node that are containers and not components
-	else if ( newNode.type > VNodeTypes._CONTAINERS )
+	else if ( newNode.type > (VNodeTypes._CONTAINERS as const) )
 		_diffChildren( newNode, oldNode )
 }

@@ -97,7 +97,8 @@
 // Unzipped is smaller with glob but bigger when zipped
 export { state, syncState } from "./states"
 export { getCurrentComponent } from "./diff"
-export { ref, refs, IRef, IRefs } from "./ref"
+export { ref, refs } from "./ref"
+export type { IRef, IRefs } from "./ref"
 export { mounted, unmounted, changed } from "./lifecycle"
 export { render, invalidateComponent } from "./render"
 // Also export createElement for JSX pragma React

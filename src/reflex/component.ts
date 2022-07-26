@@ -113,7 +113,7 @@ export function _unmountComponent ( component:ComponentInstance ) {
 }
 
 export function _recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
-	if ( node.type > VNodeTypes._CONTAINERS ) {
+	if ( node.type > (VNodeTypes._CONTAINERS as const) ) {
 		// TODO : While optim ? Do bench !
 		node.props.children.forEach( child => {
 			// FIXME : Is it necessary ?

@@ -1,5 +1,5 @@
 import { VNode, VNodeTypes } from "./common";
-import { _diffChildren, _diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
+import { _diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
 import { _createVNode } from "./jsx";
 import { ComponentInstance } from "./component";
 
@@ -8,7 +8,7 @@ import { ComponentInstance } from "./component";
 export function render ( rootNode:VNode, parentElement:HTMLElement ) {
 	// When using render, we create a new root node to detect new renders
 	// This node is never rendered, we just attach it to the parentElement and render its children
-	const root = _createVNode( VNodeTypes.ROOT, null, { children: [rootNode] } )
+	const root = _createVNode( (VNodeTypes.ROOT as const), null, { children: [rootNode] } )
 	root.dom = parentElement
 	_diffNode( root, parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ] )
 	parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ] = root
