@@ -71,7 +71,9 @@ Also, hooks dependencies array to keep state scopes ([#1](https://itnext.io/how-
 - [x] Ref
 - [x] Refs
 - [x] State
-- [ ] Better performances performances 
+- [ ] Better performances performances
+- [ ] Imperative handles through component instance
+- [ ] Shared ref between parent and child
 - [ ] Atomic rendering
 - [ ] Crazy performances 
 - [ ] JSX Types and runtime

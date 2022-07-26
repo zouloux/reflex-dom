@@ -44,6 +44,7 @@ export function UserComponent ( props:IUserComponentProps ) {
 	const root = ref()
 	const image = ref()
 	changed(() => {
+		// FIXME : root.component should be this component instance
 		console.log("REFS - UserComponent just rendered", root.component, image.dom.getAttribute('src'))
 	})
 
