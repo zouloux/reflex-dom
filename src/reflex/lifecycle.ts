@@ -19,8 +19,6 @@ type TChangeDetector = any[]
 
 type UnmountTrackHandler 	<GState extends TChangeDetector> 	= (...oldState:GState) => void
 type TrackHandler 			<GState extends TChangeDetector>	= (...newState:GState) => UnmountTrackHandler<GState>|void
-// type UnmountTrackHandler 	<GState extends TChangeDetector> 	= (oldState:GState) => void
-// type TrackHandler 			<GState extends TChangeDetector>	= (newState:GState, oldState:GState) => UnmountTrackHandler<GState>|void
 type DetectChanges 			<GState extends TChangeDetector>	= () => GState
 
 export function changed <GState extends TChangeDetector> ( detectChanges:DetectChanges<GState>|TrackHandler<GState>, executeHandler?:TrackHandler<GState> ) {

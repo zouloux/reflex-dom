@@ -42,12 +42,12 @@ function updateDirtyComponents () {
 	p && p();
 }
 
-const __microtask = self.queueMicrotask ? self.queueMicrotask : h => self.setTimeout( h, 0 )
+const _microtask = self.queueMicrotask ? self.queueMicrotask : h => self.setTimeout( h, 0 )
 
 export function invalidateComponent ( dirtyComponent:ComponentInstance ) {
 	// Queue rendering before end of frame
 	if ( componentsToUpdate.length === 0 )
-		__microtask( updateDirtyComponents );
+		_microtask( updateDirtyComponents );
 	// Invalidate this component once
 	if ( dirtyComponent._isDirty ) return;
 	dirtyComponent._isDirty = true

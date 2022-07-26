@@ -1,6 +1,5 @@
 import { ComponentFunction, LifecycleHandler, MountHandler, RenderFunction, VNode, VNodeTypes } from "./common";
-import { _createPropsProxy, _getBrowsablePropsFromProxy, IPropsProxy } from "./props";
-import { _DOM_PRIVATE_LISTENERS_KEY } from "./diff";
+import { _createPropsProxy, IPropsProxy } from "./props";
 
 // ----------------------------------------------------------------------------- TYPES
 
@@ -15,13 +14,12 @@ export interface ComponentInstance <GProps extends object = object> { // FIXME :
 	_mountHandlers		:MountHandler[]
 	_renderHandlers		:LifecycleHandler[]
 	_unmountHandlers	:LifecycleHandler[]
-	//_observables		:IStateObservable<any>[]
 	_affectedNodesByStates	:VNode[][]
 	_isRendering			:boolean
 	_afterRenderHandlers	:any[]
-	_defaultProps		?:Partial<GProps>
-	// TODO : Imperative handlers ?
-	_componentAPI : IComponentAPI<GProps>
+	_defaultProps			?:Partial<GProps>
+	// TODO : Imperative handlers on component API ?
+	_componentAPI 		:IComponentAPI<GProps>
 }
 
 export interface IComponentAPI <GProps extends object = object> {
@@ -52,15 +50,13 @@ export function _createComponentInstance
 		_mountHandlers: [],
 		_renderHandlers: [],
 		_unmountHandlers: [],
-		// _observables: [],
 		_affectedNodesByStates: [],
 		_isRendering: false,
 		_afterRenderHandlers: [],
 		_defaultProps: {},
+		// Component API is given to every functional or factory component
 		_componentAPI: {
-			get defaultProps () {
-				return component._defaultProps
-			},
+			get defaultProps () { return component._defaultProps },
 			set defaultProps ( value:Partial<GProps> ) {
 				// Register default props for the getter
 				component._defaultProps = value
@@ -104,7 +100,6 @@ export function _mountComponent ( component:ComponentInstance ) {
 export function _unmountComponent ( component:ComponentInstance ) {
 	// TODO : While optim ? Do bench !
 	component._unmountHandlers.forEach( h => h.apply( component, [] ) )
-	// component._observables.map( o => o.dispose() )
 	// FIXME : Do we need to do this ? Is it efficient or is it just noise ?
 	// delete component.vnode
 	// delete component.propsProxy
@@ -118,7 +113,7 @@ export function _unmountComponent ( component:ComponentInstance ) {
 }
 
 export function _recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
-	if ( node.type > VNodeTypes._NEXT_ARE_CONTAINERS ) {
+	if ( node.type > VNodeTypes._CONTAINERS ) {
 		// TODO : While optim ? Do bench !
 		node.props.children.forEach( child => {
 			// FIXME : Is it necessary ?

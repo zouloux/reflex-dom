@@ -25,29 +25,29 @@ export const shallowPropsCompare = ( a:object, b:object, skipChildren = true ) =
 // object. Not really concerning because it makes no sense to iterate over
 // a props object.
 export type IPropsProxy <GProps extends object> = {
-	proxy: GProps,
-	set: ( newData:GProps ) => void
-	get: () => GProps
+	proxy	: GProps,
+	set		: ( newData:GProps ) => void
+	get		: () => GProps
 }
 
-export const _proxyPrivateAccess = '_$'
-
-export function _getBrowsablePropsFromProxy <GProps extends object = object> ( propsOrProxy:GProps ):GProps {
-	return (
-		// ( propsOrProxy instanceof Proxy )
-		typeof propsOrProxy[ _proxyPrivateAccess ] === "object"
-		? propsOrProxy[ _proxyPrivateAccess ] as GProps
-		: propsOrProxy
-	)
-}
+// FIXME : Used by memo only ?
+// export const _proxyPrivateAccess = '_$'
+// export function _getBrowsablePropsFromProxy <GProps extends object = object> ( propsOrProxy:GProps ):GProps {
+// 	return (
+// 		// ( propsOrProxy instanceof Proxy )
+// 		typeof propsOrProxy[ _proxyPrivateAccess ] === "object"
+// 		? propsOrProxy[ _proxyPrivateAccess ] as GProps
+// 		: propsOrProxy
+// 	)
+// }
 
 export function _createPropsProxy <GProps extends object = object> ( props:GProps ) : IPropsProxy<GProps> {
 	// console.log("_createPropsProxy", props)
 	return {
 		proxy: new Proxy(props, {
 			get ( target:{}, propName:string|symbol ):any {
-				if ( propName === _proxyPrivateAccess )
-					return props
+				// if ( propName === _proxyPrivateAccess )
+				// 	return props
 				// TODO : Track dependencies like for state
 				return propName in props ? props[ propName ] : void 0
 			},

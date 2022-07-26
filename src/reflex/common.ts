@@ -10,25 +10,6 @@ import { ComponentInstance, IComponentAPI } from "./component";
 // 	}
 // }
 
-// ----------------------------------------------------------------------------- POLYFILLS
-
-// export const _microtask = ( window.queueMicrotask ?? ( h => window.setTimeout( h, 0 )) )
-
-// ----------------------------------------------------------------------------- UTILS
-
-// Force a list or a lonely item to be an array with the same type
-// TODO : Into ecma-core + inline in bundle
-// export const _forceArray = <G>( item:G|G[] ):G[] => Array.isArray( item ) ? item : [ item ]
-
-// export const _typeof = (entity:any, firstLetterOfType:string) => (typeof entity)[0] == firstLetterOfType
-
-// export const _isStringOrNumber = entity => ["s", "n"].indexOf( (typeof entity)[0] ) >= 0
-
-// export function _flattenChildren ( vnode:VNode ) {
-// 	// Re-assign flattened array to the original virtual node, and return it
-// 	return vnode.props.children = (vnode.props.children.flat() ?? [])
-// }
-
 // ----------------------------------------------------------------------------- INTERNAL - CREATE COMPONENT
 
 export type RenderDom = Element | Text | Comment
@@ -43,8 +24,8 @@ export type ComponentFunction <GProps extends object = object> = RenderFunction<
 export type LifecycleHandler <GReturn = void> = (...rest) => GReturn
 export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler>
 
-
 // ----------------------------------------------------------------------------- INITIAL VALUE
+
 export type TInitialValue<GType> = GType | ((oldValue?:GType) => GType)
 
 export const prepareInitialValue = <GType> ( initialValue:TInitialValue<GType>, oldValue?:GType ) => (
@@ -58,7 +39,7 @@ export const prepareInitialValue = <GType> ( initialValue:TInitialValue<GType>, 
 export const enum VNodeTypes {
 	TEXT		= 1,
 	NULL		= 0,
-	_NEXT_ARE_CONTAINERS = 4,
+	_CONTAINERS = 4, // next are containers
 	ROOT		= 5,
 	ELEMENT		= 6,
 	COMPONENT	= 7,
