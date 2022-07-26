@@ -5,14 +5,43 @@
 // Will not compare "children" which is always different
 // https://esbench.com/bench/62a138846c89f600a5701904
 // TODO : Bench against with for i in loop (test small and huge props)
-export const shallowPropsCompare = ( a:object, b:object, skipChildren = true ) => (
+import { VNodeTypes } from "./common";
+
+export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) => (
 	// Same amount of properties ?
 	Object.keys( a ).length === Object.keys( b ).length
 	// Every property exists in other object ?
-	// Never test "children" property which is always different
 	&& Object.keys( a ).every( key =>
-		( skipChildren && key === "children" )
-		|| (b.hasOwnProperty(key) && a[key] === b[key])
+		// Check children
+		(key === "children" && childrenCheck) ? (
+			// Same array instances -> we validate directly without browsing children
+			a[ key ] === b[ key ]
+			// Or, we need to check all children
+			|| (
+				// check if children props exists on props b
+				b[ key ]
+				// Both children array must have the same length
+				&& a[ key ].length === b[ key ].length
+				// Browse children and check types on every child
+				// If any child does not have the same type
+				// We halt the search
+				&& !a[ key ].find( (c, i) => {
+					const d = b[ key ][ i ]
+					// Here we inverted condition to match diff.ts checks
+					// Condition is -> check if same nodes types
+					// Find is -> halt when any node type differs (so, the inverse)
+					return !(
+						c.type === d.type
+						&& (
+							c.type === VNodeTypes.ELEMENT
+							? c.value === d.value
+							: true
+						)
+					)
+				})
+			)
+		)
+		: (b.hasOwnProperty(key) && a[key] === b[key])
 	)
 )
 

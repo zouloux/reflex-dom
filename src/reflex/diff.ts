@@ -246,7 +246,6 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	do {
 		registerKey( newParentNode, newChildren[ i ] )
 	} while ( ++i < total )
-
 	// Browse all new nodes
 	const oldParentKeys = oldParentNode._keys
 	let collapseCount = 0
@@ -256,6 +255,8 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		// To be able to detect moves or if just collapsing because a top sibling
 		// has been removed
 		const newChildNode = newChildren[ i ]
+		if (!newChildNode)
+			continue;
 		let oldChildNode:VNode = oldChildren[ i ]
 		if (
 			oldChildNode
@@ -426,11 +427,19 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 		// TODO : DOC - Optim should update
 		let shouldUpdate = true
 		if ( !renderResult && oldNode && !component.isFactory ) {
-			shouldUpdate = (
-				( component._componentAPI.shouldUpdate )
-				? component._componentAPI.shouldUpdate( newNode.props, oldNode.props )
-				: !shallowPropsCompare( newNode.props, oldNode.props )
-			)
+			if ( component._componentAPI.shouldUpdate )
+				shouldUpdate = component._componentAPI.shouldUpdate( newNode.props, oldNode.props )
+			else {
+				// Copy new props to a new object
+				// TODO : DOC
+				// let newProps = Object.assign({}, newNode.props)
+				// if ( !newProps.children )
+				// 	newProps.children = oldNode.props.children
+				// console.log(newProps, oldNode.props)
+				shouldUpdate = shallowPropsCompare( newNode.props, oldNode.props )
+			}
+			// console.log("SHOULD UPDATE", newNode, oldNode, shouldUpdate)
+			// TODO : DOC
 			if ( !shouldUpdate ) {
 				newNode.props.children = oldNode.props.children
 				newNode.dom = oldNode.dom

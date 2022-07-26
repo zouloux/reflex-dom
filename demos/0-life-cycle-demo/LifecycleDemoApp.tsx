@@ -1,5 +1,6 @@
 import { h, state, ref, refs, mounted, unmounted } from "../../src/reflex";
 import { colorList, createUID, foodList, pickRandom } from "../common/demoHelpers";
+import { IComponentAPI } from "../../src/reflex/component";
 
 function SubChild ( props ) {
 	const titleRef = ref()
@@ -64,7 +65,8 @@ export function LifecycleDemoApp () {
 		list.set( list.value.filter( c => c != item ) )
 	}
 
-	function List () {
+	function List ( props, component:IComponentAPI ) {
+		component.shouldUpdate = () => true
 		return <div>
 			<button onClick={ e => addListItem() }>Add list item</button>
 			<h3>Items :</h3>
@@ -85,6 +87,6 @@ export function LifecycleDemoApp () {
 			{ isListVisible.value ? "Hide list" : "Show list" }
 		</button>
 		<br/><br/>
-		{ isListVisible.value && <List pure={ false } /> }
+		{ isListVisible.value && <List /> }
 	</div>
 }

@@ -2,7 +2,6 @@ import { h, ref } from "../../src/reflex";
 import { createStore } from "../../src/store/store";
 import { storeState } from "../../src/store/reflexStoreState";
 import { colorList, createUID, foodList, pickRandom, rand } from "../common/demoHelpers";
-import { Memo } from "../../src/reflex/memo";
 import { IComponentAPI } from "../../src/reflex/component";
 
 // ----------------------------------------------------------------------------- STORE
@@ -85,10 +84,6 @@ function ListItem ( props:IListItemProps, component:IComponentAPI<IListItemProps
 		<td><button onClick={ e => listStore.dispatch("removeItem", item ) }>Remove</button></td>
 	</tr>
 }
-
-// const ListItem = Memo( _ListItem, (n, o) => {
-// 	return n.item !== o.item
-// })
 
 // ----------------------------------------------------------------------------- LIST APP
 
