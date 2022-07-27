@@ -1,4 +1,7 @@
-import { ComponentFunction, LifecycleHandler, MountHandler, RenderFunction, VNode, VNodeTypes } from "./common";
+import {
+	_VNodeTypes_CONTAINERS, ComponentFunction, LifecycleHandler, MountHandler,
+	RenderFunction, VNode
+} from "./common";
 import { _createPropsProxy, IPropsProxy } from "./props";
 
 // ----------------------------------------------------------------------------- TYPES
@@ -8,6 +11,7 @@ export interface ComponentInstance <GProps extends object = object> { // FIXME :
 	name				:string
 	isFactory			?:boolean
 	isMounted			:boolean;
+	methods				:Record<string, Function>
 	_isDirty			?:boolean
 	_propsProxy			:IPropsProxy<GProps>
 	_render				:RenderFunction
@@ -18,7 +22,6 @@ export interface ComponentInstance <GProps extends object = object> { // FIXME :
 	_isRendering			:boolean
 	_afterRenderHandlers	:any[]
 	_defaultProps			?:Partial<GProps>
-	// TODO : Imperative handlers on component API ?
 	_componentAPI 		:IComponentAPI<GProps>
 }
 
@@ -45,14 +48,15 @@ export function _createComponentInstance
 		),
 		name: (vnode.value as RenderFunction).name,
 		isMounted: false,
+		methods: {},
 		_isDirty: false,
 		_render: vnode.value as RenderFunction,
 		_mountHandlers: [],
 		_renderHandlers: [],
 		_unmountHandlers: [],
+		_afterRenderHandlers: [],
 		_affectedNodesByStates: [],
 		_isRendering: false,
-		_afterRenderHandlers: [],
 		_defaultProps: {},
 		// Component API is given to every functional or factory component
 		_componentAPI: {
@@ -100,20 +104,25 @@ export function _mountComponent ( component:ComponentInstance ) {
 export function _unmountComponent ( component:ComponentInstance ) {
 	// TODO : While optim ? Do bench !
 	component._unmountHandlers.forEach( h => h.apply( component, [] ) )
+	component.isMounted = false;
+	// Cut component branch from virtual node to allow GC to destroy component
+	delete component.vnode._component
+	delete component.vnode
 	// FIXME : Do we need to do this ? Is it efficient or is it just noise ?
 	// delete component.vnode
 	// delete component.propsProxy
-	delete component._mountHandlers;
-	delete component._renderHandlers;
-	delete component._unmountHandlers;
-	delete component._afterRenderHandlers;
+	// delete component._mountHandlers;
+	// delete component._renderHandlers;
+	// delete component._unmountHandlers;
+	// delete component._afterRenderHandlers;
+	// delete component.methods
+	// delete component._componentAPI
 	// delete component._observables
-	component.isMounted = false;
-	// TODO : Remove all listeners
+	// TODO : Remove all listeners ?
 }
 
 export function _recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
-	if ( node.type > (VNodeTypes._CONTAINERS as const) ) {
+	if ( node.type > _VNodeTypes_CONTAINERS ) {
 		// TODO : While optim ? Do bench !
 		node.props.children.forEach( child => {
 			// FIXME : Is it necessary ?

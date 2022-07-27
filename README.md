@@ -71,15 +71,25 @@ Also, hooks dependencies array to keep state scopes ([#1](https://itnext.io/how-
 - [x] Ref
 - [x] Refs
 - [x] State
-- [ ] Better performances performances
-- [ ] Imperative handles through component instance
-- [ ] Shared ref between parent and child
-- [ ] Atomic rendering
+- [x] Automatic memo
+- [x] Better performances
+  - [x] Diff algorithm inspired by [petit-dom](https://github.com/yelouafi/petit-dom/) and Preact
+  - [x] Props as proxy only if needed (not on functional components)
+- [WIP] Imperative handles through component instance
+- [WIP] Shared ref between parent and child
+- [WIP] Atomic rendering
+- [WIP] Component ref and forward ref
+- [WIP] States refacto with cleaner and modular API 
 - [ ] Crazy performances 
 - [ ] JSX Types and runtime
-- [ ] Babel examples in doc
 - [ ] Better docs
-- [ ] Code-sandboxes
+  - [ ] Default props
+  - [ ] Imperative methods
+  - [ ] Forward refs and component ref
+  - [ ] Memo on functional components and shouldUpdate
+  - [ ] New states
+  - [ ] Babel examples in doc
+  - [ ] Code-sandboxes
 
 ## How to install
 

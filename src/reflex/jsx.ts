@@ -1,4 +1,7 @@
-import { VNode, VNodeTypes } from "./common";
+import {
+	_VNodeTypes_COMPONENT, _VNodeTypes_ELEMENT, _VNodeTypes_LIST, _VNodeTypes_NULL,
+	_VNodeTypes_TEXT, VNode, VNodeTypes
+} from "./common";
 
 // FIXME : Is it an array ? Maybe its working as single prop
 let _dataListenersForNextNode = []
@@ -46,20 +49,20 @@ export function h ( value:any, props:any, ...children:any[] ) {
 		const typeofChild = typeof child
 		// Detect text nodes
 		if ( typeofChild === "string" || typeofChild === "number" )
-			props.children[ childIndex ] = _createVNode( (VNodeTypes.TEXT as const), child )
+			props.children[ childIndex ] = _createVNode( _VNodeTypes_TEXT, child )
 		// Detect array nodes
 		else if ( Array.isArray(child) )
-			props.children[ childIndex ] = _createVNode( (VNodeTypes.LIST as const), null, { children: child } )
+			props.children[ childIndex ] = _createVNode( _VNodeTypes_LIST, null, { children: child } )
 		// Detect null nodes (it means we have a condition )
 		else if ( child === null )
-			props.children[ childIndex ] = _createVNode( (VNodeTypes.NULL as const) )
+			props.children[ childIndex ] = _createVNode( _VNodeTypes_NULL )
 	}
 	// Virtual node type here can be only component or element
 	// Other types are created elsewhere
 	const type = (
 		typeof value === "function"
-		? (VNodeTypes.COMPONENT as const)
-		: (VNodeTypes.ELEMENT as const)
+		? _VNodeTypes_COMPONENT
+		: _VNodeTypes_ELEMENT
 	)
 	// Create and return the virtual node
 	return _createVNode( type, value, props, props.key, props.ref )

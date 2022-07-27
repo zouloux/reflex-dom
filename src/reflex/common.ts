@@ -28,23 +28,42 @@ export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler>
 
 export type TInitialValue<GType> = GType | ((oldValue?:GType) => GType)
 
-export const prepareInitialValue = <GType> ( initialValue:TInitialValue<GType>, oldValue?:GType ) => (
+export const _prepareInitialValue = <GType> ( initialValue:TInitialValue<GType>, oldValue?:GType ) => (
 	typeof initialValue == "function" ? ( initialValue as (oldValue?:GType) => GType )(oldValue) : initialValue as GType
 )
 
 // ----------------------------------------------------------------------------- JSX H / CREATE ELEMENT
 
-// FIXME : const enum not working !
+// FIXME : const enum not working ! TS create the enum as object because
+// FIXME : Its not possible to export or use as const in other modules
 // FIXME : https://ncjamieson.com/dont-export-const-enums/
-export const enum VNodeTypes {
-	TEXT		= 1,
-	NULL		= 0,
-	_CONTAINERS = 4, // next are containers
-	ROOT		= 5,
-	ELEMENT		= 6,
-	COMPONENT	= 7,
-	LIST		= 8,
-}
+// export const enum VNodeTypes {
+// 	TEXT		= 1,
+// 	NULL		= 0,
+// 	_CONTAINERS = 4, // next are containers
+// 	ROOT		= 5,
+// 	ELEMENT		= 6,
+// 	COMPONENT	= 7,
+// 	LIST		= 8,
+// }
+
+export const _VNodeTypes_NULL = 0
+export const _VNodeTypes_TEXT = 1
+export const _VNodeTypes_CONTAINERS = 4
+export const _VNodeTypes_ROOT = 5
+export const _VNodeTypes_ELEMENT = 6
+export const _VNodeTypes_COMPONENT = 7
+export const _VNodeTypes_LIST = 8
+
+export type VNodeTypes = (
+	typeof _VNodeTypes_NULL |
+	typeof _VNodeTypes_TEXT |
+	typeof _VNodeTypes_CONTAINERS |
+	typeof _VNodeTypes_ROOT |
+	typeof _VNodeTypes_ELEMENT |
+	typeof _VNodeTypes_COMPONENT |
+	typeof _VNodeTypes_LIST
+)
 
 export type VNodeElementValue = keyof (HTMLElementTagNameMap|SVGElementTagNameMap)
 export type VNodeTextValue = string

@@ -1,4 +1,4 @@
-import { prepareInitialValue, TInitialValue } from "./common";
+import { _prepareInitialValue, TInitialValue } from "./common";
 import { _diffNode, getCurrentComponent } from "./diff";
 // import { addDataListenerForNextNode } from "./jsx";
 import { invalidateComponent } from "./render";
@@ -17,7 +17,7 @@ export function state <GType> (
 	filter			?:(newValue:GType, oldValue:GType) => GType,
 	afterChange		?:(newValue:GType) => void,
 ):IAsyncState<GType> {
-	initialValue = prepareInitialValue( initialValue )
+	initialValue = _prepareInitialValue( initialValue )
 	const component = getCurrentComponent()
 	// const affectedNodesIndex = component._affectedNodesByStates.push([]) - 1
 	return {
@@ -39,7 +39,7 @@ export function state <GType> (
 		},
 		async set ( newValue:TInitialValue<GType> ) {
 			return new Promise( resolve => {
-				newValue = prepareInitialValue<GType>( newValue, initialValue as GType )
+				newValue = _prepareInitialValue<GType>( newValue, initialValue as GType )
 				initialValue = filter ? filter( newValue, initialValue as GType ) : newValue
 				component._afterRenderHandlers.push(() => {
 					resolve();
@@ -60,7 +60,7 @@ export function syncState <GType> (
 	initialValue	?:TInitialValue<GType>,
 	filter			?:(newValue:GType, oldValue:GType) => GType,
 ):ISyncState<GType> {
-	initialValue = prepareInitialValue( initialValue )
+	initialValue = _prepareInitialValue( initialValue )
 	const component = getCurrentComponent()
 	// const affectedNodesIndex = component._affectedNodesByStates.push([]) - 1
 	return {

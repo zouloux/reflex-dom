@@ -1,4 +1,8 @@
-import { ComponentFunction, ComponentReturn, RenderDom, RenderFunction, VNode, VNodeTypes } from "./common";
+import {
+	_VNodeTypes_COMPONENT, _VNodeTypes_CONTAINERS, _VNodeTypes_ELEMENT, _VNodeTypes_LIST,
+	_VNodeTypes_NULL, _VNodeTypes_TEXT, ComponentFunction, ComponentReturn,
+	RenderDom, RenderFunction, VNode
+} from "./common";
 import { _cloneVNode } from "./jsx";
 import { IInternalRef } from "./ref";
 import { _createComponentInstance, _recursivelyUpdateMountState, ComponentInstance } from "./component";
@@ -77,20 +81,20 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 	let dom:RenderDom
 	if ( oldNode ) {
 		dom = oldNode.dom
-		if ( newNode.type === (VNodeTypes.TEXT as const) && oldNode.value !== newNode.value )
+		if ( newNode.type === _VNodeTypes_TEXT && oldNode.value !== newNode.value )
 			dom.nodeValue = newNode.value as string
 	}
 	else {
-		if ( newNode.type === (VNodeTypes.NULL as const) )
+		if ( newNode.type === _VNodeTypes_NULL )
 			dom = document.createComment('')
-		else if ( newNode.type === (VNodeTypes.TEXT as const) )
+		else if ( newNode.type === _VNodeTypes_TEXT )
 			dom = document.createTextNode( newNode.value as string )
-		else if ( newNode.type === (VNodeTypes.ELEMENT as const) )
+		else if ( newNode.type === _VNodeTypes_ELEMENT )
 			dom = document.createElement( newNode.value as string )
 	}
-	if ( newNode.type === (VNodeTypes.TEXT as const) || newNode.type === (VNodeTypes.NULL as const) )
+	if ( newNode.type === _VNodeTypes_TEXT || newNode.type === _VNodeTypes_NULL )
 		return dom
-	else if ( newNode.type === (VNodeTypes.LIST as const) ) {
+	else if ( newNode.type === _VNodeTypes_LIST ) {
 		// FIXME : Check ?
 		_diffChildren( newNode, oldNode )
 		return dom
@@ -184,7 +188,7 @@ function registerKey ( parentNode:VNode, childNode:VNode) {
  * @param parentDom
  * @param node
  */
-export function injectChildren ( parentDom:Element, node:VNode ) {
+function injectChildren ( parentDom:Element, node:VNode ) {
 	let childIndex = -1
 	const totalChildren = node.props.children.length
 	while ( ++childIndex < totalChildren ) {
@@ -226,7 +230,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// And this list is the only child of its parent node
 	// We can take a shortcut and clear dom with innerHTML
 	if (
-		newParentNode.type === (VNodeTypes.LIST as const)
+		newParentNode.type === _VNodeTypes_LIST
 		&& oldParentNode
 		&& previousParentContainer.props.children.length === 0
 		&& newChildren.length === 0
@@ -273,7 +277,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 			&& ( oldChildNode = oldParentKeys?.get( newChildNode.key ) )
 			&& oldChildNode.type === newChildNode.type
 			&& (
-				newChildNode.type === (VNodeTypes.ELEMENT as const)
+				newChildNode.type === _VNodeTypes_ELEMENT
 				? oldChildNode.value === newChildNode.value
 				: true
 			)
@@ -304,7 +308,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 			&& ( oldChildNode = oldChildren[ i ] )
 			&& oldChildNode.type === newChildNode.type
 			&& (
-				newChildNode.type === (VNodeTypes.ELEMENT as const)
+				newChildNode.type === _VNodeTypes_ELEMENT
 				? oldChildNode.value === newChildNode.value
 				: true
 			)
@@ -344,7 +348,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 
 // ----------------------------------------------------------------------------- DIFF NODE
 
-export function renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any, ComponentFunction> ) :GReturn {
+export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any, ComponentFunction> ) :GReturn {
 	// Select current component before rendering
 	_currentComponent = node._component;
 	// FIXME: Before render handlers ?
@@ -383,15 +387,15 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 	// Create / update DOM element for those node types
 	if (
 		// FIXME : Create a set of number ? Or bitwise checking ? check perfs
-		newNode.type === (VNodeTypes.TEXT as const)
-		|| newNode.type === (VNodeTypes.ELEMENT as const)
-		// || newNode.type === (VNodeTypes.LIST as const)
-		|| newNode.type === (VNodeTypes.NULL as const)
+		newNode.type === _VNodeTypes_TEXT
+		|| newNode.type === _VNodeTypes_ELEMENT
+		// || newNode.type === _VNodeTypes_LIST
+		|| newNode.type === _VNodeTypes_NULL
 	)
 		newNode.dom = _diffElement( newNode, oldNode )
 
 	// Diff component node
-	else if ( newNode.type === (VNodeTypes.COMPONENT as const) ) {
+	else if ( newNode.type === _VNodeTypes_COMPONENT ) {
 		// Transfer component instance from old node to new node
 		let component:ComponentInstance = oldNode?._component
 		// Check if we need to instantiate component
@@ -402,7 +406,7 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 			newNode._component = component
 			component._render = newNode.value as RenderFunction
 			// Execute component's function and check what is returned
-			const result = renderComponentNode( newNode as VNode<object, ComponentFunction> )
+			const result = _renderComponentNode( newNode as VNode<object, ComponentFunction> )
 			// This is a factory component which return a render function
 			if ( typeof result == "function" ) {
 				component._render = result as RenderFunction
@@ -447,7 +451,7 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 		}
 		// If this component needs a render (factory function), render it
 		if ( !renderResult && shouldUpdate )
-			renderResult = renderComponentNode<VNode>( newNode as VNode<object, ComponentFunction> )
+			renderResult = _renderComponentNode<VNode>( newNode as VNode<object, ComponentFunction> )
 		// TODO : Cross assign node to component
 		// We rendered something (not reusing old component)
 		if ( renderResult ) {
@@ -459,7 +463,7 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 	// Update ref on node
 	updateNodeRef( newNode )
 	// Now that component and its children are ready
-	if ( newNode.type === (VNodeTypes.COMPONENT as const) ) {
+	if ( newNode.type === _VNodeTypes_COMPONENT ) {
 		// If component is not mounted yet, mount it recursively
 		if ( !newNode._component.isMounted )
 			_recursivelyUpdateMountState( newNode, true )
@@ -467,6 +471,6 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 		newNode._component._renderHandlers.forEach( h => h() )
 	}
 	// Diff children for node that are containers and not components
-	else if ( newNode.type > (VNodeTypes._CONTAINERS as const) )
+	else if ( newNode.type > _VNodeTypes_CONTAINERS )
 		_diffChildren( newNode, oldNode )
 }

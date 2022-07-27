@@ -1,12 +1,16 @@
-
-
+import { _VNodeTypes_ELEMENT } from "./common";
 
 // Shallow compare two objects, applied only for props between new and old virtual nodes.
 // Will not compare "children" which is always different
 // https://esbench.com/bench/62a138846c89f600a5701904
-// TODO : Bench against with for i in loop (test small and huge props)
-import { VNodeTypes } from "./common";
+// TODO : re-bench against with for i in loop (test small and huge props)
 
+/**
+ * TODO : DOC
+ * @param a
+ * @param b
+ * @param childrenCheck
+ */
 export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) => (
 	// Same amount of properties ?
 	Object.keys( a ).length === Object.keys( b ).length
@@ -32,8 +36,10 @@ export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) 
 					// Find is -> halt when any node type differs (so, the inverse)
 					return !(
 						c.type === d.type
+						// FIXME : Create a function for this peace of code ?
+						// FIXME : Less bytes into bundle but maybe less performant
 						&& (
-							c.type === VNodeTypes.ELEMENT
+							c.type === _VNodeTypes_ELEMENT
 							? c.value === d.value
 							: true
 						)
@@ -41,6 +47,7 @@ export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) 
 				})
 			)
 		)
+		// Class prop check between a and b objects
 		: (b.hasOwnProperty(key) && a[key] === b[key])
 	)
 )
@@ -58,17 +65,6 @@ export type IPropsProxy <GProps extends object> = {
 	set		: ( newData:GProps ) => void
 	get		: () => GProps
 }
-
-// FIXME : Used by memo only ?
-// export const _proxyPrivateAccess = '_$'
-// export function _getBrowsablePropsFromProxy <GProps extends object = object> ( propsOrProxy:GProps ):GProps {
-// 	return (
-// 		// ( propsOrProxy instanceof Proxy )
-// 		typeof propsOrProxy[ _proxyPrivateAccess ] === "object"
-// 		? propsOrProxy[ _proxyPrivateAccess ] as GProps
-// 		: propsOrProxy
-// 	)
-// }
 
 export function _createPropsProxy <GProps extends object = object> ( props:GProps ) : IPropsProxy<GProps> {
 	// console.log("_createPropsProxy", props)
