@@ -1,6 +1,10 @@
 # Reflex
 
-__Reflex JS__ is a tiny ![~3kb](./bits/reflex.es2017.min.js.svg) virtual-dom library with __factory based functional components__.
+__Reflex__ is a tiny ![~3kb](./bits/reflex.es2017.min.js.svg) virtual-dom library with __factory based functional components__.
+
+- 🦋 [super lightweight](https://unpkg.com/@zouloux/reflex)
+- 🏎 [highly performant](#performances)
+- 🔋 [batteries included](#factory-hooks)
 
 ![](./example/example.png)
 ![](./example/example.gif)
@@ -10,7 +14,6 @@ __Reflex JS__ is a tiny ![~3kb](./bits/reflex.es2017.min.js.svg) virtual-dom lib
 
 - [See this example running](https://zouloux.github.io/reflex/example/example.html)
 - [See more complex demos](https://zouloux.github.io/reflex/demos/)
-
 
 ---
 
@@ -24,6 +27,7 @@ __Reflex JS__ is a tiny ![~3kb](./bits/reflex.es2017.min.js.svg) virtual-dom lib
   - <a href="#stateless-and-pure-components">Stateless</a>
   - <a href="#stateful-components-with-factory-pattern">Stateful and Factory Pattern</a>
   - <a href="#props">Props</a>
+  - <a href="#default-props">Default props</a>
 - <a href="#factory-hooks">Factory hooks</a>
   - <a href="#state">State</a>
   - <a href="#ref">Ref</a>
@@ -37,7 +41,6 @@ __Reflex JS__ is a tiny ![~3kb](./bits/reflex.es2017.min.js.svg) virtual-dom lib
   - <a href="#things-missing">Things missing</a>
   - <a href="#performances">Performances</a>
   - <a href="#demos">Demos</a>
-  - <a href="#roadmap">Roadmap</a>
   - <a href="#unpkg">Unpkg</a>
 
 #### _Be kind, Lib and doc are still in beta 😘_
@@ -75,15 +78,18 @@ Also, hooks dependencies array to keep state scopes ([#1](https://itnext.io/how-
 - [x] Better performances
   - [x] Diff algorithm inspired by [petit-dom](https://github.com/yelouafi/petit-dom/) and Preact
   - [x] Props as proxy only if needed (not on functional components)
-- [WIP] Imperative handles through component instance
-- [WIP] Shared ref between parent and child
-- [WIP] Atomic rendering
-- [WIP] Component ref and forward ref
-- [WIP] States refacto with cleaner and modular API 
-- [ ] Crazy performances 
+- [ ] WIP Imperative handles through component instance
+- [ ] WIP Shared ref between parent and child
+- [ ] WIP Atomic rendering
+- [ ] WIP Component ref and forward ref
+- [ ] WIP States refacto with cleaner and modular API
+- [ ] WIP SVG support
+- [ ] renderToString
 - [ ] JSX Types and runtime
+- [ ] Crazy performances 
+- [ ] `npm create reflex-app`
 - [ ] Better docs
-  - [ ] Default props
+  - [ ] Should update
   - [ ] Imperative methods
   - [ ] Forward refs and component ref
   - [ ] Memo on functional components and shouldUpdate
@@ -93,13 +99,34 @@ Also, hooks dependencies array to keep state scopes ([#1](https://itnext.io/how-
 
 ## How to install
 
-Install it with `npm i @zouloux/reflex`. You will need at least those options into `tsconfig.json` :
+Install it with `npm i @zouloux/reflex`.
+
+#### With typescript 
+You will need at least those options into `tsconfig.json` :
 ```json
 {
     "compilerOptions": {
         "jsxFactory": "h",
         "jsx": "react"
     }
+}
+```
+
+#### With babel
+```
+{
+  "presets": [
+    [
+      "@babel/preset-react",
+      { "runtime": "automatic" }
+    ]
+  ],
+  "plugins": [
+    [
+      "@babel/plugin-transform-react-jsx",
+      { "pragma" : "h" }
+    ]
+  ]
 }
 ```
 
@@ -149,7 +176,6 @@ function ChangingComponent ( props ) {
 ```
 
 > Set `<StatelessComponent name={ connectedUser.name } pure={ false } />` if your stateless component isn't a pure function (if it uses some other dependencies than its props). 
-
 
 ### Stateful components with factory pattern
 
@@ -203,6 +229,26 @@ function PropsComponent ( props )  {
 }
 ```
 
+### Default props
+
+Default props are configurable in factory and pure functional components.
+
+```tsx
+function PureComponent (props, component) {
+    component.defaultProps = {	
+        title: "Default title"
+    }
+    console.log("Render", props.title)
+    return <div>{ props.title }</div>
+}
+function FactoryComponent (props, component) {
+    component.defaultProps = {
+        title: "Default title"
+    }
+    console.log("Factory", props.title)
+    return () => <div>{ props.title }</div>
+}
+```
 
 # Factory hooks
 
@@ -482,46 +528,45 @@ Years after using React hooks (with Preact a lot), I finally had time to get thi
 ### Things missing
 
 Here is the list of things missing from React :
-- React suspense (loading fallback)
-- React fiber (asynchronous rendering)
-- renderToString (for now only)
-- Class components
+- React suspense (loading fallback) - is planned
+- renderToString - is planned
+- React fiber and asynchronous rendering - not planned
+- Class components - not planned
 - A lot of other stuff
 
 Things missing from Solid :
-- Crazy performances
+- Crazy performances thanks to compiling - not planned
 - A lot of other stuff
 
 Things missing from Preact :
 - Not so much I guess ?
 
-### Atomic updates
+### Atomic rendering
 
-Reflex will implement atomic updates for states. Which means that when a state changes, not all the component is diffed, but only the affected dom nodes.
+Reflex will implement atomic rendering for states. Which means that when a state changes, not all the component is diffed, but only the affected dom nodes.
 See Jason Miller post : https://twitter.com/_developit/status/1549001036802625536
+This feature is WIP
 
 ### Performances
 
 Reflex goal is to be __as performant as possible__ and __as light as possible__.
-Reflex will never be as performant than Solid (because of Virtual DOM), but targets to be as performant as Preact and more performant than React in a lot of cases.
-Library weight will be around `3kb gzipped`. It may be a bit more if we add some useful features. Not used features can be tree-shaken thanks to your bundler (like Parcel or Vite). [See note](./CODEGOLF.md) about code golfing. 
-Reflex performances are still not very high (around the same as React), but will be better latter with the same feature scope.
+Reflex will never be as performant than [Solid](https://github.com/solidjs) (because of the Virtual DOM bottleneck), but targets to be more performant than Preact and React in a lot of cases.
+Library weight will be around `3kb gzipped`. It may be a bit more if we add some useful features. Not used features can be tree-shaken if you use a bundler (like Parcel or Vite).
+[See note](./CODEGOLF.md) about code golfing.
+
+![Benchmark](./benchmark.jpg)
+
+For now Reflex performances are between petit-dom and Preact. It can be greatly improved since Reflex is still in beta !
+
+About size, see [Reflex bundle](https://unpkg.com/@zouloux/reflex) vs [Preact bundle](https://unpkg.com/preact) (without states)
 
 ### Demos
 
 [Click here](https://zouloux.github.io/reflex/demos/) to see some demo (WIP)
-
-### Roadmap
-
-- Better doc
-- Better demos
-- A solution for automatic forwardRef (store two refs into vnode ?)
-- Benchmarks with React / Preact / Solid
-- A `npm create reflex-app` script with Parcel
-- Smaller package / better performances
 
 
 ### Unpkg
 
 __Reflex__ is available on [Unpkg](https://unpkg.com/@zouloux/reflex) ![](./bits/reflex.es2017.min.js.svg)
 - [see unpkg usage example](https://zouloux.github.io/reflex/demos/5-no-bundler-demo/index.html)
+
