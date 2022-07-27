@@ -67,11 +67,6 @@ assignment manually.
 To check if some property is undefined :
 - ✅ `typeof self < 'u' ? isNotUndefined : isUndefined`
 
-To check if some property is a function / object / number / string,
-check only the first char, no strict check :
-- 🚫 `typeof mountedReturn === "function"`
-- ✅ `(typeof mountedReturn)[0] == "f"`
-
 ### Casting
 
 ##### Convert to string
