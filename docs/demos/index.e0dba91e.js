@@ -388,14 +388,16 @@ parcelHelpers.export(exports, "_DOM_PRIVATE_LISTENERS_KEY", ()=>_DOM_PRIVATE_LIS
 parcelHelpers.export(exports, "getCurrentComponent", ()=>getCurrentComponent);
 // ----------------------------------------------------------------------------- DIFF ELEMENT
 /**
- *
+ * TODO DOC
  * @param newNode
  * @param oldNode
+ * @param nodeEnv
  */ parcelHelpers.export(exports, "_diffElement", ()=>_diffElement);
 /**
  * TODO DOC
  * @param newParentNode
  * @param oldParentNode
+ * @param nodeEnv
  */ parcelHelpers.export(exports, "_diffChildren", ()=>_diffChildren);
 // ----------------------------------------------------------------------------- DIFF NODE
 parcelHelpers.export(exports, "_renderComponentNode", ()=>_renderComponentNode);
@@ -410,6 +412,7 @@ const _DOM_PRIVATE_LISTENERS_KEY = "__l";
 const _IS_NON_DIMENSIONAL_REGEX = /acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|itera/i;
 // Check if an event is a capture one
 const _CAPTURE_REGEX = /Capture$/;
+const _svgNS = "http://www.w3.org/2000/svg";
 // ----------------------------------------------------------------------------- CURRENT SCOPED COMPONENT
 // We store current component in factory phase for hooks
 let _currentComponent = null;
@@ -440,16 +443,20 @@ function setStyle(style, key, value) {
 function updateNodeRef(node) {
     node._ref && node._ref._setFromVNode(node);
 }
-function _diffElement(newNode, oldNode) {
+function _diffElement(newNode, oldNode, nodeEnv) {
     // TODO : DOC
     let dom;
     if (oldNode) {
         dom = oldNode.dom;
         if (newNode.type === (0, _common._VNodeTypes_TEXT) && oldNode.value !== newNode.value) dom.nodeValue = newNode.value;
     } else {
+        const document = nodeEnv.document;
         if (newNode.type === (0, _common._VNodeTypes_NULL)) dom = document.createComment("");
         else if (newNode.type === (0, _common._VNodeTypes_TEXT)) dom = document.createTextNode(newNode.value);
-        else if (newNode.type === (0, _common._VNodeTypes_ELEMENT)) dom = document.createElement(newNode.value);
+        else if (newNode.type === (0, _common._VNodeTypes_ELEMENT)) {
+            if (newNode.value === "svg") nodeEnv.isSVG = true;
+            dom = nodeEnv.isSVG ? document.createElementNS(_svgNS, newNode.value) : document.createElement(newNode.value);
+        }
     }
     if (newNode.type === (0, _common._VNodeTypes_TEXT) || newNode.type === (0, _common._VNodeTypes_NULL)) return dom;
     else if (newNode.type === (0, _common._VNodeTypes_LIST)) {
@@ -518,12 +525,13 @@ function _diffElement(newNode, oldNode) {
  * TODO DOC
  * @param parentDom
  * @param node
- */ function injectChildren(parentDom, node) {
+ * @param nodeEnv
+ */ function injectChildren(parentDom, node, nodeEnv) {
     let childIndex = -1;
     const totalChildren = node.props.children.length;
     while(++childIndex < totalChildren){
         const child = node.props.children[childIndex];
-        _diffNode(child, null);
+        _diffNode(child, null, nodeEnv);
         registerKey(node, child);
         if (child.dom) parentDom.appendChild(child.dom);
     }
@@ -531,7 +539,7 @@ function _diffElement(newNode, oldNode) {
 // TODO : DOC
 let previousParentContainer;
 let previousParentContainerDom;
-function _diffChildren(newParentNode, oldParentNode) {
+function _diffChildren(newParentNode, oldParentNode, nodeEnv) {
     // console.log( "_diffChildren", newParentNode, oldParentNode );
     // TODO : DOC
     let parentDom = newParentNode.dom ?? previousParentContainerDom;
@@ -543,7 +551,7 @@ function _diffChildren(newParentNode, oldParentNode) {
     // No old parent node, or empty old parent node, we inject directly without checks.
     // FIXME : This optim may not work if list not only child
     // if ( !oldParentNode )
-    if (!oldParentNode || oldParentNode.props.children.length === 0) return injectChildren(parentDom, newParentNode);
+    if (!oldParentNode || oldParentNode.props.children.length === 0) return injectChildren(parentDom, newParentNode, nodeEnv);
     // Target children lists
     const newChildren = newParentNode.props.children;
     const oldChildren = oldParentNode.props.children;
@@ -579,7 +587,7 @@ function _diffChildren(newParentNode, oldParentNode) {
         // Has key, same key found in old, same type on both
         /** MOVE & UPDATE KEYED CHILD **/ if (newChildNode.key && (oldChildNode = oldParentKeys?.get(newChildNode.key)) && oldChildNode.type === newChildNode.type && (newChildNode.type === (0, _common._VNodeTypes_ELEMENT) ? oldChildNode.value === newChildNode.value : true)) {
             // console.log("move keyed", newChildNode, oldChildNode)
-            _diffNode(newChildNode, oldChildNode);
+            _diffNode(newChildNode, oldChildNode, nodeEnv);
             oldChildNode._keep = true;
             // Check if index changed, compare with collapsed index to detect moves
             const collapsedIndex = i + collapseCount;
@@ -588,16 +596,16 @@ function _diffChildren(newParentNode, oldParentNode) {
             if (oldChildren.indexOf(oldChildNode) != collapsedIndex) parentDom.insertBefore(newChildNode.dom, parentDom.children[collapsedIndex + 1]);
         } else if (newChildNode.key && oldParentKeys && !oldParentKeys.get(newChildNode.key)) {
             // console.log("create from key", newChildNode)
-            _diffNode(newChildNode);
+            _diffNode(newChildNode, null, nodeEnv);
             parentDom.insertBefore(newChildNode.dom, parentDom.children[i]);
             collapseCount--;
         } else if (i in oldChildren && (oldChildNode = oldChildren[i]) && oldChildNode.type === newChildNode.type && (newChildNode.type === (0, _common._VNodeTypes_ELEMENT) ? oldChildNode.value === newChildNode.value : true)) {
             // console.log("update in place", newChildNode, oldChildNode)
-            _diffNode(newChildNode, oldChildNode);
+            _diffNode(newChildNode, oldChildNode, nodeEnv);
             oldChildNode._keep = true;
         } else {
             // console.log("create no key", newChildNode)
-            _diffNode(newChildNode);
+            _diffNode(newChildNode, null, nodeEnv);
             parentDom.insertBefore(newChildNode.dom, parentDom.children[i]);
             collapseCount--;
         }
@@ -606,7 +614,7 @@ function _diffChildren(newParentNode, oldParentNode) {
     // FIXME : Faster loop ? Test with simple forEach
     // for ( const oldChildNode of oldChildren ) {
     const totalOld = oldChildren.length;
-    if (total === 0) return;
+    if (totalOld === 0) return;
     i = 0;
     do {
         const oldChildNode = oldChildren[i];
@@ -646,7 +654,7 @@ function _renderComponentNode(node) {
     _currentComponent = null;
     return result;
 }
-function _diffNode(newNode, oldNode) {
+function _diffNode(newNode, oldNode, nodeEnv) {
     // IMPORTANT : Here we clone node if we got the same instance
     // 			   Otherwise, altering props.children after render will fuck everything up
     // Clone identical nodes to be able to diff them
@@ -655,8 +663,12 @@ function _diffNode(newNode, oldNode) {
     if (oldNode && oldNode._id) newNode._id = oldNode._id;
     // Create / update DOM element for those node types
     if (// FIXME : Create a set of number ? Or bitwise checking ? check perfs
-    newNode.type === (0, _common._VNodeTypes_TEXT) || newNode.type === (0, _common._VNodeTypes_ELEMENT) || newNode.type === (0, _common._VNodeTypes_NULL)) newNode.dom = _diffElement(newNode, oldNode);
-    else if (newNode.type === (0, _common._VNodeTypes_COMPONENT)) {
+    newNode.type === (0, _common._VNodeTypes_TEXT) || newNode.type === (0, _common._VNodeTypes_ELEMENT) || newNode.type === (0, _common._VNodeTypes_NULL)) {
+        // Clone node env for children, to avoid env to propagate on siblings
+        nodeEnv = Object.assign({}, nodeEnv);
+        // Compute dom element for this node
+        newNode.dom = _diffElement(newNode, oldNode, nodeEnv);
+    } else if (newNode.type === (0, _common._VNodeTypes_COMPONENT)) {
         // Transfer component instance from old node to new node
         let component = oldNode?._component;
         // Check if we need to instantiate component
@@ -708,7 +720,7 @@ function _diffNode(newNode, oldNode) {
         // TODO : Cross assign node to component
         // We rendered something (not reusing old component)
         if (renderResult) {
-            _diffNode(renderResult, oldNode?.props.children[0]);
+            _diffNode(renderResult, oldNode?.props.children[0], nodeEnv);
             newNode.dom = renderResult.dom;
             newNode.props.children = [
                 renderResult
@@ -723,7 +735,7 @@ function _diffNode(newNode, oldNode) {
         if (!newNode._component.isMounted) (0, _component._recursivelyUpdateMountState)(newNode, true);
         // Execute after render handlers
         newNode._component._renderHandlers.forEach((h)=>h());
-    } else if (newNode.type > (0, _common._VNodeTypes_CONTAINERS)) _diffChildren(newNode, oldNode);
+    } else if (newNode.type > (0, _common._VNodeTypes_CONTAINERS)) _diffChildren(newNode, oldNode, nodeEnv);
 }
 
 },{"./common":"8NUdO","./jsx":"beq5O","./component":"jK9Qg","./props":"bJNzu","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"beq5O":[function(require,module,exports) {
@@ -964,7 +976,7 @@ parcelHelpers.export(exports, "invalidateComponent", ()=>invalidateComponent) //
 var _common = require("./common");
 var _diff = require("./diff");
 var _jsx = require("./jsx");
-function render(rootNode, parentElement) {
+function render(rootNode, parentElement, documentInterface = document) {
     // When using render, we create a new root node to detect new renders
     // This node is never rendered, we just attach it to the parentElement and render its children
     const root = (0, _jsx._createVNode)((0, _common._VNodeTypes_ROOT), null, {
@@ -973,7 +985,10 @@ function render(rootNode, parentElement) {
         ]
     });
     root.dom = parentElement;
-    (0, _diff._diffNode)(root, parentElement[0, _diff._DOM_PRIVATE_VIRTUAL_NODE_KEY]);
+    (0, _diff._diffNode)(root, parentElement[0, _diff._DOM_PRIVATE_VIRTUAL_NODE_KEY], {
+        isSVG: false,
+        document: documentInterface
+    });
     parentElement[0, _diff._DOM_PRIVATE_VIRTUAL_NODE_KEY] = root;
 }
 // ----------------------------------------------------------------------------- INVALIDATION

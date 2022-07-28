@@ -36,7 +36,7 @@ __Reflex__ is a tiny ![~3kb](./bits/reflex.es2017.min.js.svg) virtual-dom librar
   - <a href="#changed">Changed</a>
 - <a href="#more">More</a>
   - <a href="#automatic-forwardref">Automatic forwardRef</a>
-  - <a href="#classes-as-array">Classes as array</a>
+  - <a href="#css-classes-as-array">CSS classes as array</a>
 - <a href="#about">About</a>
   - <a href="#things-missing">Things missing</a>
   - <a href="#performances">Performances</a>
@@ -78,18 +78,19 @@ Also, hooks dependencies array to keep state scopes ([#1](https://itnext.io/how-
 - [x] Better performances
   - [x] Diff algorithm inspired by [petit-dom](https://github.com/yelouafi/petit-dom/) and Preact
   - [x] Props as proxy only if needed (not on functional components)
+- [x] SVG support
+- [x] renderToString
 - [ ] WIP Imperative handles through component instance
 - [ ] WIP Shared ref between parent and child
 - [ ] WIP Atomic rendering
 - [ ] WIP Component ref and forward ref
 - [ ] WIP States refacto with cleaner and modular API
-- [ ] WIP SVG support
-- [ ] renderToString
 - [ ] JSX Types and runtime
 - [ ] Crazy performances 
 - [ ] `npm create reflex-app`
 - [ ] Better docs
   - [ ] Should update
+  - [ ] Render to string doc
   - [ ] Imperative methods
   - [ ] Forward refs and component ref
   - [ ] Memo on functional components and shouldUpdate
@@ -336,7 +337,7 @@ function MyComponent () {
 
 ## Refs aka multi-ref
 
-Multi ref in Reflex is `ref` as an array of components. Very handy when dealing with lists !
+Multi ref in Reflex is `ref` as an array of components. Very handy when dealing with lists!
 
 ```typescript jsx
 function List ( props ) {
@@ -494,9 +495,9 @@ function Parent () {
 }
 ```
 
-### Classes as array
+### CSS classes as array
 
-Classes can be set as an array. Falsy values will be automatically filtered out.
+CSS classes can be set as an array. Falsy values will be automatically filtered out.
 
 ```typescript jsx
 function PureComponent ( props ) {
@@ -539,7 +540,7 @@ Things missing from Solid :
 - A lot of other stuff
 
 Things missing from Preact :
-- Not so much I guess ?
+- Not so much I guess?
 
 ### Atomic rendering
 
@@ -556,7 +557,7 @@ Library weight will be around `3kb gzipped`. It may be a bit more if we add some
 
 ![Benchmark](./benchmark.jpg)
 
-For now Reflex performances are between petit-dom and Preact. It can be greatly improved since Reflex is still in beta !
+For now Reflex performances are between petit-dom and Preact. It can be greatly improved since Reflex is still in beta!
 
 About size, see [Reflex bundle](https://unpkg.com/@zouloux/reflex) vs [Preact bundle](https://unpkg.com/preact) (without states)
 

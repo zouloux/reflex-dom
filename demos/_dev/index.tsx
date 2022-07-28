@@ -1,6 +1,7 @@
 import { h, render, state } from "../../src/reflex";
 import { trackPerformances, setReflexDebug } from "../../src/reflex-more/debug";
 import { colorList, createUID, foodList, pickRandom } from "../common/demoHelpers";
+import { renderToString } from "../../src/reflex-more/renderer";
 
 // -----------------------------------------------------------------------------
 
@@ -51,10 +52,19 @@ function TestComponent () {
 	</div>
 }
 
+
+function TestSVG () {
+	return <svg height="210" width="500">
+		<polygon points="200,10 250,190 160,210" style="fill:lime;stroke:purple;stroke-width:1" />
+	</svg>
+}
+
 function DevApp () {
 	return <div class="Coucou">
 		<h1>Hello</h1>
 		<TestComponent />
+		<TestSVG />
+		<div>After SVG</div>
 	</div>
 }
 
@@ -68,6 +78,8 @@ export function init () {
 	const a = <DevApp />
 	console.log('A', a );
 	render( a, document.getElementById('App') )
+	const string = renderToString( a )
+	console.log( string );
 	// render( a, document.getElementById('App') )
 	p();
 }

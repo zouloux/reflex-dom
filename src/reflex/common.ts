@@ -10,6 +10,54 @@ import { ComponentInstance, IComponentAPI } from "./component";
 // 	}
 // }
 
+// ----------------------------------------------------------------------------- DOCUMENT INTERFACE
+
+type AbstractNodeTypes = "comment"|"text"|"element"
+
+export interface IAbstractNode {
+	abstractType:AbstractNodeTypes
+}
+
+export interface IAbstractComment extends IAbstractNode {
+	abstractType:"comment"
+	data:string
+}
+export interface IAbstractText extends IAbstractNode {
+	abstractType:"text"
+	nodeValue:string
+}
+export interface IAbstractElement extends IAbstractNode {
+	abstractType:"element"
+	namespace:string
+	type:string
+	readonly attributes:object
+	readonly children:IAbstractNode[]
+	addEventListener(...rest):any
+	removeEventListener(...rest):any
+	setAttribute( name:string, value:any )
+	getAttribute( name:string )
+	removeAttribute( name:string )
+	removeChild ( child:IAbstractNode )
+	appendChild ( child:IAbstractNode )
+	insertBefore ( child:IAbstractNode, before:IAbstractNode ),
+	innerHTML:string
+	toString():string
+}
+
+export interface IAbstractDocument
+{
+	createComment 	(data:string):IAbstractComment
+	createTextNode 	(data:string):IAbstractText
+	createElement 	(type:string):IAbstractElement
+	createElementNS (namespace:string, type:string):IAbstractElement
+}
+
+
+export interface INodeEnv {
+	isSVG: boolean,
+	document: Document | IAbstractDocument,
+}
+
 // ----------------------------------------------------------------------------- INTERNAL - CREATE COMPONENT
 
 export type RenderDom = Element | Text | Comment

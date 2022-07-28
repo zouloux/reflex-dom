@@ -1,6 +1,6 @@
 import {
 	_VNodeTypes_COMPONENT, _VNodeTypes_CONTAINERS, _VNodeTypes_ELEMENT, _VNodeTypes_LIST,
-	_VNodeTypes_NULL, _VNodeTypes_TEXT, ComponentFunction, ComponentReturn,
+	_VNodeTypes_NULL, _VNodeTypes_TEXT, ComponentFunction, ComponentReturn, INodeEnv,
 	RenderDom, RenderFunction, VNode
 } from "./common";
 import { _cloneVNode } from "./jsx";
@@ -29,6 +29,8 @@ const _IS_NON_DIMENSIONAL_REGEX = /acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine
 
 // Check if an event is a capture one
 const _CAPTURE_REGEX = /Capture$/
+
+const _svgNS = "http://www.w3.org/2000/svg"
 
 // ----------------------------------------------------------------------------- CURRENT SCOPED COMPONENT
 
@@ -72,11 +74,12 @@ function updateNodeRef ( node:VNode ) {
 // ----------------------------------------------------------------------------- DIFF ELEMENT
 
 /**
- *
+ * TODO DOC
  * @param newNode
  * @param oldNode
+ * @param nodeEnv
  */
-export function _diffElement ( newNode:VNode, oldNode:VNode ) {
+export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) {
 	// TODO : DOC
 	let dom:RenderDom
 	if ( oldNode ) {
@@ -85,12 +88,20 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 			dom.nodeValue = newNode.value as string
 	}
 	else {
+		const document = nodeEnv.document as Document
 		if ( newNode.type === _VNodeTypes_NULL )
 			dom = document.createComment('')
 		else if ( newNode.type === _VNodeTypes_TEXT )
 			dom = document.createTextNode( newNode.value as string )
-		else if ( newNode.type === _VNodeTypes_ELEMENT )
-			dom = document.createElement( newNode.value as string )
+		else if ( newNode.type === _VNodeTypes_ELEMENT ) {
+			if ( newNode.value as string === "svg" )
+				nodeEnv.isSVG = true
+			dom = (
+				nodeEnv.isSVG
+				? document.createElementNS( _svgNS, newNode.value as string )
+				: document.createElement( newNode.value as string )
+			)
+		}
 	}
 	if ( newNode.type === _VNodeTypes_TEXT || newNode.type === _VNodeTypes_NULL )
 		return dom
@@ -175,7 +186,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
  * @param parentNode
  * @param childNode
  */
-function registerKey ( parentNode:VNode, childNode:VNode) {
+function registerKey ( parentNode:VNode, childNode:VNode ) {
 	if ( childNode.key ) {
 		if ( !parentNode._keys )
 			parentNode._keys = new Map<string, VNode>()
@@ -187,13 +198,14 @@ function registerKey ( parentNode:VNode, childNode:VNode) {
  * TODO DOC
  * @param parentDom
  * @param node
+ * @param nodeEnv
  */
-function injectChildren ( parentDom:Element, node:VNode ) {
+function injectChildren ( parentDom:Element, node:VNode, nodeEnv:INodeEnv ) {
 	let childIndex = -1
 	const totalChildren = node.props.children.length
 	while ( ++childIndex < totalChildren ) {
 		const child = node.props.children[ childIndex ]
-		_diffNode( child, null )
+		_diffNode( child, null, nodeEnv )
 		registerKey( node, child )
 		if ( child.dom )
 			parentDom.appendChild( child.dom )
@@ -208,8 +220,10 @@ let previousParentContainerDom:Element
  * TODO DOC
  * @param newParentNode
  * @param oldParentNode
+ * @param nodeEnv
  */
-export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
+export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEnv?:INodeEnv ) {
+
 	// console.log( "_diffChildren", newParentNode, oldParentNode );
 	// TODO : DOC
 	let parentDom = (newParentNode.dom ?? previousParentContainerDom) as Element
@@ -222,7 +236,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// FIXME : This optim may not work if list not only child
 	// if ( !oldParentNode )
 	if ( !oldParentNode || oldParentNode.props.children.length === 0 )
-		return injectChildren( parentDom, newParentNode )
+		return injectChildren( parentDom, newParentNode, nodeEnv )
 	// Target children lists
 	const newChildren = newParentNode.props.children
 	const oldChildren = oldParentNode.props.children
@@ -283,7 +297,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 			)
 		) {
 			// console.log("move keyed", newChildNode, oldChildNode)
-			_diffNode( newChildNode, oldChildNode )
+			_diffNode( newChildNode, oldChildNode, nodeEnv )
 			oldChildNode._keep = true;
 			// Check if index changed, compare with collapsed index to detect moves
 			const collapsedIndex = i + collapseCount
@@ -296,7 +310,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		/** CREATE HAS KEY**/
 		else if ( newChildNode.key && oldParentKeys && !oldParentKeys.get( newChildNode.key ) ) {
 			// console.log("create from key", newChildNode)
-			_diffNode( newChildNode )
+			_diffNode( newChildNode, null, nodeEnv )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
 		}
@@ -314,14 +328,14 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 			)
 		) {
 			// console.log("update in place", newChildNode, oldChildNode)
-			_diffNode( newChildNode, oldChildNode )
+			_diffNode( newChildNode, oldChildNode, nodeEnv )
 			oldChildNode._keep = true;
 		}
 		// Not found
 		/** CREATE **/
 		else {
 			// console.log("create no key", newChildNode)
-			_diffNode( newChildNode )
+			_diffNode( newChildNode, null, nodeEnv )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
 		}
@@ -330,7 +344,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	// FIXME : Faster loop ? Test with simple forEach
 	// for ( const oldChildNode of oldChildren ) {
 	const totalOld = oldChildren.length
-	if ( total === 0 ) return;
+	if ( totalOld === 0 ) return;
 	i = 0
 	do {
 		const oldChildNode = oldChildren[ i ]
@@ -373,17 +387,15 @@ export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<an
 	return result as GReturn
 }
 
-export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
+export function _diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv?:any ) {
 	// IMPORTANT : Here we clone node if we got the same instance
 	// 			   Otherwise, altering props.children after render will fuck everything up
 	// Clone identical nodes to be able to diff them
 	if ( oldNode && oldNode === newNode )
 		newNode = _cloneVNode( oldNode )
-
 	// Transfer id for refs
 	if ( oldNode && oldNode._id )
 		newNode._id = oldNode._id
-
 	// Create / update DOM element for those node types
 	if (
 		// FIXME : Create a set of number ? Or bitwise checking ? check perfs
@@ -391,9 +403,12 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 		|| newNode.type === _VNodeTypes_ELEMENT
 		// || newNode.type === _VNodeTypes_LIST
 		|| newNode.type === _VNodeTypes_NULL
-	)
-		newNode.dom = _diffElement( newNode, oldNode )
-
+	) {
+		// Clone node env for children, to avoid env to propagate on siblings
+		nodeEnv = Object.assign({}, nodeEnv)
+		// Compute dom element for this node
+		newNode.dom = _diffElement( newNode, oldNode, nodeEnv )
+	}
 	// Diff component node
 	else if ( newNode.type === _VNodeTypes_COMPONENT ) {
 		// Transfer component instance from old node to new node
@@ -455,7 +470,7 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 		// TODO : Cross assign node to component
 		// We rendered something (not reusing old component)
 		if ( renderResult ) {
-			_diffNode( renderResult, oldNode?.props.children[0] )
+			_diffNode( renderResult, oldNode?.props.children[0], nodeEnv )
 			newNode.dom = renderResult.dom
 			newNode.props.children = [ renderResult ]
 		}
@@ -472,5 +487,5 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode ) {
 	}
 	// Diff children for node that are containers and not components
 	else if ( newNode.type > _VNodeTypes_CONTAINERS )
-		_diffChildren( newNode, oldNode )
+		_diffChildren( newNode, oldNode, nodeEnv )
 }

@@ -1,7 +1,7 @@
 {
 	"name": "@zouloux/reflex",
 	"type": "module",
-	"version": "0.6.3",
+	"version": "0.7.0",
 	"description": "Reflex is a tiny 3kb virtual-dom library with factory based functional components.",
 	"main": "./dist/index.es2017.cjs",
 	"module": "./dist/index.es2020.mjs",
@@ -56,6 +56,9 @@
 			},
 			{
 				"input": "./src/reflex-more/debug.ts"
+			},
+			{
+				"input": "./src/reflex-more/renderer.ts"
 			}
 		]
 	}

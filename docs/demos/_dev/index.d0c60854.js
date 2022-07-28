@@ -149,6 +149,7 @@ parcelHelpers.export(exports, "init", ()=>init);
 var _reflex = require("../../src/reflex");
 var _debug = require("../../src/reflex-more/debug");
 var _demoHelpers = require("../common/demoHelpers");
+var _renderer = require("../../src/reflex-more/renderer");
 function ListItem(props) {
     const item = props.item;
     return /*#__PURE__*/ (0, _reflex.h)("li", null, item.id, " : ", item.name);
@@ -180,10 +181,19 @@ function TestComponent() {
                 item: item
             }))), /*#__PURE__*/ (0, _reflex.h)("span", null, "Length: ", list.value.length), /*#__PURE__*/ (0, _reflex.h)("div", null, "Has children :\xa0", list.value.length > 0 ? /*#__PURE__*/ (0, _reflex.h)("span", null, "YES") : null));
 }
+function TestSVG() {
+    return /*#__PURE__*/ (0, _reflex.h)("svg", {
+        height: "210",
+        width: "500"
+    }, /*#__PURE__*/ (0, _reflex.h)("polygon", {
+        points: "200,10 250,190 160,210",
+        style: "fill:lime;stroke:purple;stroke-width:1"
+    }));
+}
 function DevApp() {
     return /*#__PURE__*/ (0, _reflex.h)("div", {
         class: "Coucou"
-    }, /*#__PURE__*/ (0, _reflex.h)("h1", null, "Hello"), /*#__PURE__*/ (0, _reflex.h)(TestComponent, null));
+    }, /*#__PURE__*/ (0, _reflex.h)("h1", null, "Hello"), /*#__PURE__*/ (0, _reflex.h)(TestComponent, null), /*#__PURE__*/ (0, _reflex.h)(TestSVG, null), /*#__PURE__*/ (0, _reflex.h)("div", null, "After SVG"));
 }
 // -----------------------------------------------------------------------------
 (0, _debug.setReflexDebug)(true);
@@ -193,12 +203,14 @@ function init() {
     const a = /*#__PURE__*/ (0, _reflex.h)(DevApp, null);
     console.log("A", a);
     (0, _reflex.render)(a, document.getElementById("App"));
+    const string = (0, _renderer.renderToString)(a);
+    console.log(string);
     // render( a, document.getElementById('App') )
     p();
 }
 init();
 
-},{"../../src/reflex":"cuBJf","../../src/reflex-more/debug":"2vfjB","../common/demoHelpers":"7ZAOq","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"2vfjB":[function(require,module,exports) {
+},{"../../src/reflex":"cuBJf","../../src/reflex-more/debug":"2vfjB","../common/demoHelpers":"7ZAOq","../../src/reflex-more/renderer":"aVBGp","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"2vfjB":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "getReflexDebug", ()=>getReflexDebug);
@@ -271,5 +283,97 @@ const lastnameList = [
 const delay = (durationInSeconds)=>new Promise((resolve)=>window.setTimeout(resolve, durationInSeconds * 1000));
 const randomDelay = (min, max)=>delay(min + rand(max - min));
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["fbtN8"], "fbtN8", "parcelRequirea1a1")
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"aVBGp":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "renderToString", ()=>renderToString);
+var _reflex = require("../reflex");
+function renderAbstractNodeToString(node) {
+    if (node.abstractType === "comment") return `<!--${node.data}-->`;
+    if (node.abstractType === "text") return node.nodeValue;
+    if (node.abstractType === "element") {
+        const nodeElement = node;
+        const type = nodeElement.type.toLowerCase();
+        let buffer = `<${type}`;
+        Object.keys(nodeElement.attributes).forEach((key)=>{
+            // FIXME : Replace all ?
+            buffer += ` ${key}="${nodeElement.attributes[key].replace(/"/g, "&quot;")}"`;
+        });
+        if (nodeElement.children.length === 0) return buffer + "/>";
+        buffer += ">";
+        buffer += nodeElement.innerHTML;
+        return `${buffer}</${type}>`;
+    }
+}
+const abstractDocument = {
+    createComment (data) {
+        return {
+            abstractType: "comment",
+            data
+        };
+    },
+    createTextNode (nodeValue) {
+        return {
+            abstractType: "text",
+            nodeValue
+        };
+    },
+    createElement (type) {
+        return abstractDocument.createElementNS(null, type);
+    },
+    createElementNS (namespace, type) {
+        let innerHTML = "";
+        let attributes = {};
+        let children = [];
+        return {
+            /** Get components */ get attributes () {
+                return attributes;
+            },
+            get children () {
+                return children;
+            },
+            /** Base element type */ abstractType: "element",
+            type,
+            namespace,
+            /** Events are useless here */ // FIXME : Will become useful for hydrate
+            addEventListener (...rest) {},
+            removeEventListener (...rest) {},
+            /** Attributes */ setAttribute (name, value) {
+                attributes[name] = value;
+            },
+            getAttribute (name) {
+                return attributes[name];
+            },
+            removeAttribute (name) {
+                delete attributes[name];
+            },
+            /** Children */ removeChild (child) {
+                children = children.filter((c)=>c !== child);
+            },
+            appendChild (child) {
+                children.push(child);
+            },
+            insertBefore (child, before) {
+                children.splice(children.indexOf(before), 0, child);
+            },
+            /** innerHTML */ get innerHTML () {
+                return innerHTML != "" ? innerHTML : children.map((child)=>renderAbstractNodeToString(child)).join("");
+            },
+            set innerHTML (value){
+                if (value == "") children = [];
+                innerHTML = value;
+            },
+            /** toString */ toString () {
+                return renderAbstractNodeToString(this);
+            }
+        };
+    }
+};
+function renderToString(rootNode) {
+    const rootElement = abstractDocument.createElement("body");
+    (0, _reflex.render)(rootNode, rootElement, abstractDocument);
+    return rootElement.innerHTML;
+}
+
+},{"../reflex":"cuBJf","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["fbtN8"], "fbtN8", "parcelRequirea1a1")
 
