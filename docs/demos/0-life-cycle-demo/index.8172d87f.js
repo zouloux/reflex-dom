@@ -147,7 +147,7 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "init", ()=>init);
 var _reflex = require("../../src/reflex");
-var _debug = require("../../src/reflex-more/debug");
+var _debug = require("../../src/reflex/debug");
 var _lifecycleDemoApp = require("./LifecycleDemoApp");
 var _codeViewerHelpers = require("../common/codeViewerHelpers");
 // -----------------------------------------------------------------------------
@@ -164,7 +164,7 @@ function init() {
 ], 1);
 init();
 
-},{"../../src/reflex":"cuBJf","../../src/reflex-more/debug":"2vfjB","./LifecycleDemoApp":"8PsVL","../common/codeViewerHelpers":"ca3Po","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"2vfjB":[function(require,module,exports) {
+},{"../../src/reflex":"cuBJf","../../src/reflex/debug":"7uUcT","./LifecycleDemoApp":"8PsVL","../common/codeViewerHelpers":"ca3Po","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7uUcT":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "getReflexDebug", ()=>getReflexDebug);

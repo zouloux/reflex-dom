@@ -1,8 +1,8 @@
-import { render } from "../reflex";
+import { render } from "./index";
 import {
 	IAbstractComment, IAbstractDocument, IAbstractElement, IAbstractNode,
 	IAbstractText, VNode
-} from "../reflex/common";
+} from "./common";
 
 
 function renderAbstractNodeToString ( node:IAbstractNode ) {

@@ -1,6 +1,6 @@
 import { h, render } from "../../src/reflex";
 import { StoreListDemoApp } from "./StoreListDemoApp";
-import { setReflexDebug, trackPerformances } from "../../src/reflex-more/debug";
+import { setReflexDebug, trackPerformances } from "../../src/reflex/debug";
 
 // -----------------------------------------------------------------------------
 

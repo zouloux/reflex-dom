@@ -142,75 +142,27 @@
       this[globalName] = mainExports;
     }
   }
-})({"fbtN8":[function(require,module,exports) {
+})({"lNzLw":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "init", ()=>init);
 var _reflex = require("../../src/reflex");
-var _debug = require("../../src/reflex-more/debug");
-var _demoHelpers = require("../common/demoHelpers");
-var _renderer = require("../../src/reflex-more/renderer");
-function ListItem(props) {
-    const item = props.item;
-    return /*#__PURE__*/ (0, _reflex.h)("li", null, item.id, " : ", item.name);
-}
-function TestComponent() {
-    const list = (0, _reflex.state)([]);
-    function addItems() {
-        const items = [];
-        for(let i = 0; i < 10; i++)items.push({
-            id: (0, _demoHelpers.createUID)(),
-            name: (0, _demoHelpers.pickRandom)((0, _demoHelpers.colorList)) + " " + (0, _demoHelpers.pickRandom)((0, _demoHelpers.foodList))
-        });
-        list.value = [
-            ...list.value,
-            ...items
-        ];
-    }
-    // addItems();
-    // FIXME : Does not target correct node (it target first child)
-    // return () => <div class={["TestComponent", list.value.length]}>
-    return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
-            class: [
-                "TestComponent"
-            ]
-        }, /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: addItems
-        }, "Add Items"), /*#__PURE__*/ (0, _reflex.h)("ul", null, list.value.map((item)=>/*#__PURE__*/ (0, _reflex.h)(ListItem, {
-                key: item.id,
-                item: item
-            }))), /*#__PURE__*/ (0, _reflex.h)("span", null, "Length: ", list.value.length), /*#__PURE__*/ (0, _reflex.h)("div", null, "Has children :\xa0", list.value.length > 0 ? /*#__PURE__*/ (0, _reflex.h)("span", null, "YES") : null));
-}
-function TestSVG() {
-    return /*#__PURE__*/ (0, _reflex.h)("svg", {
-        height: "210",
-        width: "500"
-    }, /*#__PURE__*/ (0, _reflex.h)("polygon", {
-        points: "200,10 250,190 160,210",
-        style: "fill:lime;stroke:purple;stroke-width:1"
-    }));
-}
-function DevApp() {
-    return /*#__PURE__*/ (0, _reflex.h)("div", {
-        class: "Coucou"
-    }, /*#__PURE__*/ (0, _reflex.h)("h1", null, "Hello"), /*#__PURE__*/ (0, _reflex.h)(TestComponent, null), /*#__PURE__*/ (0, _reflex.h)(TestSVG, null), /*#__PURE__*/ (0, _reflex.h)("div", null, "After SVG"));
-}
+var _debug = require("../../src/reflex/debug");
+var _statefulListDemoApp = require("./StatefulListDemoApp");
 // -----------------------------------------------------------------------------
 (0, _debug.setReflexDebug)(true);
+let renderIndex = 0;
 function init() {
     const p = (0, _debug.trackPerformances)("Root rendering");
-    // console.log(<div><h1>Test</h1></div>)
-    const a = /*#__PURE__*/ (0, _reflex.h)(DevApp, null);
-    console.log("A", a);
-    (0, _reflex.render)(a, document.getElementById("App"));
-    const string = (0, _renderer.renderToString)(a);
-    console.log(string);
-    // render( a, document.getElementById('App') )
+    (0, _reflex.render)(/*#__PURE__*/ (0, _reflex.h)((0, _statefulListDemoApp.StatefulDemoApp), {
+        render: init,
+        renderIndex: renderIndex++
+    }), document.body);
     p();
 }
 init();
 
-},{"../../src/reflex":"cuBJf","../../src/reflex-more/debug":"2vfjB","../common/demoHelpers":"7ZAOq","../../src/reflex-more/renderer":"aVBGp","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"2vfjB":[function(require,module,exports) {
+},{"../../src/reflex":"cuBJf","../../src/reflex/debug":"7uUcT","./StatefulListDemoApp":"e1pMx","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7uUcT":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "getReflexDebug", ()=>getReflexDebug);
@@ -229,7 +181,125 @@ function trackPerformances(subject) {
     return ()=>{};
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7ZAOq":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"e1pMx":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+// ----------------------------------------------------------------------------- LIST APP
+parcelHelpers.export(exports, "StatefulDemoApp", ()=>StatefulDemoApp);
+var _reflex = require("../../src/reflex");
+var _demoHelpers = require("../common/demoHelpers");
+// ----------------------------------------------------------------------------- LIST ITEM
+const listItemStyle = {
+    border: `1px solid black`
+};
+function ListItem(props) {
+    // console.log( "ListItem" );
+    return /*#__PURE__*/ (0, _reflex.h)("tr", {
+        class: "ListItem",
+        "data-id": props.item.id,
+        style: listItemStyle
+    }, /*#__PURE__*/ (0, _reflex.h)("td", null, props.item.name), /*#__PURE__*/ (0, _reflex.h)("td", null, /*#__PURE__*/ (0, _reflex.h)("button", {
+        onClick: props.moveUpClicked
+    }, "\u2B06")), /*#__PURE__*/ (0, _reflex.h)("td", null, /*#__PURE__*/ (0, _reflex.h)("button", {
+        onClick: props.moveDownClicked
+    }, "\u2B07")), /*#__PURE__*/ (0, _reflex.h)("td", null, /*#__PURE__*/ (0, _reflex.h)("button", {
+        onClick: props.removeClicked
+    }, "Remove")));
+}
+function StatefulDemoApp() {
+    /**
+	 * List state and reducers
+	 */ const list = (0, _reflex.state)([]);
+    const clearList = ()=>{
+        list.value = [];
+    };
+    const addItem = (position, item)=>{
+        if (position === "bottom") list.value = [
+            ...list.value,
+            item
+        ];
+        else list.value = [
+            item,
+            ...list.value
+        ];
+    };
+    const removeItem = (item)=>{
+        list.value = list.value.filter((currentItem)=>currentItem != item);
+    };
+    const moveItem = (item, offset)=>{
+        const index = list.value.indexOf(item) + offset;
+        if (index < 0 || index >= list.value.length) return;
+        removeItem(item);
+        list.value.splice(index, 0, item);
+    };
+    function addRandomItems(total = 0) {
+        total ||= (0, _demoHelpers.rand)(5 + list.value.length) + 1;
+        for(let i = 0; i < total; i++)addItem("bottom", {
+            id: (0, _demoHelpers.createUID)(),
+            name: (0, _demoHelpers.pickRandom)((0, _demoHelpers.colorList)) + " " + (0, _demoHelpers.pickRandom)((0, _demoHelpers.foodList))
+        });
+    }
+    function removeRandomItems() {
+        const total = (0, _demoHelpers.rand)(list.value.length) + 1;
+        for(let i = 0; i < total; i++){
+            const item = (0, _demoHelpers.pickRandom)(list.value);
+            removeItem(item);
+        }
+    }
+    /**
+	 * Handlers
+	 */ function controlSubmitted(event) {
+        event.preventDefault();
+        // TODO : Implement refs
+        const nameInput = document.getElementById("StatefulDemoApp_nameInput");
+        if (!nameInput.value) return;
+        addItem("top", {
+            name: nameInput.value,
+            id: (0, _demoHelpers.createUID)()
+        });
+        nameInput.value = "";
+    }
+    /**
+	 * Sub-components
+	 */ function Controls() {
+        console.log("Controls rendered");
+        return /*#__PURE__*/ (0, _reflex.h)("div", {
+            className: "StatefulDemoApp_controls"
+        }, /*#__PURE__*/ (0, _reflex.h)("table", null, /*#__PURE__*/ (0, _reflex.h)("button", {
+            onClick: (e)=>addRandomItems()
+        }, "Add random items to bottom"), /*#__PURE__*/ (0, _reflex.h)("button", {
+            onClick: (e)=>addRandomItems(1000)
+        }, "Add 1_000 items to bottom"), /*#__PURE__*/ (0, _reflex.h)("button", {
+            onClick: (e)=>addRandomItems(10000)
+        }, "Add 10_000 items to bottom"), /*#__PURE__*/ (0, _reflex.h)("button", {
+            onClick: (e)=>removeRandomItems()
+        }, "Remove random items"), /*#__PURE__*/ (0, _reflex.h)("button", {
+            onClick: (e)=>clearList()
+        }, "Clear list")), /*#__PURE__*/ (0, _reflex.h)("form", {
+            onSubmit: controlSubmitted
+        }, /*#__PURE__*/ (0, _reflex.h)("table", null, /*#__PURE__*/ (0, _reflex.h)("input", {
+            id: "StatefulDemoApp_nameInput",
+            type: "text",
+            name: "name",
+            placeholder: "Name ..."
+        }), /*#__PURE__*/ (0, _reflex.h)("button", {
+            type: "submit"
+        }, "Add to top"))));
+    }
+    /**
+	 * Render
+	 */ return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
+            class: "StatefulDemoApp"
+        }, /*#__PURE__*/ (0, _reflex.h)(Controls, null), /*#__PURE__*/ (0, _reflex.h)("h3", null, list.value.length, " element", list.value.length > 1 ? "s" : ""), /*#__PURE__*/ (0, _reflex.h)("table", null, list.value.map((item)=>/* Each item will be re-rendered, even with the same key */ /* Because handlers are recreated each time list.value is mapped */ /*#__PURE__*/ (0, _reflex.h)(ListItem, {
+                item: item,
+                key: item.id,
+                removeClicked: (e)=>removeItem(item),
+                moveUpClicked: (e)=>moveItem(item, -1),
+                moveDownClicked: (e)=>moveItem(item, 1)
+            }))));
+}
+
+},{"../../src/reflex":"cuBJf","../common/demoHelpers":"7ZAOq","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7ZAOq":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "toHex", ()=>toHex);
@@ -283,97 +353,5 @@ const lastnameList = [
 const delay = (durationInSeconds)=>new Promise((resolve)=>window.setTimeout(resolve, durationInSeconds * 1000));
 const randomDelay = (min, max)=>delay(min + rand(max - min));
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"aVBGp":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "renderToString", ()=>renderToString);
-var _reflex = require("../reflex");
-function renderAbstractNodeToString(node) {
-    if (node.abstractType === "comment") return `<!--${node.data}-->`;
-    if (node.abstractType === "text") return node.nodeValue;
-    if (node.abstractType === "element") {
-        const nodeElement = node;
-        const type = nodeElement.type.toLowerCase();
-        let buffer = `<${type}`;
-        Object.keys(nodeElement.attributes).forEach((key)=>{
-            // FIXME : Replace all ?
-            buffer += ` ${key}="${nodeElement.attributes[key].replace(/"/g, "&quot;")}"`;
-        });
-        if (nodeElement.children.length === 0) return buffer + "/>";
-        buffer += ">";
-        buffer += nodeElement.innerHTML;
-        return `${buffer}</${type}>`;
-    }
-}
-const abstractDocument = {
-    createComment (data) {
-        return {
-            abstractType: "comment",
-            data
-        };
-    },
-    createTextNode (nodeValue) {
-        return {
-            abstractType: "text",
-            nodeValue
-        };
-    },
-    createElement (type) {
-        return abstractDocument.createElementNS(null, type);
-    },
-    createElementNS (namespace, type) {
-        let innerHTML = "";
-        let attributes = {};
-        let children = [];
-        return {
-            /** Get components */ get attributes () {
-                return attributes;
-            },
-            get children () {
-                return children;
-            },
-            /** Base element type */ abstractType: "element",
-            type,
-            namespace,
-            /** Events are useless here */ // FIXME : Will become useful for hydrate
-            addEventListener (...rest) {},
-            removeEventListener (...rest) {},
-            /** Attributes */ setAttribute (name, value) {
-                attributes[name] = value;
-            },
-            getAttribute (name) {
-                return attributes[name];
-            },
-            removeAttribute (name) {
-                delete attributes[name];
-            },
-            /** Children */ removeChild (child) {
-                children = children.filter((c)=>c !== child);
-            },
-            appendChild (child) {
-                children.push(child);
-            },
-            insertBefore (child, before) {
-                children.splice(children.indexOf(before), 0, child);
-            },
-            /** innerHTML */ get innerHTML () {
-                return innerHTML != "" ? innerHTML : children.map((child)=>renderAbstractNodeToString(child)).join("");
-            },
-            set innerHTML (value){
-                if (value == "") children = [];
-                innerHTML = value;
-            },
-            /** toString */ toString () {
-                return renderAbstractNodeToString(this);
-            }
-        };
-    }
-};
-function renderToString(rootNode) {
-    const rootElement = abstractDocument.createElement("body");
-    (0, _reflex.render)(rootNode, rootElement, abstractDocument);
-    return rootElement.innerHTML;
-}
-
-},{"../reflex":"cuBJf","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["fbtN8"], "fbtN8", "parcelRequirea1a1")
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["lNzLw"], "lNzLw", "parcelRequirea1a1")
 

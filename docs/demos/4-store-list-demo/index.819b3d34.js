@@ -148,7 +148,7 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "init", ()=>init);
 var _reflex = require("../../src/reflex");
 var _storeListDemoApp = require("./StoreListDemoApp");
-var _debug = require("../../src/reflex-more/debug");
+var _debug = require("../../src/reflex/debug");
 // -----------------------------------------------------------------------------
 (0, _debug.setReflexDebug)(true);
 let renderIndex = 0;
@@ -162,7 +162,7 @@ function init() {
 }
 init();
 
-},{"../../src/reflex":"cuBJf","./StoreListDemoApp":"cjD7G","../../src/reflex-more/debug":"2vfjB","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"cjD7G":[function(require,module,exports) {
+},{"../../src/reflex":"cuBJf","./StoreListDemoApp":"cjD7G","../../src/reflex/debug":"7uUcT","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"cjD7G":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // ----------------------------------------------------------------------------- LIST APP
@@ -678,7 +678,7 @@ const lastnameList = [
 const delay = (durationInSeconds)=>new Promise((resolve)=>window.setTimeout(resolve, durationInSeconds * 1000));
 const randomDelay = (min, max)=>delay(min + rand(max - min));
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"2vfjB":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"7uUcT":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "getReflexDebug", ()=>getReflexDebug);

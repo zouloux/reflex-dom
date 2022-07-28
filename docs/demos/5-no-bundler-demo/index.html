@@ -13,17 +13,11 @@
 		const { render, h, state, ref } = require("@zouloux/reflex")
         // Reflex is also available in public
 		// const { render, h, state, ref } = Reflex
-        // Same as Signal which is injected into the bundle
-        // let signal = Signal()
 
 		// Create a stateful component with
 		function StateTest () {
 			const _s = state( 0 );
 			const _r = ref()
-            // Signal test
-            // _s.onChanged.add( (newValue, oldValue) => {
-			// 	console.log('Signal state changed', {newValue, oldValue})
-            // })
             // Render some html
 			return () => h('div', {}, [
 				// A button, which will increase the state when clicked

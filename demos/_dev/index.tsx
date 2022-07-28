@@ -1,7 +1,7 @@
 import { h, render, state } from "../../src/reflex";
-import { trackPerformances, setReflexDebug } from "../../src/reflex-more/debug";
+import { trackPerformances, setReflexDebug } from "../../src/reflex/debug";
 import { colorList, createUID, foodList, pickRandom } from "../common/demoHelpers";
-import { renderToString } from "../../src/reflex-more/renderer";
+import { renderToString } from "../../src/reflex/renderToString";
 
 // -----------------------------------------------------------------------------
 
