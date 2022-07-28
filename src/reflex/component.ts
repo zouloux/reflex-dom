@@ -61,6 +61,7 @@ export function _createComponentInstance
 		// Component API is given to every functional or factory component
 		_componentAPI: {
 			get defaultProps () { return component._defaultProps },
+			// FIXME : Move to props.ts ?
 			set defaultProps ( value:Partial<GProps> ) {
 				// Register default props for the getter
 				component._defaultProps = value
@@ -78,7 +79,7 @@ export function _createComponentInstance
 					const { props } = component.vnode
 					// Browse default, and inject them if it does not exist on props
 					for ( let i in value )
-						if ( !props.hasOwnProperty(i) )
+						if ( !props.hasOwnProperty(i) || props[ i ] == null )
 							// @ts-ignore - FIXME : Type error
 							props[ i ] = value[ i ]
 				}

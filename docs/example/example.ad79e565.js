@@ -142,7 +142,50 @@
       this[globalName] = mainExports;
     }
   }
-})({"cuBJf":[function(require,module,exports) {
+})({"eJHQY":[function(require,module,exports) {
+// Import it like any other v-dom lib
+var _reflex = require("../src/reflex");
+// Reflex components can be pure functions or factory functions
+function ReflexApp(props) {
+    // How basic state works
+    const counter = (0, _reflex.state)(0);
+    const increment = ()=>counter.value++;
+    const reset = ()=>counter.value = 0;
+    // No need to use ref for locally scoped variables
+    let firstUpdate = true;
+    // Detect changes of states or props
+    (0, _reflex.changed)(()=>[
+            counter.value
+        ], (newValue)=>{
+        console.log(`Counter just updated to ${newValue}`, firstUpdate);
+        firstUpdate = false;
+    });
+    // How refs of dom elements works
+    const title = (0, _reflex.ref)();
+    (0, _reflex.mounted)(()=>console.log(title.dom.innerHTML));
+    // Returns a render function
+    // Classes can be arrays ! Falsy elements of the array will be discarded
+    return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
+            class: [
+                "ReflexApp",
+                props.modifier,
+                false
+            ]
+        }, /*#__PURE__*/ (0, _reflex.h)("h1", {
+            ref: title
+        }, "Hello from Reflex ", props.emoji), /*#__PURE__*/ (0, _reflex.h)("button", {
+            onClick: increment
+        }, "Increment"), "\xa0", /*#__PURE__*/ (0, _reflex.h)("button", {
+            onClick: reset
+        }, "Reset"), "\xa0", /*#__PURE__*/ (0, _reflex.h)("span", null, "Counter : ", counter.value));
+}
+// Render it like any other v-dom library
+(0, _reflex.render)(/*#__PURE__*/ (0, _reflex.h)(ReflexApp, {
+    modifier: "ReflexApp-lightMode",
+    emoji: "\uD83D\uDC4B"
+}), document.body);
+
+},{"../src/reflex":"cuBJf"}],"cuBJf":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /// <reference lib="dom" />
@@ -847,6 +890,7 @@ function _createComponentInstance(vnode) {
             get defaultProps () {
                 return component._defaultProps;
             },
+            // FIXME : Move to props.ts ?
             set defaultProps (value){
                 // Register default props for the getter
                 component._defaultProps = value;
@@ -858,7 +902,7 @@ function _createComponentInstance(vnode) {
                     // Get props object instance from current virtual node
                     const { props  } = component.vnode;
                     // Browse default, and inject them if it does not exist on props
-                    for(let i in value)if (!props.hasOwnProperty(i)) // @ts-ignore - FIXME : Type error
+                    for(let i in value)if (!props.hasOwnProperty(i) || props[i] == null) // @ts-ignore - FIXME : Type error
                     props[i] = value[i];
                 }
             }
@@ -1139,5 +1183,5 @@ function changed(detectChanges, executeHandler) {
     });
 }
 
-},{"./diff":"6sa8r","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},[], null, "parcelRequirea1a1")
+},{"./diff":"6sa8r","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["eJHQY"], "eJHQY", "parcelRequirea1a1")
 
