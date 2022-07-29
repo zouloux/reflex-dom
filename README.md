@@ -176,8 +176,6 @@ function ChangingComponent ( props ) {
 }
 ```
 
-> Set `<StatelessComponent name={ connectedUser.name } pure={ false } />` if your stateless component isn't a pure function (if it uses some other dependencies than its props). 
-
 ### Stateful components with factory pattern
 
 This is where it changes from React. Stateful components in Reflex follows the __Factory Component Pattern__. __[Factory hooks](#factory-hooks)__ are used __only__ in the "factory phase" of the component.
