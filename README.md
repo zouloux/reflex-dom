@@ -266,6 +266,7 @@ console.log( myState.value )
 
 // Set new value (will trigger a component update)
 myState.value = newValue
+// -> Dom not updated yet
 
 // After setting using .value, component is not refreshed instantanously
 // Use .set to wait for component invalidation
@@ -283,6 +284,7 @@ Additional options for state are
 function filter (newValue, oldValue) {
     return Math.max(newValue, 0)
 }
+
 function afterChange ( newValue ) {
     // Component has been updated and dom is ready
     console.log( newValue ) 
@@ -305,13 +307,17 @@ Like in React, we can use ref to target rendered components.
 
 ```tsx
 function MyComponent () {
+    // Create a new ref
     const otherComponentRef = ref()
+  
     function showref () {
         // Log component dom element
         console.log('DOM', otherComponentRef.dom )
+      
         // Log component instance
         console.log('Component', otherComponentRef.component )
     }
+    
     return () => <div>
         <OtherComponent ref={ otherComponentRef }/>
         <button onClick={ showref }>Show ref</button>
@@ -325,11 +331,15 @@ To create a locally scoped prop that will not trigger rendering, just use `let`
 
 ```tsx
 function MyComponent () {
+    // Create a local variable (no need for ref here)
     let localVariable = 0
+  
     function updateLocalVariable () {
+        // Update this variable will not trigger a render
         localVariable ++
         console.log( localVariable );
     }
+    
     return () => <div>
         <button onClick={ updateLocalVariable }>Update local variable</button>
     </div>
@@ -342,13 +352,18 @@ Multi ref in Reflex is `ref` as an array of components. Very handy when dealing 
 
 ```tsx
 function List ( props ) {
+    // Create ref for list
     const itemRefs = refs()
+  
     function showListItemElements () {
         // Will be an array of all refs
         console.log( itemsRefs.list );
     }
+    
     return () => <ul>
-        {props.items.map( item => <li ref={itemRefs}>{item.name}</li> )}
+        {props.items.map( item =>
+            <li ref={itemRefs}>{item.name}</li>
+        )}
     </ul>
 }
 ```
@@ -479,6 +494,8 @@ Reflex is slim, but it still has some cool features for greater DX.
 ### Automatic forwardRef
 
 When attaching a ref from inside the component, an from the parent, it will just work as expected.
+
+> NOTE : This feature is WIP
 
 ```tsx
 function Child () {
