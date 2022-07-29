@@ -53,7 +53,7 @@ Stateful components will return a __render function__ instead of virtual-nodes d
 Scope is shared between the factory and the render function.
 
 
-```typescript jsx
+```tsx
 function FactoryComponent ( props ) {
     // factory hooks and component logic goes here
     // render function and conditions goes there
@@ -135,7 +135,7 @@ You will need at least those options into `tsconfig.json` :
 
 ### Simple DOM rendering
 
-```typescript jsx
+```tsx
 // Import Reflex like you would import Preact for example.
 import { h, render } from "reflex";
 
@@ -155,7 +155,7 @@ renderApp( `Hello from Reflex ✌️` )
 
 Stateless, or components without logic can avoid the factory pattern. Simply return the virtual-dom tree derived from props like you would do it in React or Preact.
 
-```typescript jsx
+```tsx
 function StatelessComponent ( props ) {
     return <div class="StatelessComponent">
       Hello { props.name } 👋
@@ -165,7 +165,7 @@ function StatelessComponent ( props ) {
 
 > Because Stateless and Stateful components are written differently, Reflex can  optimize render of Stateless components by keeping old virtual-node tree, if props did not change between renders. We have better performances without adding anything to our app.
 
-```typescript jsx
+```tsx
 function ChangingComponent ( props ) {
   // If "connectedUser.name" does not changes between "ChangingComponent" renders,
   // "StatelessComponent" does not need to re-render.
@@ -180,7 +180,7 @@ function ChangingComponent ( props ) {
 
 This is where it changes from React. Stateful components in Reflex follows the __Factory Component Pattern__. __[Factory hooks](#factory-hooks)__ are used __only__ in the "factory phase" of the component.
 
-```typescript jsx
+```tsx
 function StatefulComponent ( props ) {
     // This is the "factory phase"
     // This part of the component is executed once, when component is created and not updated.
@@ -203,7 +203,7 @@ function StatefulComponent ( props ) {
 
 In Stateful components, "props" is a __Proxy__ object (like in Solid). Because factory phase is executed once, at component's creation, we need a way to access new props values at each render, this is possible thanks to __Proxy__ [#1](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Proxy), [#2](https://caniuse.com/?search=proxy).
 
-```typescript jsx
+```tsx
 function PropsComponent ( props ) {
     function logName () {
         // ✅ Will log latest name, even if component rendered several times
@@ -217,7 +217,7 @@ function PropsComponent ( props ) {
 
 > The main tradeoff is that props destructuring is not possible anymore. Or destructed props will be equal to the first props value and will never change.
 
-```typescript jsx
+```tsx
 function PropsComponent ( props )  {
     // 🚫 Here name will never change even if the component is updated by its parent
     const { name } = props
@@ -257,13 +257,16 @@ Like in React, __factory hooks__ are composable into other functions easily.
 
 ## State
 
-```typescript jsx
+```tsx
 // Create a new state
 const myState = state( initialState )
+
 // Get current state value
 console.log( myState.value )
+
 // Set new value (will trigger a component update)
 myState.value = newValue
+
 // After setting using .value, component is not refreshed instantanously
 // Use .set to wait for component invalidation
 await myState.set( newValue )
@@ -300,7 +303,7 @@ function changeStateValues () {
 
 Like in React, we can use ref to target rendered components.
 
-```typescript jsx
+```tsx
 function MyComponent () {
     const otherComponentRef = ref()
     function showref () {
@@ -320,7 +323,7 @@ function MyComponent () {
 
 To create a locally scoped prop that will not trigger rendering, just use `let`
 
-```typescript jsx
+```tsx
 function MyComponent () {
     let localVariable = 0
     function updateLocalVariable () {
@@ -337,7 +340,7 @@ function MyComponent () {
 
 Multi ref in Reflex is `ref` as an array of components. Very handy when dealing with lists!
 
-```typescript jsx
+```tsx
 function List ( props ) {
     const itemRefs = refs()
     function showListItemElements () {
@@ -352,7 +355,7 @@ function List ( props ) {
 
 > Refs are populated in order of rendering. So if you are using a list which can render in another order than from 0 to length, you can specify the index ( [see example](./demos/common/CodeViewer/CodeViewer.tsx) )
 
-```typescript jsx
+```tsx
 function List ( props ) {
     const itemRefs = refs()
     return () => <ul>
@@ -370,7 +373,7 @@ function List ( props ) {
 
 Pretty self-explanatory, will be called when mounting or unmounting the component. 
 
-```typescript jsx
+```tsx
 function MountUnmount ( props ) {
     const root = ref()
     
@@ -394,7 +397,7 @@ function MountUnmount ( props ) {
 
 __Changed__ factory hook is useful to detect changes into a component.  With only one handler as argument, it will be called after each component render.
 
-```typescript jsx
+```tsx
 function ChangedComponent ( props ) {
     const root = ref()
     const number = state(0)
@@ -413,7 +416,7 @@ function ChangedComponent ( props ) {
 
 __Changed__ can have a first argument to detect changes on values. Because we are in __Factory phase__, raw props or values can't be used directly. __Note__ that the check function __always returns an array__.
 
-```typescript jsx
+```tsx
 function ChangedComponent ( props ) {
     const stateA = state()
     const stateB = state()
@@ -432,7 +435,7 @@ function ChangedComponent ( props ) {
 
 Return from the detect function can detect changes on multiple elements.
 
-```typescript jsx
+```tsx
 function ChangedComponent ( props ) {
     const stateA = state()
     const stateB = state()
@@ -454,7 +457,7 @@ function ChangedComponent ( props ) {
 
 __Changed__ handler has the same return behavior than `mount` and `unmount`.
 
-```typescript jsx
+```tsx
 function ChangedComponent ( props ) {
     const state = state()
     changed( () => [state.value], newValue => {
@@ -477,7 +480,7 @@ Reflex is slim, but it still has some cool features for greater DX.
 
 When attaching a ref from inside the component, an from the parent, it will just work as expected.
 
-```typescript jsx
+```tsx
 function Child () {
     // Works, will have component instance and div element
     const root = ref()
@@ -497,7 +500,7 @@ function Parent () {
 
 CSS classes can be set as an array. Falsy values will be automatically filtered out.
 
-```typescript jsx
+```tsx
 function PureComponent ( props ) {
     const classes = [
         "PureComponent",
