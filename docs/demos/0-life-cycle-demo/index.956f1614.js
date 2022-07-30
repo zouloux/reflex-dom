@@ -244,6 +244,7 @@ function LifecycleDemoApp() {
         list.set(list.value.filter((c)=>c != item));
     }
     function List(props, component) {
+        // This functional component is not pure, always update it
         component.shouldUpdate = ()=>true;
         return /*#__PURE__*/ (0, _reflex.h)("div", null, /*#__PURE__*/ (0, _reflex.h)("button", {
             onClick: (e)=>addListItem()

@@ -66,6 +66,7 @@ export function LifecycleDemoApp () {
 	}
 
 	function List ( props, component:IComponentAPI ) {
+		// This functional component is not pure, always update it
 		component.shouldUpdate = () => true
 		return <div>
 			<button onClick={ e => addListItem() }>Add list item</button>

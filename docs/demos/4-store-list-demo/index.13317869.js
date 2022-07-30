@@ -224,7 +224,7 @@ const listStore = (0, _store.createStore)(getInitialListState(), {
 const listItemStyle = {
     border: `1px solid black`
 };
-ListItem.isFunctional = true;
+ListItem.isFactory = false;
 function ListItem(props, component) {
     // console.log("ListItem");
     component.shouldUpdate = (n, o)=>n.item !== o.item;

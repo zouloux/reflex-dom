@@ -14,7 +14,6 @@ interface IUserComponentProps {
 // -----------------------------------------------------------------------------
 
 export function UserComponent ( props:IUserComponentProps ) {
-
 	// Here "props" is a proxy, so it's values can be updated dynamically
 	// The main tradeoff is that destructuring props is not possible
 
@@ -45,7 +44,7 @@ export function UserComponent ( props:IUserComponentProps ) {
 	const image = ref()
 	changed(() => {
 		// FIXME : root.component should be this component instance
-		console.log("REFS - UserComponent just rendered", root.component, image.dom.getAttribute('src'))
+		console.log("REFS - UserComponent just rendered", /*root.component,*/ image.dom.getAttribute('src'))
 	})
 
 	// With factory pattern, we have to return a render function.

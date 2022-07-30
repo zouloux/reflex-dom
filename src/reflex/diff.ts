@@ -223,7 +223,6 @@ let previousParentContainerDom:Element
  * @param nodeEnv
  */
 export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEnv?:INodeEnv ) {
-
 	// console.log( "_diffChildren", newParentNode, oldParentNode );
 	// TODO : DOC
 	let parentDom = (newParentNode.dom ?? previousParentContainerDom) as Element
@@ -372,7 +371,7 @@ export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<an
 	// Use regular ref and do not use proxy if we are sure we are on a functional component
 	let props = node.props
 	// @ts-ignore - FIXME : Type
-	// if ( !node.value.isFunctional && _currentComponent.isFactory ) {
+	// if ( !node.value.isFactory && _currentComponent.isFactory ) {
 	if ( _currentComponent._propsProxy ) {
 		_currentComponent._propsProxy.set( node.props )
 		props = _currentComponent._propsProxy.proxy
@@ -424,17 +423,13 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv?:any ) {
 			const result = _renderComponentNode( newNode as VNode<object, ComponentFunction> )
 			// This is a factory component which return a render function
 			if ( typeof result == "function" ) {
+				newNode.value.isFactory = true
 				component._render = result as RenderFunction
-				component.isFactory = true
-				// @ts-ignore - FIXME : Type
-				newNode.value.isFunctional = false
 			}
 			// This is pure functional component which returns a virtual node
 			else if ( typeof result == "object" && "type" in result ) {
+				newNode.value.isFactory = false
 				component._render = newNode.value as RenderFunction
-				component.isFactory = false
-				// @ts-ignore - FIXME : Type
-				newNode.value.isFunctional = true
 				renderResult = result
 			}
 		}
@@ -445,7 +440,7 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv?:any ) {
 		}
 		// TODO : DOC - Optim should update
 		let shouldUpdate = true
-		if ( !renderResult && oldNode && !component.isFactory ) {
+		if ( !renderResult && oldNode && !component.vnode.value.isFactory ) {
 			if ( component._componentAPI.shouldUpdate )
 				shouldUpdate = component._componentAPI.shouldUpdate( newNode.props, oldNode.props )
 			else {
@@ -475,6 +470,9 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv?:any ) {
 			newNode.props.children = [ renderResult ]
 		}
 	}
+	// Inject node env into node, now that it has been diffed and rendered
+	if ( !newNode._nodeEnv )
+		newNode._nodeEnv = nodeEnv
 	// Update ref on node
 	updateNodeRef( newNode )
 	// Now that component and its children are ready

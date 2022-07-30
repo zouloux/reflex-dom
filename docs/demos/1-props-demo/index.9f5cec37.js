@@ -204,6 +204,7 @@ function PropsDemoApp() {
     // Create a state attached to "PropsDemoApp".
     // Initial state is gathered at init from "getRandomUser" function.
     const currentUser = (0, _reflex.state)(getRandomUser);
+    // changed(() => [currentUser.value], () => { console.log( currentUser.value ) })
     // With factory pattern, we have to return a render function.
     return ()=>/*#__PURE__*/ (0, _reflex.h)("div", null, /*#__PURE__*/ (0, _reflex.h)("button", {
             onClick: (e)=>currentUser.set(getRandomUser)
@@ -247,7 +248,7 @@ function UserComponent(props) {
     const image = (0, _reflex.ref)();
     (0, _reflex.changed)(()=>{
         // FIXME : root.component should be this component instance
-        console.log("REFS - UserComponent just rendered", root.component, image.dom.getAttribute("src"));
+        console.log("REFS - UserComponent just rendered", /*root.component,*/ image.dom.getAttribute("src"));
     });
     // With factory pattern, we have to return a render function.
     return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {

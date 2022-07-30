@@ -142,50 +142,7 @@
       this[globalName] = mainExports;
     }
   }
-})({"eJHQY":[function(require,module,exports) {
-// Import it like any other v-dom lib
-var _reflex = require("../src/reflex");
-// Reflex components can be pure functions or factory functions
-function ReflexApp(props) {
-    // How basic state works
-    const counter = (0, _reflex.state)(0);
-    const increment = ()=>counter.value++;
-    const reset = ()=>counter.value = 0;
-    // No need to use ref for locally scoped variables
-    let firstUpdate = true;
-    // Detect changes of states or props
-    (0, _reflex.changed)(()=>[
-            counter.value
-        ], (newValue)=>{
-        console.log(`Counter just updated to ${newValue}`, firstUpdate);
-        firstUpdate = false;
-    });
-    // How refs of dom elements works
-    const title = (0, _reflex.ref)();
-    (0, _reflex.mounted)(()=>console.log(title.dom.innerHTML));
-    // Returns a render function
-    // Classes can be arrays ! Falsy elements of the array will be discarded
-    return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
-            class: [
-                "ReflexApp",
-                props.modifier,
-                false
-            ]
-        }, /*#__PURE__*/ (0, _reflex.h)("h1", {
-            ref: title
-        }, "Hello from Reflex ", props.emoji), /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: increment
-        }, "Increment"), "\xa0", /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: reset
-        }, "Reset"), "\xa0", /*#__PURE__*/ (0, _reflex.h)("span", null, "Counter : ", counter.value));
-}
-// Render it like any other v-dom library
-(0, _reflex.render)(/*#__PURE__*/ (0, _reflex.h)(ReflexApp, {
-    modifier: "ReflexApp-lightMode",
-    emoji: "\uD83D\uDC4B"
-}), document.body);
-
-},{"../src/reflex":"cuBJf"}],"cuBJf":[function(require,module,exports) {
+})({"cuBJf":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /// <reference lib="dom" />
@@ -682,7 +639,7 @@ function _renderComponentNode(node) {
     // Use regular ref and do not use proxy if we are sure we are on a functional component
     let props = node.props;
     // @ts-ignore - FIXME : Type
-    // if ( !node.value.isFunctional && _currentComponent.isFactory ) {
+    // if ( !node.value.isFactory && _currentComponent.isFactory ) {
     if (_currentComponent._propsProxy) {
         _currentComponent._propsProxy.set(node.props);
         props = _currentComponent._propsProxy.proxy;
@@ -725,15 +682,11 @@ function _diffNode(newNode, oldNode, nodeEnv) {
             const result = _renderComponentNode(newNode);
             // This is a factory component which return a render function
             if (typeof result == "function") {
+                newNode.value.isFactory = true;
                 component._render = result;
-                component.isFactory = true;
-                // @ts-ignore - FIXME : Type
-                newNode.value.isFunctional = false;
             } else if (typeof result == "object" && "type" in result) {
+                newNode.value.isFactory = false;
                 component._render = newNode.value;
-                component.isFactory = false;
-                // @ts-ignore - FIXME : Type
-                newNode.value.isFunctional = true;
                 renderResult = result;
             }
         } else {
@@ -742,7 +695,7 @@ function _diffNode(newNode, oldNode, nodeEnv) {
         }
         // TODO : DOC - Optim should update
         let shouldUpdate = true;
-        if (!renderResult && oldNode && !component.isFactory) {
+        if (!renderResult && oldNode && !component.vnode.value.isFactory) {
             if (component._componentAPI.shouldUpdate) shouldUpdate = component._componentAPI.shouldUpdate(newNode.props, oldNode.props);
             else // Copy new props to a new object
             // TODO : DOC
@@ -770,6 +723,8 @@ function _diffNode(newNode, oldNode, nodeEnv) {
             ];
         }
     }
+    // Inject node env into node, now that it has been diffed and rendered
+    if (!newNode._nodeEnv) newNode._nodeEnv = nodeEnv;
     // Update ref on node
     updateNodeRef(newNode);
     // Now that component and its children are ready
@@ -871,8 +826,7 @@ var _props = require("./props");
 function _createComponentInstance(vnode) {
     const component = {
         vnode,
-        _propsProxy: // @ts-ignore - FIXME Type
-        vnode.value.isFunctional ? null : (0, _props._createPropsProxy)(vnode.props),
+        _propsProxy: vnode.value.isFactory || vnode.value.isFactory === undefined ? (0, _props._createPropsProxy)(vnode.props) : null,
         name: vnode.value.name,
         isMounted: false,
         methods: {},
@@ -1041,7 +995,7 @@ function updateDirtyComponents() {
     let p;
     // TODO : Update with depth ! Deepest first ? Or last ?
     componentsToUpdate.forEach((component)=>{
-        (0, _diff._diffNode)(component.vnode, component.vnode);
+        (0, _diff._diffNode)(component.vnode, component.vnode, component.vnode._nodeEnv);
         // if ( component._affectedNodesByStates.length == 0 )
         // 	_diffNode( component.vnode, component.vnode )
         // else for ( let i = 0; i < component._affectedNodesByStates.length; ++i ) {
@@ -1183,5 +1137,5 @@ function changed(detectChanges, executeHandler) {
     });
 }
 
-},{"./diff":"6sa8r","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["eJHQY"], "eJHQY", "parcelRequirea1a1")
+},{"./diff":"6sa8r","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},[], null, "parcelRequirea1a1")
 

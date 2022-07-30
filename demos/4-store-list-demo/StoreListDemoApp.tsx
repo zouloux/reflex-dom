@@ -72,7 +72,7 @@ interface IListItemProps {
 }
 
 
-ListItem.isFunctional = true
+ListItem.isFactory = false
 function ListItem ( props:IListItemProps, component:IComponentAPI<IListItemProps> ) {
 	// console.log("ListItem");
 	component.shouldUpdate = (n, o) => n.item !== o.item

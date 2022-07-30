@@ -1,5 +1,5 @@
 import {
-	_VNodeTypes_CONTAINERS, ComponentFunction, LifecycleHandler, MountHandler,
+	_VNodeTypes_CONTAINERS, ComponentFunction, INodeEnv, LifecycleHandler, MountHandler,
 	RenderFunction, VNode
 } from "./common";
 import { _createPropsProxy, IPropsProxy } from "./props";
@@ -9,7 +9,6 @@ import { _createPropsProxy, IPropsProxy } from "./props";
 export interface ComponentInstance <GProps extends object = object> { // FIXME : Generics ?
 	vnode				:VNode<GProps, ComponentFunction>
 	name				:string
-	isFactory			?:boolean
 	isMounted			:boolean;
 	methods				:Record<string, Function>
 	_isDirty			?:boolean
@@ -41,10 +40,8 @@ export function _createComponentInstance
 	const component = {
 		vnode,
 		_propsProxy: (
-			// @ts-ignore - FIXME Type
-			vnode.value.isFunctional
-			? null
-			: _createPropsProxy( vnode.props )
+			( vnode.value.isFactory || vnode.value.isFactory === undefined )
+			? _createPropsProxy( vnode.props ) : null
 		),
 		name: (vnode.value as RenderFunction).name,
 		isMounted: false,

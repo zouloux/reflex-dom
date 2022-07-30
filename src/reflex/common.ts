@@ -60,6 +60,8 @@ export interface INodeEnv {
 
 // ----------------------------------------------------------------------------- INTERNAL - CREATE COMPONENT
 
+export type THasIsFactoryProp = { isFactory?: boolean }
+
 export type RenderDom = Element | Text | Comment
 
 // FIXME : Cannot be VNode[] in current implementation.
@@ -67,7 +69,7 @@ export type RenderDom = Element | Text | Comment
 export type RenderFunction <GProps extends object = object> = ( props?:GProps, componentAPI?:IComponentAPI ) => VNode
 export type ComponentReturn <GProps extends object = object> = RenderFunction<GProps> | VNode
 export type FactoryComponent <GProps extends object = object> = ( props?:GProps ) => RenderFunction
-export type ComponentFunction <GProps extends object = object> = RenderFunction<GProps> | FactoryComponent<GProps>
+export type ComponentFunction <GProps extends object = object> = ( RenderFunction<GProps> | FactoryComponent<GProps> ) & THasIsFactoryProp
 
 export type LifecycleHandler <GReturn = void> = (...rest) => GReturn
 export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler>
@@ -113,9 +115,10 @@ export type VNodeTypes = (
 	typeof _VNodeTypes_LIST
 )
 
+
 export type VNodeElementValue = keyof (HTMLElementTagNameMap|SVGElementTagNameMap)
 export type VNodeTextValue = string
-export type VNodeValue = VNodeElementValue | VNodeTextValue | ComponentFunction
+export type VNodeValue = ( VNodeElementValue | VNodeTextValue | ComponentFunction ) & THasIsFactoryProp
 
 export interface VNodeBaseProps {
 	children	?:VNode[],
@@ -142,6 +145,7 @@ export interface VNode <
 	props			:GProps
 	key				:string	// Allow numbers ?
 	dom				?:RenderDom
+	_nodeEnv		?:INodeEnv
 	_keys			?:Map<string, VNode>
 	_ref			?:IRef | IRefs
 	_component		?:ComponentInstance
