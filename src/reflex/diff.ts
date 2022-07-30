@@ -386,7 +386,10 @@ export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<an
 	return result as GReturn
 }
 
-export function _diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv?:any ) {
+export function _diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv?:INodeEnv ) {
+	// Get back node env from node if node env is missing
+	if ( !newNode._nodeEnv )
+		nodeEnv = newNode._nodeEnv
 	// IMPORTANT : Here we clone node if we got the same instance
 	// 			   Otherwise, altering props.children after render will fuck everything up
 	// Clone identical nodes to be able to diff them

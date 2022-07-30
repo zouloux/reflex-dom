@@ -26,7 +26,7 @@ function updateDirtyComponents () {
 		p = require("./debug").trackPerformances("Update dirty components")
 	// TODO : Update with depth ! Deepest first ? Or last ?
 	componentsToUpdate.forEach( component => {
-		_diffNode( component.vnode, component.vnode, component.vnode._nodeEnv )
+		_diffNode( component.vnode, component.vnode )
 		// if ( component._affectedNodesByStates.length == 0 )
 		// 	_diffNode( component.vnode, component.vnode )
 		// else for ( let i = 0; i < component._affectedNodesByStates.length; ++i ) {
