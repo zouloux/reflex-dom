@@ -654,9 +654,7 @@ function _renderComponentNode(node) {
     _currentComponent = null;
     return result;
 }
-function _diffNode(newNode, oldNode, nodeEnv) {
-    // Get back node env from node if node env is missing
-    if (!newNode._nodeEnv) nodeEnv = newNode._nodeEnv;
+function _diffNode(newNode, oldNode, nodeEnv = newNode._nodeEnv) {
     // IMPORTANT : Here we clone node if we got the same instance
     // 			   Otherwise, altering props.children after render will fuck everything up
     // Clone identical nodes to be able to diff them
