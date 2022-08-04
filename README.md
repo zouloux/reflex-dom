@@ -31,15 +31,15 @@ function FactoryComponent ( props ) {
 }
 ```
 
-#### Improvements 
+#### Improvements 👍
 - __Simpler__ : Classic React Hooks like `useCallback`, `useEvent` and `useMemo` becomes __useless__ and does not exist in __Reflex__.<br>
 - __Fewer bugs__ : [Stale closure] issues (https://dmitripavlutin.com/react-hooks-stale-closures/) vanishes.<br>
 - __Cleaner__ : Also, hooks dependencies array to keep state scopes ([#1](https://itnext.io/how-to-work-with-intervals-in-react-hooks-f29892d650f2), [#2](https://overreacted.io/a-complete-guide-to-useeffect/)) are not needed with __[factory extensions](#factory-extensions)__.
 - __Back to basics__ : Using `useRef` to store stateless values does not exist anymore. In __Reflex__, `ref` is used only to target dom node or components, `let` is used to declare local variables like it would normally do.
 
-#### Tradeoffs
+#### Tradeoffs 👎
 - __Stateless vs stateful__ : When a component is going from stateless to stateful, the `return <div>...` needs to be refactored to `return () => <div>...`
-- __Props__ : Props cannot be destructured [because props are a Proxy](#props)
+- __Props__ : Props cannot be destructured [because props is a Proxy](#props)
 - Surely more but I got biases :)
 
 ---
@@ -110,17 +110,20 @@ You will need at least those options into `tsconfig.json` :
 ```tsx
 // Import Reflex like you would import Preact for example.
 import { h, render } from "reflex";
-
-function renderApp( greetings:string ) {
-  const app = <div class="MyApp">
-    <h1>{ greetings }</h1>
-  </div>
-  render( app, document.body )
+// Optionnaly type props with typescript
+interface IAppProps {
+	greetings:string
+}
+// App is a stateless function, no need for factory pattern
+function App ( props:IAppProps ) {
+	return <div class="MyApp">
+      <h1>{ props.greetings }</h1>
+    </div>
 }
 
-renderApp( `Hello from Reflex ✌️` )
-// Note : if you call renderApp again, it will update state of previously rendered app
-// renderApp( `Dom is updated` )
+render( <App greetings="Hello from Reflex 👋" />, document.body )
+// Note : if you call render again, it will update state of previously rendered app
+render( <App greetings="Hello from Reflex ✌️" />, document.body )
 ```
 
 ### Stateless and pure components
