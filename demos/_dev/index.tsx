@@ -1,4 +1,4 @@
-import { h, render, state } from "../../src/reflex";
+import { h, mounted, ref, render, state } from "../../src/reflex";
 import { trackPerformances, setReflexDebug } from "../../src/reflex/debug";
 import { colorList, createUID, foodList, pickRandom } from "../common/demoHelpers";
 import { renderToString } from "../../src/reflex/renderToString";
@@ -54,17 +54,24 @@ function TestComponent () {
 
 
 function TestSVG () {
+	//return <div class={["test"]} nope onClick={e => {}}> {"ok"}</div>
 	return <svg height="210" width="500">
 		<polygon points="200,10 250,190 160,210" style="fill:lime;stroke:purple;stroke-width:1" />
 	</svg>
 }
 
 function DevApp () {
-	return <div class="Coucou">
+	const r = ref<HTMLDivElement>();
+
+	mounted(() => {
+		console.log( "DOM", r.dom );
+	})
+
+	return () => <div ref={ r }>
 		<h1>Hello</h1>
 		<TestComponent />
 		<TestSVG />
-		<div>After SVG</div>
+		<div>After SVG {12}</div>
 	</div>
 }
 

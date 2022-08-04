@@ -1,117 +1,48 @@
 /// <reference lib="dom" />
+
+// NOTE : Avoid glob exports from which insert a helper
+// Unzipped is smaller with glob but bigger when zipped;
+
 // ----------------------------------------------------------------------------- IMPORT / EXPORT
 
-/**
- * REFLEX JS
- *
- * - Reflex Core
- * 		- Core
- * 		- Polyfills
- * 		- Signal + Observer
- * 		- YADL
- * 		- Utils
- * - Reflex Components
- * 		- Reflex View (vdom + web components)
- * 		- Reflex Store
- * 			- Regular store / Async store or one big store well-made
- * 		- Reflex Router
- * 			- Based on Reflex Store
- * 		- Reflex Tween ?
- *		- Reflex Toolkit
- *			- Hooks
- *			- Responsive
- *			- Inputs
- *			- Cursor
- *			- Sound
- *			- Viewport
- *		- Reflex UI Kit
- *			- mixins
- *			- UI Kit
- *			- Components ( Slideshow / Menu / Player ... )
- * - Reflex Server
- *
- */
-
-/**
- * FEATURES :
- *
- * - Basic v-dom
- * 	 ✔ Create / remove elements
- * 	 ✔ Set / remove attributes
- * 	 ✔ Set / remove event listeners
- * 	 ✔ Reuse previous components, do not trash everything everytime
- * 	 ✔ innerHTML
- *   ✔ Class as string or array filtered with booleans
- *   	- Optimize class when does not changes, is it possible ?
- *   ✔ Style as object only
- *   	- Optimize style when does not changes, is it possible ?
- *
- * - Advanced v-dom
- *   ✔ Move elements and keep track of dom elements with keyed virtual nodes
- *   	✔ Add to top
- *   	✔ Add to bottom
- *   	✔ Remove from top
- *   	✔ Remove from bottom
- *   	✔ Insert in the middle
- *      ✔ Remove from the middle
- *      ✔ Basic swap
- *  	X Optimized Swap
- *  		- Do 2 operations, should do only one
- *   ✔ Keep track of component instances
- *   ✔ Remove subtrees recursively
- *   ✔ Sub tree rendering
- *   ✔ Rendering optimization (like memo and skip)
- *
- * - Reactive
- *   ✔ Dom ref / component ref
- *   ✔ Factory helpers (like hooks), find name and prefix
- *   ✔ Var in ref as let ! Yeah
- *   ✔ States / observers
- *   ✔ Stores
- *   ✔ Mount / Unmount
- *   ✔ Updated + Props
- *
- * - Advanced Reactive
- *   - Multi refs in for loops and stuff, need to keep correct indexes even when moving
- *   - Factory Errors / Component errors ( try catch on instance + render etc )
- *   - Async states ! With cancellation
- *   - Fetch hook with race condition management + states + cache + cancellable
- *   - Imperative handles
- *
- * - Types
- * 	 - Basic JSX Type
- * 	 - Render and component return JSX Types
- * 	 - Props types
- *
- * - Release
- * 	 - Optimize
- * 	 - Benchmark
- * 	 - Docs
- * 	 - Release
- *
- * V2 :
- * - Advanced Hot Module reloading with state keeping automagically
- */
-
-// NOTE : Avoid glob exports from which insert an helper
-// Unzipped is smaller with glob but bigger when zipped
-export { state, syncState } from "./states"
+// Export public API
+export { state } from "./states"
 export { getCurrentComponent } from "./diff"
 export { ref, refs } from "./ref"
-export type { IRef, IRefs } from "./ref"
 export { mounted, unmounted, changed } from "./lifecycle"
 export { render, invalidateComponent } from "./render"
+
 // Also export createElement for JSX pragma React
 export { h, h as createElement } from "./jsx"
 
-/**
- * http://localhost:1234/4-store-list-demo/index.html
- * plugged
- * Root rendering 0ms
- * index.4f0fe1bd.js:1317 Update dirty components 730ms
- * index.4f0fe1bd.js:1317 Update dirty components 170ms
- * index.4f0fe1bd.js:1317 Update dirty components 660ms
- * index.4f0fe1bd.js:1317 Update dirty components 150ms
- * index.4f0fe1bd.js:1317 Update dirty components 640ms
- * index.4f0fe1bd.js:1317 Update dirty components 150ms
- */
+// Export types ( do not export too much to keep it simple )
+export type { IState, TInitialValue } from "./states"
+export type { IRef, IRefs } from "./ref"
+export type { ComponentInstance, IComponentAPI } from "./component"
+export type {
+	VNode, IAbstractNode, IAbstractText, IAbstractElement, IAbstractDocument,
+	IAbstractComment, INodeEnv, AbstractNodeTypes, DefaultReflexBaseProps,
+	DefaultReflexProps
+} from "./common"
+
+// ----------------------------------------------------------------------------- JSX TYPES
+
+// Import / Export JSX types without creating a useless empty module into the bundle
+import type { ReflexIntrinsicElements } from "./jsx-types"
+export type {
+	ComponentChild, DOMAttributes, HTMLAttributes, DefaultReflexAttributes,
+	SVGAttributes, ReflexIntrinsicElements, CSSProperties
+} from "./jsx-types"
+
+// Declare global JSX types
+// FIXME : Do it smarter to be compatible with other multiple JSX Runtimes
+// https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-8.html#locally-scoped-jsx-namespaces
+// https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-8.html#per-file-jsx-factories
+declare global {
+	namespace JSX {
+		interface IntrinsicElements extends ReflexIntrinsicElements {}
+		// TODO : Element & ElementClass for factory functions
+		//type Element <GProps extends object = object> = VNode
+		//type ElementClass = ComponentFunction
+	}
+}

@@ -8,14 +8,6 @@ import { IInternalRef } from "./ref";
 import { _createComponentInstance, _recursivelyUpdateMountState, ComponentInstance } from "./component";
 import { shallowPropsCompare } from "./props";
 
-/**
- * TODO : Errors
- * - Disallow a component render function to return a component as main node !
- * 			() => <OtherComponent /> <- Forbidden
- * - Disallow a component which render an array
- * 			() => [<div />, <div />] <- Forbidden
- */
-
 // ----------------------------------------------------------------------------- CONSTANTS
 
 // Virtual node object is injected into associated dom elements with this name
@@ -30,6 +22,7 @@ const _IS_NON_DIMENSIONAL_REGEX = /acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine
 // Check if an event is a capture one
 const _CAPTURE_REGEX = /Capture$/
 
+// Namespace for SVG elements
 const _svgNS = "http://www.w3.org/2000/svg"
 
 // ----------------------------------------------------------------------------- CURRENT SCOPED COMPONENT
@@ -115,8 +108,10 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 	// Remove attributes which are removed from old node
 	if ( oldNode ) for ( let name in oldNode.props ) {
 		// Do not process children and remove only if not in new node
-		if ( name == "children" ) continue
-		if ( name in newNode.props && newNode.props[ name ] === oldNode.props[ name ] )
+		if (
+			name == "children"
+			|| (name in newNode.props && newNode.props[ name ] === oldNode.props[ name ])
+		)
 			continue;
 		// Insert HTML directly without warning
 		if ( name == "innerHTML" )
@@ -135,10 +130,12 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 	// Update props
 	for ( let name in newNode.props ) {
 		let value = newNode.props[ name ];
-		if ( name == "children" || !value )
-			continue;
 		// Do not continue if attribute or event did not change
-		if ( oldNode && name in oldNode.props && oldNode.props[ name ] === value )
+		if (
+			name == "children"
+			|| !value
+			|| ( oldNode && name in oldNode.props && oldNode.props[ name ] === value )
+		)
 			continue;
 		// Insert HTML directly without warning
 		if ( name == "innerHTML" )
@@ -258,7 +255,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 	// FIXME : Check perfs with a simple foreach
 	// newChildren.forEach( child => registerKey( newParentNode, child ) )
 	const total = newChildren.length
-	if ( total === 0 ) return;
+	if ( !total ) return;
 	let i = 0
 	do {
 		registerKey( newParentNode, newChildren[ i ] )
@@ -302,7 +299,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			const collapsedIndex = i + collapseCount
 			// FIXME : Should do 1 operation when swapping positions, not 2
 			// FIXME : Perf, is indexOf quick ? Maybe store every indexes in an array ?
-			if ( oldChildren.indexOf( oldChildNode ) != collapsedIndex )
+			if ( oldChildren.indexOf( oldChildNode ) !== collapsedIndex )
 				parentDom.insertBefore( newChildNode.dom, parentDom.children[ collapsedIndex + 1 ] )
 		}
 		// Has key, but not found in old
@@ -422,12 +419,12 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = ne
 			// Execute component's function and check what is returned
 			const result = _renderComponentNode( newNode as VNode<object, ComponentFunction> )
 			// This is a factory component which return a render function
-			if ( typeof result == "function" ) {
+			if ( typeof result === "function" ) {
 				newNode.value.isFactory = true
 				component._render = result as RenderFunction
 			}
 			// This is pure functional component which returns a virtual node
-			else if ( typeof result == "object" && "type" in result ) {
+			else if ( typeof result === "object" && "type" in result ) {
 				newNode.value.isFactory = false
 				component._render = newNode.value as RenderFunction
 				renderResult = result

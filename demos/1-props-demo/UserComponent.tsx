@@ -40,8 +40,8 @@ export function UserComponent ( props:IUserComponentProps ) {
 
 	// REFS - Refs are updated just after dom has been updated.
 	// This proves that after render, refs are updated correctly and available right after
-	const root = ref()
-	const image = ref()
+	const root = ref<HTMLDivElement>()
+	const image = ref<HTMLImageElement>()
 	changed(() => {
 		// FIXME : root.component should be this component instance
 		console.log("REFS - UserComponent just rendered", /*root.component,*/ image.dom.getAttribute('src'))

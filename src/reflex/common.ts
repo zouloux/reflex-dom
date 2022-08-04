@@ -1,18 +1,9 @@
-import { IRef, IRefs } from "./ref";
+import { IRefOrRefs } from "./ref";
 import { ComponentInstance, IComponentAPI } from "./component";
-
-// ----------------------------------------------------------------------------- TYPES
-
-// Declare global JSX override hack
-// declare global {
-// 	namespace JSX {
-//
-// 	}
-// }
 
 // ----------------------------------------------------------------------------- DOCUMENT INTERFACE
 
-type AbstractNodeTypes = "comment"|"text"|"element"
+export type AbstractNodeTypes = "comment"|"text"|"element"
 
 export interface IAbstractNode {
 	abstractType:AbstractNodeTypes
@@ -32,11 +23,11 @@ export interface IAbstractElement extends IAbstractNode {
 	type:string
 	readonly attributes:object
 	readonly children:IAbstractNode[]
-	addEventListener(...rest):any
-	removeEventListener(...rest):any
-	setAttribute( name:string, value:any )
-	getAttribute( name:string )
-	removeAttribute( name:string )
+	addEventListener (...rest):any
+	removeEventListener (...rest):any
+	setAttribute ( name:string, value:any )
+	getAttribute ( name:string )
+	removeAttribute ( name:string )
 	removeChild ( child:IAbstractNode )
 	appendChild ( child:IAbstractNode )
 	insertBefore ( child:IAbstractNode, before:IAbstractNode ),
@@ -51,7 +42,6 @@ export interface IAbstractDocument
 	createElement 	(type:string):IAbstractElement
 	createElementNS (namespace:string, type:string):IAbstractElement
 }
-
 
 export interface INodeEnv {
 	isSVG: boolean,
@@ -73,14 +63,6 @@ export type ComponentFunction <GProps extends object = object> = ( RenderFunctio
 
 export type LifecycleHandler <GReturn = void> = (...rest) => GReturn
 export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler>
-
-// ----------------------------------------------------------------------------- INITIAL VALUE
-
-export type TInitialValue<GType> = GType | ((oldValue?:GType) => GType)
-
-export const _prepareInitialValue = <GType> ( initialValue:TInitialValue<GType>, oldValue?:GType ) => (
-	typeof initialValue == "function" ? ( initialValue as (oldValue?:GType) => GType )(oldValue) : initialValue as GType
-)
 
 // ----------------------------------------------------------------------------- JSX H / CREATE ELEMENT
 
@@ -115,21 +97,15 @@ export type VNodeTypes = (
 	typeof _VNodeTypes_LIST
 )
 
-
 export type VNodeElementValue = keyof (HTMLElementTagNameMap|SVGElementTagNameMap)
 export type VNodeTextValue = string
 export type VNodeValue = ( VNodeElementValue | VNodeTextValue | ComponentFunction ) & THasIsFactoryProp
 
-export interface VNodeBaseProps {
-	children	?:VNode[],
-	key			?:string
-	ref			?:IRef|IRefs
-	pure		?:boolean
-}
-
 export interface VNode <
-	GProps extends VNodeBaseProps	= VNodeBaseProps,
-	GValue extends VNodeValue 		= VNodeValue,
+	GProps extends DefaultReflexProps	= DefaultReflexProps,
+	GValue extends VNodeValue 				= VNodeValue,
+	GDom extends Element 					= Element,
+	GComponent extends ComponentInstance 	= ComponentInstance,
 > {
 	// Type of virtual node, as const
 	// Not the JSX type, which is named value here
@@ -147,8 +123,26 @@ export interface VNode <
 	dom				?:RenderDom
 	_nodeEnv		?:INodeEnv
 	_keys			?:Map<string, VNode>
-	_ref			?:IRef | IRefs
+	_ref			?:IRefOrRefs<GDom, GComponent>
 	_component		?:ComponentInstance
 	_keep			?:boolean
 	_id				?:number
+}
+
+export interface DefaultReflexBaseProps<
+	GDom extends Element = Element,
+	GComponent extends ComponentInstance = ComponentInstance
+> {
+	key			?:string;
+	ref			?:IRefOrRefs<GDom, GComponent>
+	innerHTML	?:string
+	children	?:any[]
+}
+
+export interface DefaultReflexProps<
+	GDom extends Element = Element,
+	GComponent extends ComponentInstance = ComponentInstance,
+> extends DefaultReflexBaseProps<GDom, GComponent> {
+	// Children are created by h here, so it's VNode, not string or number
+	children	?:VNode<any>[]
 }

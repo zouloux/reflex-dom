@@ -42,20 +42,22 @@ function updateDirtyComponents () {
 		component._isDirty = false
 	})
 	componentsToUpdate = []
-	p && p();
+	p?.();
 }
 
+// Internal fast microtask polyfill
 const _microtask = self.queueMicrotask ? self.queueMicrotask : h => self.setTimeout( h, 0 )
 
-export function invalidateComponent ( dirtyComponent:ComponentInstance ) {
+export function invalidateComponent ( component:ComponentInstance ) {
 	// Queue rendering before end of frame
-	if ( componentsToUpdate.length === 0 )
+	if ( !componentsToUpdate.length )
 		_microtask( updateDirtyComponents );
 	// Invalidate this component once
-	if ( dirtyComponent._isDirty ) return;
-	dirtyComponent._isDirty = true
-	// Store it into the list of dirty components
-	componentsToUpdate.push( dirtyComponent )
+	if ( !component._isDirty ) {
+		component._isDirty = true
+		// Store it into the list of dirty components
+		componentsToUpdate.push( component )
+	}
 }
 
 // ----------------------------------------------------------------------------- REGISTER WEB-COMPONENTS

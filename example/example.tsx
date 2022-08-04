@@ -17,7 +17,7 @@ function ReflexApp ( props ) {
 	})
 
 	// How refs of dom elements works
-	const title = ref()
+	const title = ref<HTMLDivElement>()
 	mounted(() => console.log(title.dom.innerHTML) )
 
 	// Returns a render function

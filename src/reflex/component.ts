@@ -1,5 +1,5 @@
 import {
-	_VNodeTypes_CONTAINERS, ComponentFunction, INodeEnv, LifecycleHandler, MountHandler,
+	_VNodeTypes_CONTAINERS, ComponentFunction, LifecycleHandler, MountHandler,
 	RenderFunction, VNode
 } from "./common";
 import { _createPropsProxy, IPropsProxy } from "./props";
@@ -89,9 +89,9 @@ export function _createComponentInstance
 
 export function _mountComponent ( component:ComponentInstance ) {
 	// Call every mount handler and store returned unmount handlers
-	component._mountHandlers.map( handler => {
+	component._mountHandlers.forEach( handler => {
 		const mountedReturn = handler.apply( component, [] );
-		if ( typeof mountedReturn == "function" )
+		if ( typeof mountedReturn === "function" )
 			component._unmountHandlers.push( mountedReturn )
 	})
 	// Reset mount handlers, no need to keep them

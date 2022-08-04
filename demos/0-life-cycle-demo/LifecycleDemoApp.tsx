@@ -3,7 +3,7 @@ import { colorList, createUID, foodList, pickRandom } from "../common/demoHelper
 import { IComponentAPI } from "../../src/reflex/component";
 
 function SubChild ( props ) {
-	const titleRef = ref()
+	const titleRef = ref<HTMLTableCellElement>()
 	// Local stateless variable without ref 👀
 	let clicked = 0
 	mounted(() => {

@@ -146,99 +146,11 @@
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /// <reference lib="dom" />
+// NOTE : Avoid glob exports from which insert a helper
+// Unzipped is smaller with glob but bigger when zipped;
 // ----------------------------------------------------------------------------- IMPORT / EXPORT
-/**
- * REFLEX JS
- *
- * - Reflex Core
- * 		- Core
- * 		- Polyfills
- * 		- Signal + Observer
- * 		- YADL
- * 		- Utils
- * - Reflex Components
- * 		- Reflex View (vdom + web components)
- * 		- Reflex Store
- * 			- Regular store / Async store or one big store well-made
- * 		- Reflex Router
- * 			- Based on Reflex Store
- * 		- Reflex Tween ?
- *		- Reflex Toolkit
- *			- Hooks
- *			- Responsive
- *			- Inputs
- *			- Cursor
- *			- Sound
- *			- Viewport
- *		- Reflex UI Kit
- *			- mixins
- *			- UI Kit
- *			- Components ( Slideshow / Menu / Player ... )
- * - Reflex Server
- *
- */ /**
- * FEATURES :
- *
- * - Basic v-dom
- * 	 ✔ Create / remove elements
- * 	 ✔ Set / remove attributes
- * 	 ✔ Set / remove event listeners
- * 	 ✔ Reuse previous components, do not trash everything everytime
- * 	 ✔ innerHTML
- *   ✔ Class as string or array filtered with booleans
- *   	- Optimize class when does not changes, is it possible ?
- *   ✔ Style as object only
- *   	- Optimize style when does not changes, is it possible ?
- *
- * - Advanced v-dom
- *   ✔ Move elements and keep track of dom elements with keyed virtual nodes
- *   	✔ Add to top
- *   	✔ Add to bottom
- *   	✔ Remove from top
- *   	✔ Remove from bottom
- *   	✔ Insert in the middle
- *      ✔ Remove from the middle
- *      ✔ Basic swap
- *  	X Optimized Swap
- *  		- Do 2 operations, should do only one
- *   ✔ Keep track of component instances
- *   ✔ Remove subtrees recursively
- *   ✔ Sub tree rendering
- *   ✔ Rendering optimization (like memo and skip)
- *
- * - Reactive
- *   ✔ Dom ref / component ref
- *   ✔ Factory helpers (like hooks), find name and prefix
- *   ✔ Var in ref as let ! Yeah
- *   ✔ States / observers
- *   ✔ Stores
- *   ✔ Mount / Unmount
- *   ✔ Updated + Props
- *
- * - Advanced Reactive
- *   - Multi refs in for loops and stuff, need to keep correct indexes even when moving
- *   - Factory Errors / Component errors ( try catch on instance + render etc )
- *   - Async states ! With cancellation
- *   - Fetch hook with race condition management + states + cache + cancellable
- *   - Imperative handles
- *
- * - Types
- * 	 - Basic JSX Type
- * 	 - Render and component return JSX Types
- * 	 - Props types
- *
- * - Release
- * 	 - Optimize
- * 	 - Benchmark
- * 	 - Docs
- * 	 - Release
- *
- * V2 :
- * - Advanced Hot Module reloading with state keeping automagically
- */ // NOTE : Avoid glob exports from which insert an helper
-// Unzipped is smaller with glob but bigger when zipped
+// Export public API
 parcelHelpers.export(exports, "state", ()=>(0, _states.state));
-parcelHelpers.export(exports, "syncState", ()=>(0, _states.syncState));
 parcelHelpers.export(exports, "getCurrentComponent", ()=>(0, _diff.getCurrentComponent));
 parcelHelpers.export(exports, "ref", ()=>(0, _ref.ref));
 parcelHelpers.export(exports, "refs", ()=>(0, _ref.refs));
@@ -248,17 +160,7 @@ parcelHelpers.export(exports, "changed", ()=>(0, _lifecycle.changed));
 parcelHelpers.export(exports, "render", ()=>(0, _render.render));
 parcelHelpers.export(exports, "invalidateComponent", ()=>(0, _render.invalidateComponent));
 // Also export createElement for JSX pragma React
-parcelHelpers.export(exports, "h", ()=>(0, _jsx.h)) /**
- * http://localhost:1234/4-store-list-demo/index.html
- * plugged
- * Root rendering 0ms
- * index.4f0fe1bd.js:1317 Update dirty components 730ms
- * index.4f0fe1bd.js:1317 Update dirty components 170ms
- * index.4f0fe1bd.js:1317 Update dirty components 660ms
- * index.4f0fe1bd.js:1317 Update dirty components 150ms
- * index.4f0fe1bd.js:1317 Update dirty components 640ms
- * index.4f0fe1bd.js:1317 Update dirty components 150ms
- */ ;
+parcelHelpers.export(exports, "h", ()=>(0, _jsx.h));
 parcelHelpers.export(exports, "createElement", ()=>(0, _jsx.h));
 var _states = require("./states");
 var _diff = require("./diff");
@@ -270,117 +172,48 @@ var _jsx = require("./jsx");
 },{"./states":"jPtHd","./diff":"6sa8r","./ref":"fdaPH","./lifecycle":"8Qw9Y","./render":"krTG7","./jsx":"beq5O","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"jPtHd":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-// TODO : Merge async and sync states with an option second argument
-parcelHelpers.export(exports, "state", ()=>state);
-parcelHelpers.export(exports, "syncState", ()=>syncState);
-var _common = require("./common");
-var _diff = require("./diff");
-// import { addDataListenerForNextNode } from "./jsx";
-var _render = require("./render");
-function state(initialValue, filter, afterChange) {
-    initialValue = (0, _common._prepareInitialValue)(initialValue);
-    const component = (0, _diff.getCurrentComponent)();
-    // const affectedNodesIndex = component._affectedNodesByStates.push([]) - 1
-    return {
-        get value () {
-            // if ( component._isRendering ) {
-            // 	addDataListenerForNextNode( node => {
-            // 		console.log('>', component._affectedNodesByStates[affectedNodesIndex].length, node)
-            // 		component._affectedNodesByStates[affectedNodesIndex].push( node )
-            // 	})
-            // }
-            return initialValue;
-        },
-        set value (newValue){
-            initialValue = filter ? filter(newValue, initialValue) : newValue;
-            (0, _render.invalidateComponent)(component);
-            afterChange && component._afterRenderHandlers.push(()=>afterChange(initialValue));
-        },
-        async set (newValue) {
-            return new Promise((resolve)=>{
-                newValue = (0, _common._prepareInitialValue)(newValue, initialValue);
-                initialValue = filter ? filter(newValue, initialValue) : newValue;
-                component._afterRenderHandlers.push(()=>{
-                    resolve();
-                    afterChange && afterChange(initialValue);
-                });
-                (0, _render.invalidateComponent)(component);
-            });
-        }
-    };
-}
-function syncState(initialValue, filter) {
-    initialValue = (0, _common._prepareInitialValue)(initialValue);
-    const component = (0, _diff.getCurrentComponent)();
-    // const affectedNodesIndex = component._affectedNodesByStates.push([]) - 1
-    return {
-        get value () {
-            // if ( component._isRendering ) {
-            // 	addDataListenerForNextNode( node => {
-            // 		console.log('>', component._affectedNodesByStates[affectedNodesIndex].length, node)
-            // 		component._affectedNodesByStates[affectedNodesIndex].push( node )
-            // 	})
-            // }
-            return initialValue;
-        },
-        set value (newValue){
-            initialValue = filter ? filter(newValue, initialValue) : newValue;
-            (0, _diff._diffNode)(component.vnode, component.vnode);
-        }
-    };
-}
-
-},{"./common":"8NUdO","./diff":"6sa8r","./render":"krTG7","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"8NUdO":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "_prepareInitialValue", ()=>_prepareInitialValue);
-parcelHelpers.export(exports, "_VNodeTypes_NULL", ()=>_VNodeTypes_NULL);
-parcelHelpers.export(exports, "_VNodeTypes_TEXT", ()=>_VNodeTypes_TEXT);
-parcelHelpers.export(exports, "_VNodeTypes_CONTAINERS", ()=>_VNodeTypes_CONTAINERS);
-parcelHelpers.export(exports, "_VNodeTypes_ROOT", ()=>_VNodeTypes_ROOT);
-parcelHelpers.export(exports, "_VNodeTypes_ELEMENT", ()=>_VNodeTypes_ELEMENT);
-parcelHelpers.export(exports, "_VNodeTypes_COMPONENT", ()=>_VNodeTypes_COMPONENT);
-parcelHelpers.export(exports, "_VNodeTypes_LIST", ()=>_VNodeTypes_LIST);
+// ----------------------------------------------------------------------------- STATE
+parcelHelpers.export(exports, "state", ()=>state);
+var _diff = require("./diff");
+var _render = require("./render");
 const _prepareInitialValue = (initialValue, oldValue)=>typeof initialValue == "function" ? initialValue(oldValue) : initialValue;
-const _VNodeTypes_NULL = 0;
-const _VNodeTypes_TEXT = 1;
-const _VNodeTypes_CONTAINERS = 4;
-const _VNodeTypes_ROOT = 5;
-const _VNodeTypes_ELEMENT = 6;
-const _VNodeTypes_COMPONENT = 7;
-const _VNodeTypes_LIST = 8;
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"j7FRh":[function(require,module,exports) {
-exports.interopDefault = function(a) {
-    return a && a.__esModule ? a : {
-        default: a
+function state(initialValue, stateOptions = {}) {
+    // Prepare initial value if it's a function
+    initialValue = _prepareInitialValue(initialValue);
+    // Get current extended component
+    const component = (0, _diff.getCurrentComponent)();
+    // const affectedNodesIndex = component._affectedNodesByStates.push([]) - 1
+    // Set value and invalidate or render component
+    function _setAndInvalidate(newValue, resolve) {
+        initialValue = stateOptions.filter ? stateOptions.filter(newValue, initialValue) : newValue;
+        if (stateOptions.directInvalidation) {
+            (0, _diff._diffNode)(component.vnode, component.vnode);
+            resolve?.();
+        } else {
+            resolve && component._afterRenderHandlers.push(resolve);
+            (0, _render.invalidateComponent)(component);
+        }
+    }
+    // Return public API with value get/set and set function
+    return {
+        get value () {
+            // if ( component._isRendering ) {
+            // 	addDataListenerForNextNode( node => {
+            // 		console.log('>', component._affectedNodesByStates[affectedNodesIndex].length, node)
+            // 		component._affectedNodesByStates[affectedNodesIndex].push( node )
+            // 	})
+            // }
+            return initialValue;
+        },
+        set value (newValue){
+            _setAndInvalidate(newValue);
+        },
+        set: (newValue)=>new Promise((resolve)=>_setAndInvalidate(_prepareInitialValue(newValue, initialValue), resolve))
     };
-};
-exports.defineInteropFlag = function(a) {
-    Object.defineProperty(a, "__esModule", {
-        value: true
-    });
-};
-exports.exportAll = function(source, dest) {
-    Object.keys(source).forEach(function(key) {
-        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
-        Object.defineProperty(dest, key, {
-            enumerable: true,
-            get: function() {
-                return source[key];
-            }
-        });
-    });
-    return dest;
-};
-exports.export = function(dest, destName, get) {
-    Object.defineProperty(dest, destName, {
-        enumerable: true,
-        get: get
-    });
-};
+}
 
-},{}],"6sa8r":[function(require,module,exports) {
+},{"./diff":"6sa8r","./render":"krTG7","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"6sa8r":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "_DOM_PRIVATE_VIRTUAL_NODE_KEY", ()=>_DOM_PRIVATE_VIRTUAL_NODE_KEY);
@@ -412,6 +245,7 @@ const _DOM_PRIVATE_LISTENERS_KEY = "__l";
 const _IS_NON_DIMENSIONAL_REGEX = /acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|itera/i;
 // Check if an event is a capture one
 const _CAPTURE_REGEX = /Capture$/;
+// Namespace for SVG elements
 const _svgNS = "http://www.w3.org/2000/svg";
 // ----------------------------------------------------------------------------- CURRENT SCOPED COMPONENT
 // We store current component in factory phase for hooks
@@ -468,8 +302,7 @@ function _diffElement(newNode, oldNode, nodeEnv) {
     // Remove attributes which are removed from old node
     if (oldNode) for(let name in oldNode.props){
         // Do not process children and remove only if not in new node
-        if (name == "children") continue;
-        if (name in newNode.props && newNode.props[name] === oldNode.props[name]) continue;
+        if (name == "children" || name in newNode.props && newNode.props[name] === oldNode.props[name]) continue;
         // Insert HTML directly without warning
         if (name == "innerHTML") dom.innerHTML = "" // FIXME : Maybe use delete or null ?
         ;
@@ -481,9 +314,8 @@ function _diffElement(newNode, oldNode, nodeEnv) {
     // Update props
     for(let name1 in newNode.props){
         let value = newNode.props[name1];
-        if (name1 == "children" || !value) continue;
         // Do not continue if attribute or event did not change
-        if (oldNode && name1 in oldNode.props && oldNode.props[name1] === value) continue;
+        if (name1 == "children" || !value || oldNode && name1 in oldNode.props && oldNode.props[name1] === value) continue;
         // Insert HTML directly without warning
         if (name1 == "innerHTML") dom.innerHTML = value;
         else if (name1.startsWith("on")) {
@@ -568,7 +400,7 @@ function _diffChildren(newParentNode, oldParentNode, nodeEnv) {
     // FIXME : Check perfs with a simple foreach
     // newChildren.forEach( child => registerKey( newParentNode, child ) )
     const total = newChildren.length;
-    if (total === 0) return;
+    if (!total) return;
     let i = 0;
     do registerKey(newParentNode, newChildren[i]);
     while (++i < total);
@@ -593,7 +425,7 @@ function _diffChildren(newParentNode, oldParentNode, nodeEnv) {
             const collapsedIndex = i + collapseCount;
             // FIXME : Should do 1 operation when swapping positions, not 2
             // FIXME : Perf, is indexOf quick ? Maybe store every indexes in an array ?
-            if (oldChildren.indexOf(oldChildNode) != collapsedIndex) parentDom.insertBefore(newChildNode.dom, parentDom.children[collapsedIndex + 1]);
+            if (oldChildren.indexOf(oldChildNode) !== collapsedIndex) parentDom.insertBefore(newChildNode.dom, parentDom.children[collapsedIndex + 1]);
         } else if (newChildNode.key && oldParentKeys && !oldParentKeys.get(newChildNode.key)) {
             // console.log("create from key", newChildNode)
             _diffNode(newChildNode, null, nodeEnv);
@@ -681,10 +513,10 @@ function _diffNode(newNode, oldNode, nodeEnv = newNode._nodeEnv) {
             // Execute component's function and check what is returned
             const result = _renderComponentNode(newNode);
             // This is a factory component which return a render function
-            if (typeof result == "function") {
+            if (typeof result === "function") {
                 newNode.value.isFactory = true;
                 component._render = result;
-            } else if (typeof result == "object" && "type" in result) {
+            } else if (typeof result === "object" && "type" in result) {
                 newNode.value.isFactory = false;
                 component._render = newNode.value;
                 renderResult = result;
@@ -736,7 +568,55 @@ function _diffNode(newNode, oldNode, nodeEnv = newNode._nodeEnv) {
     } else if (newNode.type > (0, _common._VNodeTypes_CONTAINERS)) _diffChildren(newNode, oldNode, nodeEnv);
 }
 
-},{"./common":"8NUdO","./jsx":"beq5O","./component":"jK9Qg","./props":"bJNzu","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"beq5O":[function(require,module,exports) {
+},{"./common":"8NUdO","./jsx":"beq5O","./component":"jK9Qg","./props":"bJNzu","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"8NUdO":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "_VNodeTypes_NULL", ()=>_VNodeTypes_NULL);
+parcelHelpers.export(exports, "_VNodeTypes_TEXT", ()=>_VNodeTypes_TEXT);
+parcelHelpers.export(exports, "_VNodeTypes_CONTAINERS", ()=>_VNodeTypes_CONTAINERS);
+parcelHelpers.export(exports, "_VNodeTypes_ROOT", ()=>_VNodeTypes_ROOT);
+parcelHelpers.export(exports, "_VNodeTypes_ELEMENT", ()=>_VNodeTypes_ELEMENT);
+parcelHelpers.export(exports, "_VNodeTypes_COMPONENT", ()=>_VNodeTypes_COMPONENT);
+parcelHelpers.export(exports, "_VNodeTypes_LIST", ()=>_VNodeTypes_LIST);
+const _VNodeTypes_NULL = 0;
+const _VNodeTypes_TEXT = 1;
+const _VNodeTypes_CONTAINERS = 4;
+const _VNodeTypes_ROOT = 5;
+const _VNodeTypes_ELEMENT = 6;
+const _VNodeTypes_COMPONENT = 7;
+const _VNodeTypes_LIST = 8;
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"j7FRh":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
+},{}],"beq5O":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "addDataListenerForNextNode", ()=>addDataListenerForNextNode);
@@ -866,9 +746,9 @@ function _createComponentInstance(vnode) {
 }
 function _mountComponent(component) {
     // Call every mount handler and store returned unmount handlers
-    component._mountHandlers.map((handler)=>{
+    component._mountHandlers.forEach((handler)=>{
         const mountedReturn = handler.apply(component, []);
-        if (typeof mountedReturn == "function") component._unmountHandlers.push(mountedReturn);
+        if (typeof mountedReturn === "function") component._unmountHandlers.push(mountedReturn);
     });
     // Reset mount handlers, no need to keep them
     component._mountHandlers = [];
@@ -1011,36 +891,33 @@ function updateDirtyComponents() {
         component._isDirty = false;
     });
     componentsToUpdate = [];
-    p && p();
+    p?.();
 }
+// Internal fast microtask polyfill
 const _microtask = self.queueMicrotask ? self.queueMicrotask : (h)=>self.setTimeout(h, 0);
-function invalidateComponent(dirtyComponent) {
+function invalidateComponent(component) {
     // Queue rendering before end of frame
-    if (componentsToUpdate.length === 0) _microtask(updateDirtyComponents);
+    if (!componentsToUpdate.length) _microtask(updateDirtyComponents);
     // Invalidate this component once
-    if (dirtyComponent._isDirty) return;
-    dirtyComponent._isDirty = true;
-    // Store it into the list of dirty components
-    componentsToUpdate.push(dirtyComponent);
+    if (!component._isDirty) {
+        component._isDirty = true;
+        // Store it into the list of dirty components
+        componentsToUpdate.push(component);
+    }
 }
 
 },{"./common":"8NUdO","./diff":"6sa8r","./jsx":"beq5O","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"fdaPH":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ref", ()=>ref);
-parcelHelpers.export(exports, "refs", ()=>refs) // FIXME : When using web components with original dom not from Reflex
- // FIXME : Move it in module web-components ?
- // export function find () {
- //
- // }
-;
+parcelHelpers.export(exports, "refs", ()=>refs);
 function ref() {
     const value = {
         component: null,
         dom: null,
-        _setFromVNode (vnode) {
-            value.dom = vnode.dom;
-            value.component = vnode._component;
+        _setFromVNode (vNode) {
+            value.dom = vNode.dom;
+            value.component = vNode._component;
         }
     };
     return value;
@@ -1048,31 +925,31 @@ function ref() {
 function refs() {
     let _counter = 0;
     let _list = [];
-    function registerAtIndex(vnode, index) {
+    function registerAtIndex(vNode, index) {
         // Delete
-        if (!vnode.dom) _list = _list.filter((_, i)=>i != index);
+        if (!vNode.dom) _list = _list.filter((_, i)=>i !== index);
         else _list[index] = {
-            dom: vnode.dom,
-            component: vnode._component
+            dom: vNode.dom,
+            component: vNode._component
         };
     }
     const value = {
         get list () {
             return _list;
         },
-        _setFromVNode (vnode) {
-            // Set vnode id from counter.
+        _setFromVNode (vNode) {
+            // Set vNode id from counter.
             // Node ids starts from 1 to be able to compress a bit
-            if (!vnode._id) vnode._id = ++_counter;
+            if (!vNode._id) vNode._id = ++_counter;
             // Set back from starting 1 to 0
-            registerAtIndex(vnode, vnode._id - 1);
+            registerAtIndex(vNode, vNode._id - 1);
         },
         // FIXME : Better api ?
         atIndex (index) {
             return {
                 // TODO : Check if terser uses same mangled name
-                _setFromVNode (vnode) {
-                    registerAtIndex(vnode, index);
+                _setFromVNode (vNode) {
+                    registerAtIndex(vNode, index);
                 }
             };
         }

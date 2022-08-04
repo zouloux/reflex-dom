@@ -1,10 +1,11 @@
 # Reflex
 
-__Reflex__ is a tiny ![~3kb](./bits/reflex.es2017.min.js.svg) virtual-dom library with __factory based functional components__.
+__Reflex__ is a tiny and fast virtual-dom library with __factory based functional components__.
 
-- 🦋 [super lightweight](https://unpkg.com/@zouloux/reflex)
-- 🏎 [highly performant](#performances)
-- 🔋 [batteries included](#factory-hooks)
+- 🦋 Super lightweight - about ![~3kb](./bits/reflex.es2017.min.js.svg) min-zipped - [See bundle](https://unpkg.com/@zouloux/reflex)
+- 🏎 Highly performant - [Proof](#performances)
+- 🔋 Batteries included with [factory extensions](#factory-extensions)
+- 🤓 Typed JSX
 
 ![](./example/example.png)
 ![](./example/example.gif)
@@ -17,10 +18,34 @@ __Reflex__ is a tiny ![~3kb](./bits/reflex.es2017.min.js.svg) virtual-dom librar
 
 ---
 
+## API Concept
+
+Stateful components will return a __render function__ instead of virtual-nodes directly.
+Scope is shared between the factory and the render function.
+
+```tsx
+function FactoryComponent ( props ) {
+    // factory extensions and component logic goes here
+    // render function returning node tree goes there
+    return () => <div>...</div>
+}
+```
+
+#### Improvements 
+- __Simpler__ : Classic React Hooks like `useCallback`, `useEvent` and `useMemo` becomes useless.<br>
+- __Less bugs__ : [Stale closure issues](https://dmitripavlutin.com/react-hooks-stale-closures/) vanishes.<br>
+- __Cleaner__ : Also, hooks dependencies array to keep state scopes ([#1](https://itnext.io/how-to-work-with-intervals-in-react-hooks-f29892d650f2) [#2](https://overreacted.io/a-complete-guide-to-useeffect/)) does not exist with __[factory extensions](#factory-extensions)__.
+- __Back to basics__ : Using `useRef` to store stateless values does not exist anymore. In __Reflex__, `ref` are only here to target dom node or components, `let` is used to declare local variables like it would normally do.
+
+#### Tradeoffs
+- __Stateless vs stateful__ : When a component is going from stateless to stateful, the `return <div>...` needs to be refactored to `return () => <div>...`
+- __Props__ : Props cannot be destructured [because props are a Proxy](#props)
+- Surely more but I got biases :)
+
+---
+
 ## Table of contents
 
-- <a href="#concept">Concept</a>
-- <a href="#roadmap">Roadmap</a>
 - <a href="#how-to-install">Installation</a>
 - <a href="#because-code-samples-are-better-than-a-thousand-words">Code samples</a>
   - <a href="#simple-dom-rendering">Rendering</a>
@@ -28,7 +53,7 @@ __Reflex__ is a tiny ![~3kb](./bits/reflex.es2017.min.js.svg) virtual-dom librar
   - <a href="#stateful-components-with-factory-pattern">Stateful and Factory Pattern</a>
   - <a href="#props">Props</a>
   - <a href="#default-props">Default props</a>
-- <a href="#factory-hooks">Factory hooks</a>
+- <a href="#factory-extensions">Factory extensions</a>
   - <a href="#state">State</a>
   - <a href="#ref">Ref</a>
   - <a href="#refs-aka-multi-ref">Refs</a>
@@ -41,62 +66,9 @@ __Reflex__ is a tiny ![~3kb](./bits/reflex.es2017.min.js.svg) virtual-dom librar
   - <a href="#things-missing">Things missing</a>
   - <a href="#performances">Performances</a>
   - <a href="#demos">Demos</a>
-  - <a href="#unpkg">Unpkg</a>
-
-#### _Be kind, Lib and doc are still in beta 😘_
-
----
-
-## Concept
-
-Stateful components will return a __render function__ instead of virtual-nodes directly.
-Scope is shared between the factory and the render function.
-
-
-```tsx
-function FactoryComponent ( props ) {
-    // factory hooks and component logic goes here
-    // render function and conditions goes there
-    return () => <div>...</div>
-}
-```
-
-Classic React Hooks like `useCallback`, `useEvent` and `useMemo` becomes useless.
-Also, hooks dependencies array to keep state scopes ([#1](https://itnext.io/how-to-work-with-intervals-in-react-hooks-f29892d650f2) [#2](https://overreacted.io/a-complete-guide-to-useeffect/)) does not exist with __Factory Hooks__. Using `useRef` to store stateless values does not exist anymore. In __Reflex__, `ref` are only here to target dom node or components, `let` is used to declare local variables like it would normally do.
-
-## Roadmap
-
-- [x] Virtual dom
-- [x] Diffing
-- [x] Props as attributes
-- [x] Lifecycle events
-- [x] Lifecycle hooks (mounted / unmounted)
-- [x] Ref
-- [x] Refs
-- [x] State
-- [x] Automatic memo
-- [x] Better performances
-  - [x] Diff algorithm inspired by [petit-dom](https://github.com/yelouafi/petit-dom/) and Preact
-  - [x] Props as proxy only if needed (not on functional components)
-- [x] SVG support
-- [x] renderToString
-- [ ] WIP Imperative handles through component instance
-- [ ] WIP Shared ref between parent and child
-- [ ] WIP Atomic rendering
-- [ ] WIP Component ref and forward ref
-- [ ] WIP States refacto with cleaner and modular API
-- [ ] JSX Types and runtime
-- [ ] Crazy performances 
-- [ ] `npm create reflex-app`
-- [ ] Better docs
-  - [ ] Should update
-  - [ ] Render to string doc
-  - [ ] Imperative methods
-  - [ ] Forward refs and component ref
-  - [ ] Memo on functional components and shouldUpdate
-  - [ ] New states
-  - [ ] Babel examples in doc
-  - [ ] Code-sandboxes
+  - <a href="#unpkg-and-esmsh">Unpkg and Esmsh</a>
+  - <a href="#roadmap">Roadmap</a>
+  - <a href="#thanks">Thanks</a>
 
 ## How to install
 
@@ -154,7 +126,7 @@ renderApp( `Hello from Reflex ✌️` )
 ### Stateless and pure components
 
 Stateless, or components without logic can avoid the factory pattern. Simply return the virtual-dom tree derived from props like you would do it in React or Preact.
-
+Stateless functions are [__pure__](https://en.wikipedia.org/wiki/Pure_function), which means it has always the same output (returned elements) for a specific input (props).
 ```tsx
 function StatelessComponent ( props ) {
     return <div class="StatelessComponent">
@@ -164,6 +136,7 @@ function StatelessComponent ( props ) {
 ```
 
 > Because Stateless and Stateful components are written differently, Reflex can  optimize render of Stateless components by keeping old virtual-node tree, if props did not change between renders. We have better performances without adding anything to our app.
+> No need to memoize anything.
 
 ```tsx
 function ChangingComponent ( props ) {
@@ -178,7 +151,7 @@ function ChangingComponent ( props ) {
 
 ### Stateful components with factory pattern
 
-This is where it changes from React. Stateful components in Reflex follows the __Factory Component Pattern__. __[Factory hooks](#factory-hooks)__ are used __only__ in the "factory phase" of the component.
+This is where it changes from React. Stateful components in Reflex follows the __Factory Component Pattern__. __[Factory extensions](#factory-extensions)__ are used __only__ in the "factory phase" of the component.
 
 ```tsx
 function StatefulComponent ( props ) {
@@ -198,6 +171,8 @@ function StatefulComponent ( props ) {
     </div>
 }
 ```
+
+> Stateful components are not __pure__. Output differs even with the same props as input.
 
 ### Props
 
@@ -248,12 +223,13 @@ function FactoryComponent (props, component) {
     return () => <div>{ props.title }</div>
 }
 ```
+> This feature is WIP and may change in RC
 
-# Factory hooks
+# Factory extensions
 
-Here is a list of all base __factory hooks__ available.
-Remember, __factory hooks__ are only usable in __factory phase__ of components and not available in Stateless components.
-Like in React, __factory hooks__ are composable into other functions easily.
+Here is a list of all base __factory extensions__ available.
+Remember, __factory extensions__ are only usable in __factory phase__ of components and not available in Stateless components.
+Like in React, __factory extensions__ are composable into other functions easily.
 
 ## State
 
@@ -274,31 +250,30 @@ await myState.set( newValue )
 // -> Now the dom is updated
 ```
 
-> Note, setting a new state is asynchronous because all state changes of a component are stacked and component renders only once for better performances. After the component is refreshed, the `await state.set( value )` promise will be resolved.
+> __Note__ : setting a new state is asynchronous because all state changes of a component are stacked and component renders only once for better performances.
+> After the component is refreshed, the `await state.set( value )` promise will be resolved.
 
 Additional options for state are 
 - `filter` to change value when set, useful to avoid invalid values
-- `after` is called after the associated component is rendered
+- `directInvalidation` is called after the associated component is rendered
 
 ```typescript
-function filter (newValue, oldValue) {
-    return Math.max(newValue, 0)
-}
+const myState = state( 0, {
+	// Value is filtered when "myState.value = something" or "myState.set( something )" is used. 
+    // Here value cannot be set bellow 0 
+    filter: (newValue, oldValue) => Math.max( newValue, 0 ),
+    // Will force component to be rendered after each set
+    // It can be useful if you need sync data rendering
+    // But be careful about data flow, it can destroy performances in loops !
+    directInvalidation: true
+})
 
-function afterChange ( newValue ) {
-    // Component has been updated and dom is ready
-    console.log( newValue ) 
-    // will show only `10` because component updates are debounced
-}
+// Value is 0 and DOM is directly updated
+myState.value = -2
 
-const myState = state( 0, filter, afterChange )
-
-function changeStateValues () {
-    state.value = -2
-    console.log( state.value ) // 0
-    state.value = 10
-    console.log( state.value ) // 10
-}
+// Because of directInvalidation, it will render component at each loop and your app will certainly crash
+for ( let i = 0; i < 10000; ++i)
+	myState.value ++
 ```
 
 ## Ref
@@ -362,7 +337,7 @@ function List ( props ) {
     
     return () => <ul>
         {props.items.map( item =>
-            <li ref={itemRefs}>{item.name}</li>
+            <li ref={ itemRefs }>{item.name}</li>
         )}
     </ul>
 }
@@ -495,8 +470,6 @@ Reflex is slim, but it still has some cool features for greater DX.
 
 When attaching a ref from inside the component, an from the parent, it will just work as expected.
 
-> NOTE : This feature is WIP
-
 ```tsx
 function Child () {
     // Works, will have component instance and div element
@@ -512,6 +485,7 @@ function Parent () {
     </div>
 }
 ```
+> This feature is WIP and will certainly change in RC
 
 ### CSS classes as array
 
@@ -584,8 +558,68 @@ About size, see [Reflex bundle](https://unpkg.com/@zouloux/reflex) vs [Preact bu
 [Click here](https://zouloux.github.io/reflex/demos/) to see some demo (WIP)
 
 
-### Unpkg
+### Unpkg and Esmsh
 
 __Reflex__ is available on [Unpkg](https://unpkg.com/@zouloux/reflex) ![](./bits/reflex.es2017.min.js.svg)
 - [see unpkg usage example](https://zouloux.github.io/reflex/demos/5-no-bundler-demo/index.html)
 
+Also available on Esm.sh
+- [Esm.sh](https://esm.sh/@zouloux/reflex)
+
+> Its better to specify used version in your code to avoid code breaking and also for cache and response time.
+
+## Roadmap
+
+#### Done
+- [x] A lot of research about how v-dom works
+- [x] Actual Virtual dom implementation
+- [x] Diffing with complex trees
+- [x] Props as dom attributes
+- [x] Lifecycle events
+- [x] Lifecycle extensions (mounted / unmounted)
+- [x] Ref
+- [x] Refs
+- [x] State
+- [x] Automatic memo
+- [x] Better performances
+  - [x] Diff algorithm inspired by [petit-dom](https://github.com/yelouafi/petit-dom/) and Preact
+  - [x] Props as proxy only if needed (not on functional components)
+- [x] SVG support
+- [x] renderToString
+- [x] JSX Types and runtime
+- [x] State invalidation refacto
+
+#### Work in progress / TODO
+- [ ] WIP - New `changed` API which can listen to `states`, `props` and custom handlers with simple API
+- [ ] WIP - Imperative handles through component instance
+- [ ] WIP - Shared ref between parent and child + component ref + refacto component interface for refs and public API
+- [ ] WIP - Atomic rendering
+- [ ] Crazy performances
+- [ ] Hydration
+- [ ] Web components integration
+- [ ] `npm create reflex-app`
+- [ ] Server components streaming
+- [ ] Better docs
+  - [ ] Should update
+  - [ ] Render to string doc
+  - [ ] Imperative methods
+  - [ ] Forward refs and component ref
+  - [ ] Memo on functional components and shouldUpdate
+  - [ ] New states
+  - [ ] Babel examples in doc
+  - [ ] Code-sandboxes
+- [ ] Release : Move everything to a Reflex organisation
+
+#### Next, other subjects
+
+- [ ] Reflex store (compatible with Preact and React)
+- [ ] Reflex router (compatible with Preact and React)
+- [ ] Reflex Run with SSR ?
+- [ ] Reflex UIKit ?
+
+
+### Thanks
+
+- [xdev1](https://github.com/xdev1) for your feedbacks 🙌 ( and the name of Factory Extensions )
+- [Preact](https://github.com/preactjs/preact) for the inspiration and some chunk of codes
+- [Jason Miller](https://github.com/developit), [Marvin Hagemeister](https://github.com/marvinhagemeister), [Dan Abramov](https://github.com/gaearon), [Sophie Alpert](https://github.com/sophiebits) for your amazing ideas 🙏

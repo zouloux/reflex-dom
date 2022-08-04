@@ -182,6 +182,7 @@ function TestComponent() {
             }))), /*#__PURE__*/ (0, _reflex.h)("span", null, "Length: ", list.value.length), /*#__PURE__*/ (0, _reflex.h)("div", null, "Has children :\xa0", list.value.length > 0 ? /*#__PURE__*/ (0, _reflex.h)("span", null, "YES") : null));
 }
 function TestSVG() {
+    //return <div class={["test"]} nope onClick={e => {}}> {"ok"}</div>
     return /*#__PURE__*/ (0, _reflex.h)("svg", {
         height: "210",
         width: "500"
@@ -191,9 +192,13 @@ function TestSVG() {
     }));
 }
 function DevApp() {
-    return /*#__PURE__*/ (0, _reflex.h)("div", {
-        class: "Coucou"
-    }, /*#__PURE__*/ (0, _reflex.h)("h1", null, "Hello"), /*#__PURE__*/ (0, _reflex.h)(TestComponent, null), /*#__PURE__*/ (0, _reflex.h)(TestSVG, null), /*#__PURE__*/ (0, _reflex.h)("div", null, "After SVG"));
+    const r = (0, _reflex.ref)();
+    (0, _reflex.mounted)(()=>{
+        console.log("DOM", r.dom);
+    });
+    return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
+            ref: r
+        }, /*#__PURE__*/ (0, _reflex.h)("h1", null, "Hello"), /*#__PURE__*/ (0, _reflex.h)(TestComponent, null), /*#__PURE__*/ (0, _reflex.h)(TestSVG, null), /*#__PURE__*/ (0, _reflex.h)("div", null, "After SVG ", 12));
 }
 // -----------------------------------------------------------------------------
 (0, _debug.setReflexDebug)(true);
@@ -288,7 +293,9 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "renderToString", ()=>renderToString);
 var _index = require("./index");
-function renderAbstractNodeToString(node) {
+/**
+ * TODO : Missing async components and a lot of other stuff ...
+ */ function renderAbstractNodeToString(node) {
     if (node.abstractType === "comment") return `<!--${node.data}-->`;
     if (node.abstractType === "text") return node.nodeValue;
     if (node.abstractType === "element") {
@@ -297,7 +304,8 @@ function renderAbstractNodeToString(node) {
         let buffer = `<${type}`;
         Object.keys(nodeElement.attributes).forEach((key)=>{
             // FIXME : Replace all ?
-            buffer += ` ${key}="${nodeElement.attributes[key].replace(/"/g, "&quot;")}"`;
+            const value = nodeElement.attributes[key];
+            if (value) buffer += ` ${key}="${(value + "").replace(/"/g, "&quot;")}"`;
         });
         if (nodeElement.children.length === 0) return buffer + "/>";
         buffer += ">";

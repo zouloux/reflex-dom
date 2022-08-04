@@ -4,6 +4,9 @@ import {
 	IAbstractText, VNode
 } from "./common";
 
+/**
+ * TODO : Missing async components and a lot of other stuff ...
+ */
 
 function renderAbstractNodeToString ( node:IAbstractNode ) {
 	if ( node.abstractType === "comment" )
@@ -16,7 +19,9 @@ function renderAbstractNodeToString ( node:IAbstractNode ) {
 		let buffer = `<${type}`
 		Object.keys( nodeElement.attributes ).forEach( key => {
 			// FIXME : Replace all ?
-			buffer += ` ${key}="${nodeElement.attributes[key].replace(/"/g, '&quot;')}"`
+			const value = nodeElement.attributes[key]
+			if (value)
+				buffer += ` ${key}="${(value+'').replace(/"/g, '&quot;')}"`
 		})
 		if ( nodeElement.children.length === 0 )
 			return buffer + "/>"
