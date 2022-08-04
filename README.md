@@ -608,18 +608,18 @@ Also available on Esm.sh
   - [ ] New states
   - [ ] Babel examples in doc
   - [ ] Code-sandboxes
-- [ ] Release : Move everything to a Reflex organisation
+- [ ] __Release RC-1.0_ and move everything to a Reflex organisation ?
 
-#### Next, other subjects
-
-- [ ] Reflex store (compatible with Preact and React)
-- [ ] Reflex router (compatible with Preact and React)
-- [ ] Reflex Run with SSR ?
-- [ ] Reflex UIKit ?
+[//]: # (#### Next, other subjects)
+[//]: # (- [ ] Reflex store &#40;compatible with Preact and React&#41;)
+[//]: # (- [ ] Reflex router &#40;compatible with Preact and React&#41;)
+[//]: # (- [ ] Reflex Run with SSR ?)
+[//]: # (- [ ] Reflex UIKit ?)
 
 
 ### Thanks
 
-- [xdev1](https://github.com/xdev1) for your feedbacks 🙌 ( and the name of Factory Extensions )
+- [xdev1](https://github.com/xdev1) for your feedbacks 🙌 ( and the name of __Factory Extensions__ )
 - [Preact](https://github.com/preactjs/preact) for the inspiration and some chunk of codes
+- [Petit-DOM](https://github.com/yelouafi/petit-dom) for the inspiration
 - [Jason Miller](https://github.com/developit), [Marvin Hagemeister](https://github.com/marvinhagemeister), [Dan Abramov](https://github.com/gaearon), [Sophie Alpert](https://github.com/sophiebits) for your amazing ideas 🙏
