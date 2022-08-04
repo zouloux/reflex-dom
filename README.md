@@ -2,8 +2,8 @@
 
 __Reflex__ is a tiny and fast virtual-dom library with __factory based functional components__.
 
-- 🦋 Super lightweight - about ![~3kb](./bits/reflex.es2017.min.js.svg) min-zipped - [See bundle](https://unpkg.com/@zouloux/reflex)
-- 🏎 Highly performant - [Proof](#performances)
+- 🦋 Super lightweight, about ![~3kb](./bits/reflex.es2017.min.js.svg) min-zipped ( [See bundle](https://unpkg.com/@zouloux/reflex) )
+- 🏎 Highly performant ( [Proof](#performances) )
 - 🔋 Batteries included with [factory extensions](#factory-extensions)
 - 🤓 Typed JSX
 
@@ -32,10 +32,10 @@ function FactoryComponent ( props ) {
 ```
 
 #### Improvements 
-- __Simpler__ : Classic React Hooks like `useCallback`, `useEvent` and `useMemo` becomes useless.<br>
-- __Less bugs__ : [Stale closure issues](https://dmitripavlutin.com/react-hooks-stale-closures/) vanishes.<br>
-- __Cleaner__ : Also, hooks dependencies array to keep state scopes ([#1](https://itnext.io/how-to-work-with-intervals-in-react-hooks-f29892d650f2) [#2](https://overreacted.io/a-complete-guide-to-useeffect/)) does not exist with __[factory extensions](#factory-extensions)__.
-- __Back to basics__ : Using `useRef` to store stateless values does not exist anymore. In __Reflex__, `ref` are only here to target dom node or components, `let` is used to declare local variables like it would normally do.
+- __Simpler__ : Classic React Hooks like `useCallback`, `useEvent` and `useMemo` becomes __useless__ and does not exist in __Reflex__.<br>
+- __Fewer bugs__ : [Stale closure] issues (https://dmitripavlutin.com/react-hooks-stale-closures/) vanishes.<br>
+- __Cleaner__ : Also, hooks dependencies array to keep state scopes ([#1](https://itnext.io/how-to-work-with-intervals-in-react-hooks-f29892d650f2), [#2](https://overreacted.io/a-complete-guide-to-useeffect/)) are not needed with __[factory extensions](#factory-extensions)__.
+- __Back to basics__ : Using `useRef` to store stateless values does not exist anymore. In __Reflex__, `ref` is used only to target dom node or components, `let` is used to declare local variables like it would normally do.
 
 #### Tradeoffs
 - __Stateless vs stateful__ : When a component is going from stateless to stateful, the `return <div>...` needs to be refactored to `return () => <div>...`
