@@ -1,4 +1,4 @@
-import { h, mounted, ref, render, state } from "../../src/reflex";
+import { changed, h, mounted, ref, render, state } from "../../src/reflex";
 import { trackPerformances, setReflexDebug } from "../../src/reflex/debug";
 import { colorList, createUID, foodList, pickRandom } from "../common/demoHelpers";
 import { renderToString } from "../../src/reflex/renderToString";
@@ -15,6 +15,7 @@ function ListItem (props) {
 	return <li>{ item.id } : { item.name }</li>
 }
 
+
 function TestComponent () {
 	const list = state<IItem[]>([])
 	function addItems () {
@@ -27,6 +28,9 @@ function TestComponent () {
 		}
 		list.value = [ ...list.value, ...items ]
 	}
+
+
+
 	// addItems();
 	// FIXME : Does not target correct node (it target first child)
 	// return () => <div class={["TestComponent", list.value.length]}>

@@ -161,7 +161,6 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 			if ( name == "class" && Array.isArray( value ) )
 				value = value.filter( v => v !== true && !!v ).join(" ").trim()
 			// Manage style as object only
-			// else if ( name == "style" && _typeof(value, "o") )
 			else if ( name == "style" && typeof value == "object" ) {
 				// FIXME : Can it be optimized ? Maybe only setStyle when needed ?
 				Object.keys( value ).forEach(

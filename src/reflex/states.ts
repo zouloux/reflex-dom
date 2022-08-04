@@ -16,6 +16,10 @@ export type IState<GType> = {
 	set ( newValue:TInitialValue<GType> ):Promise<void>
 }
 
+export interface IInternalState<GType> extends IState<GType> {
+	readonly _isState:true
+}
+
 interface IStateOptions<GType> {
 	filter				?:(newValue:GType, oldValue:GType) => GType,
 	directInvalidation	?:boolean
@@ -61,6 +65,8 @@ export function state <GType> (
 		set value ( newValue:GType ) { _setAndInvalidate( newValue ) },
 		set: ( newValue:TInitialValue<GType> ) => new Promise(
 			resolve => _setAndInvalidate( _prepareInitialValue<GType>( newValue, initialValue as GType ), resolve )
-		)
-	}
+		),
+		// Changed knows if it's a state
+		get _isState () { return true }
+	} as IState<GType>
 }

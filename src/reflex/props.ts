@@ -1,4 +1,6 @@
 import { _VNodeTypes_ELEMENT } from "./common";
+import { getCurrentComponent } from "./diff";
+import { ComponentInstance } from "./component";
 
 // Shallow compare two objects, applied only for props between new and old virtual nodes.
 // Will not compare "children" which is always different
@@ -66,7 +68,14 @@ export type IPropsProxy <GProps extends object> = {
 	get		: () => GProps
 }
 
-export function _createPropsProxy <GProps extends object = object> ( props:GProps ) : IPropsProxy<GProps> {
+// let _trackedProps = new Set<string>()
+// export const _getTrackedProps = ():string[] => {
+// 	const all = [ ..._trackedProps.values() ]
+// 	_trackedProps.clear()
+// 	return all
+// }
+
+export function _createPropsProxy <GProps extends object = object> ( props:GProps, component:ComponentInstance ) : IPropsProxy<GProps> {
 	// console.log("_createPropsProxy", props)
 	return {
 		proxy: new Proxy(props, {
@@ -74,6 +83,7 @@ export function _createPropsProxy <GProps extends object = object> ( props:GProp
 				// if ( propName === _proxyPrivateAccess )
 				// 	return props
 				// TODO : Track dependencies like for state
+				// _trackedProps.add( propName as string )
 				return propName in props ? props[ propName ] : void 0
 			},
 			set ():boolean {

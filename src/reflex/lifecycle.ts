@@ -1,5 +1,6 @@
 import { getCurrentComponent } from "./diff";
 import { LifecycleHandler, MountHandler } from "./common";
+import { IInternalState, IState } from "./states";
 
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 
@@ -20,16 +21,30 @@ type TChangeDetector = any[]
 type UnmountTrackHandler 	<GState extends TChangeDetector> 	= (...oldState:GState) => void
 type TrackHandler 			<GState extends TChangeDetector>	= (...newState:GState) => UnmountTrackHandler<GState>|void
 type DetectChanges 			<GState extends TChangeDetector>	= () => GState
+type ArrayOfDependencies	<GState extends TChangeDetector>	= (IState<any>|(() => any))[]
 
-export function changed <GState extends TChangeDetector> ( detectChanges:DetectChanges<GState>|TrackHandler<GState>, executeHandler?:TrackHandler<GState> ) {
+export function changed <GState extends TChangeDetector> ( detectChanges:DetectChanges<GState>|ArrayOfDependencies<GState>|TrackHandler<GState>, executeHandler?:TrackHandler<GState> ) {
 	const component = getCurrentComponent()
 	// No executeHandler function means detectChanges has been omitted.
 	// Do not check any change, just call executeHandler after every render.
 	if ( !executeHandler ) {
-		component._renderHandlers.push( detectChanges );
+		component._renderHandlers.push( detectChanges as  TrackHandler<GState> );
 		return;
 	}
 	// Get first state
+	if ( Array.isArray(detectChanges) ) {
+		let _detectChanges = detectChanges;
+		detectChanges = () => _detectChanges.map( dependency => {
+			// Custom change function
+			if ( typeof dependency === "function" )
+				return dependency()
+			// State
+			else if ( typeof dependency === "object" && (dependency as IInternalState<any>)._isState )
+				return ( dependency as IState<any> ).value
+			if ( process.env.NODE_ENV !== "production" )
+				throw new Error("Reflex - Changed can track states or functions only. changed([state, () => prop.value], ...)")
+		}) as never as DetectChanges<GState>
+	}
 	let state = (detectChanges as DetectChanges<GState>)()
 	// Stored previous unmount handler
 	let previousUnmountHandler:LifecycleHandler
@@ -43,7 +58,6 @@ export function changed <GState extends TChangeDetector> ( detectChanges:DetectC
 		// const executeResult = executeHandler( state, oldState )
 		// Get previous unmount handler from return or cancel it
 		previousUnmountHandler = (
-			// _typeof(executeResult, "f")
 			typeof executeResult == "function"
 			? executeResult as UnmountTrackHandler<GState>
 			: null

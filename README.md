@@ -2,10 +2,17 @@
 
 __Reflex__ is a tiny and fast virtual-dom library with __factory based functional components__.
 
-- 🦋 Super lightweight, about ![~3kb](./bits/reflex.es2017.min.js.svg) min-zipped ( [See bundle](https://unpkg.com/@zouloux/reflex) )
+- 🦋 Super lightweight and 0 dependency, about ![~3kb](./bits/reflex.es2017.min.js.svg) min-zipped ( [See bundle](https://unpkg.com/@zouloux/reflex) )
 - 🏎 Highly performant ( [Proof](#performances) )
 - 🔋 Batteries included with [factory extensions](#factory-extensions)
 - 🤓 Typed JSX
+
+[![npm](https://img.shields.io/npm/v/@zouloux/reflex.svg)](http://npm.im/@zouloux/reflex)
+![](https://img.shields.io/badge/Build-passing-success)
+![](https://img.shields.io/badge/0-dependency-success)
+<br>
+[![gzip size](http://img.badgesize.io/https://unpkg.com/@zouloux/reflex@0.9.0/dist/reflex.es2017.min.js?compression=gzip&label=gzip)](https://unpkg.com/@zouloux/reflex@0.9.0/dist/reflex.es2017.min.js)
+[![brotli size](http://img.badgesize.io/https://esm.sh/v89/@zouloux/reflex@0.9.0/es2022/reflex.bundle.js?compression=brotli&label=brotli)](https://esm.sh/v89/@zouloux/reflex@0.9.0/es2022/reflex.bundle.js)
 
 ![](./example/example.png)
 ![](./example/example.gif)

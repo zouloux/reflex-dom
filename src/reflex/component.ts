@@ -37,12 +37,8 @@ export function _createComponentInstance
 	( vnode:VNode<GProps, ComponentFunction> )
 	:ComponentInstance
 {
-	const component = {
+	const component:Partial<ComponentInstance> = {
 		vnode,
-		_propsProxy: (
-			( vnode.value.isFactory || vnode.value.isFactory === undefined )
-			? _createPropsProxy( vnode.props ) : null
-		),
 		name: (vnode.value as RenderFunction).name,
 		isMounted: false,
 		methods: {},
@@ -76,6 +72,7 @@ export function _createComponentInstance
 					const { props } = component.vnode
 					// Browse default, and inject them if it does not exist on props
 					for ( let i in value )
+						// @ts-ignore - FIXME : Type error
 						if ( !props.hasOwnProperty(i) || props[ i ] == null )
 							// @ts-ignore - FIXME : Type error
 							props[ i ] = value[ i ]
@@ -83,7 +80,11 @@ export function _createComponentInstance
 			}
 		}
 	}
-	return component;
+	component._propsProxy = (
+		( vnode.value.isFactory || vnode.value.isFactory === undefined )
+		? _createPropsProxy( vnode.props, component as ComponentInstance ) : null
+	);
+	return component as ComponentInstance;
 }
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 
