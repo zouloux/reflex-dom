@@ -18,7 +18,7 @@ function ReflexApp ( props ) {
 
 	// How refs of dom elements works
 	const title = ref<HTMLDivElement>()
-	mounted(() => console.log(title.dom.innerHTML) )
+	mounted(() => console.log(title.dom.innerHTML))
 
 	// Returns a render function
 	// Classes can be arrays ! Falsy elements of the array will be discarded
