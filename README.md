@@ -11,8 +11,8 @@ __Reflex__ is a tiny and fast virtual-dom library with __factory based functiona
 ![](https://img.shields.io/badge/Build-passing-success)
 ![](https://img.shields.io/badge/0-dependency-success)
 <br>
-[![gzip size](http://img.badgesize.io/https://unpkg.com/@zouloux/reflex@0.9.0/dist/reflex.es2017.min.js?compression=gzip&label=gzip)](https://unpkg.com/@zouloux/reflex@0.9.0/dist/reflex.es2017.min.js)
-[![brotli size](http://img.badgesize.io/https://esm.sh/v89/@zouloux/reflex@0.9.0/es2022/reflex.bundle.js?compression=brotli&label=brotli)](https://esm.sh/v89/@zouloux/reflex@0.9.0/es2022/reflex.bundle.js)
+[![gzip size](http://img.badgesize.io/https://unpkg.com/@zouloux/reflex/dist/reflex.es2017.min.js?compression=gzip&label=gzip)](https://unpkg.com/@zouloux/reflex/dist/reflex.es2017.min.js)
+[![brotli size](http://img.badgesize.io/https://esm.sh/v89/@zouloux/reflex/es2022/reflex.bundle.js?compression=brotli&label=brotli)](https://esm.sh/v89/@zouloux/reflex/es2022/reflex.bundle.js)
 
 ![](./example/example.png)
 ![](./example/example.gif)
@@ -119,11 +119,11 @@ You will need at least those options into `tsconfig.json` :
 import { h, render } from "reflex";
 // Optionnaly type props with typescript
 interface IAppProps {
-	greetings:string
+    greetings:string
 }
 // App is a stateless function, no need for factory pattern
 function App ( props:IAppProps ) {
-	return <div class="MyApp">
+    return <div class="MyApp">
       <h1>{ props.greetings }</h1>
     </div>
 }
@@ -269,7 +269,7 @@ Additional options for state are
 
 ```typescript
 const myState = state( 0, {
-	// Value is filtered when "myState.value = something" or "myState.set( something )" is used. 
+    // Value is filtered when "myState.value = something" or "myState.set( something )" is used. 
     // Here value cannot be set bellow 0 
     filter: (newValue, oldValue) => Math.max( newValue, 0 ),
     // Will force component to be rendered after each set
@@ -283,7 +283,7 @@ myState.value = -2
 
 // Because of directInvalidation, it will render component at each loop and your app will certainly crash
 for ( let i = 0; i < 10000; ++i)
-	myState.value ++
+    myState.value ++
 ```
 
 ## Ref
@@ -414,26 +414,24 @@ function ChangedComponent ( props ) {
 }
 ```
 
-__Changed__ can have a first argument to detect changes on values. Because we are in __Factory phase__, raw props or values can't be used directly. __Note__ that the check function __always returns an array__.
+__Changed__ can have a first argument to detect changes state changes.
 
 ```tsx
 function ChangedComponent ( props ) {
     const stateA = state()
     const stateB = state()
-    changed(
-        // The function detect changes only on stateA, stateB is ignored
-        () => [stateA.value],
-        // Called when change is detected
-        () => {
-            // StateA is updated
-            console.log(stateA.value)
-        }
-    )
+    // This function detect changes only when stateA changes. stateB is ignored.
+    changed( [stateA], (aValue) => {
+      // StateA is updated
+      console.log( aValue )
+    })
     return () => <div>...</div>
 }
 ```
+> Because we are targeting the state here, we do not need to specify `stateA.value`
 
-Return from the detect function can detect changes on multiple elements.
+Changed can also detect changes on arbitrary values or props.
+The detect function returns an array of dependencies to check.
 
 ```tsx
 function ChangedComponent ( props ) {
@@ -454,6 +452,9 @@ function ChangedComponent ( props ) {
     return () => <div>...</div>
 }
 ```
+
+>  Because we are in __Factory phase__, raw props or values can't be used directly. __Note__ that the check function __always returns an array__.
+
 
 __Changed__ handler has the same return behavior than `mount` and `unmount`.
 
@@ -598,9 +599,9 @@ Also available on Esm.sh
 - [x] renderToString
 - [x] JSX Types and runtime
 - [x] State invalidation refacto
+- [x] New `changed` API which can listen to `states`, `props` and custom handlers with simple API
 
 #### Work in progress / TODO
-- [ ] WIP - New `changed` API which can listen to `states`, `props` and custom handlers with simple API
 - [ ] WIP - Imperative handles through component instance
 - [ ] WIP - Shared ref between parent and child + component ref + refacto component interface for refs and public API
 - [ ] WIP - Atomic rendering

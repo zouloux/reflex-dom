@@ -11,7 +11,7 @@ function ReflexApp ( props ) {
 	// No need to use ref for locally scoped variables
 	let firstUpdate = true
 	// Detect changes of states or props
-	changed(() => [counter.value], newValue => {
+	changed([counter], newValue => {
 		console.log(`Counter just updated to ${newValue}`, firstUpdate)
 		firstUpdate = false
 	})

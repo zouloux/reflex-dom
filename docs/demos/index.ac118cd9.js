@@ -142,50 +142,7 @@
       this[globalName] = mainExports;
     }
   }
-})({"eJHQY":[function(require,module,exports) {
-// Import it like any other v-dom lib
-var _reflex = require("../src/reflex");
-// Reflex components can be pure functions or factory functions
-function ReflexApp(props) {
-    // How basic state works
-    const counter = (0, _reflex.state)(0);
-    const increment = ()=>counter.value++;
-    const reset = ()=>counter.value = 0;
-    // No need to use ref for locally scoped variables
-    let firstUpdate = true;
-    // Detect changes of states or props
-    (0, _reflex.changed)(()=>[
-            counter.value
-        ], (newValue)=>{
-        console.log(`Counter just updated to ${newValue}`, firstUpdate);
-        firstUpdate = false;
-    });
-    // How refs of dom elements works
-    const title = (0, _reflex.ref)();
-    (0, _reflex.mounted)(()=>console.log(title.dom.innerHTML));
-    // Returns a render function
-    // Classes can be arrays ! Falsy elements of the array will be discarded
-    return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
-            class: [
-                "ReflexApp",
-                props.modifier,
-                false
-            ]
-        }, /*#__PURE__*/ (0, _reflex.h)("h1", {
-            ref: title
-        }, "Hello from Reflex ", props.emoji), /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: increment
-        }, "Increment"), "\xa0", /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: reset
-        }, "Reset"), "\xa0", /*#__PURE__*/ (0, _reflex.h)("span", null, "Counter : ", counter.value));
-}
-// Render it like any other v-dom library
-(0, _reflex.render)(/*#__PURE__*/ (0, _reflex.h)(ReflexApp, {
-    modifier: "ReflexApp-lightMode",
-    emoji: "\uD83D\uDC4B"
-}), document.body);
-
-},{"../src/reflex":"cuBJf"}],"cuBJf":[function(require,module,exports) {
+})({"cuBJf":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /// <reference lib="dom" />
@@ -252,7 +209,11 @@ function state(initialValue, stateOptions = {}) {
         set value (newValue){
             _setAndInvalidate(newValue);
         },
-        set: (newValue)=>new Promise((resolve)=>_setAndInvalidate(_prepareInitialValue(newValue, initialValue), resolve))
+        set: (newValue)=>new Promise((resolve)=>_setAndInvalidate(_prepareInitialValue(newValue, initialValue), resolve)),
+        // Changed knows if it's a state
+        get _isState () {
+            return true;
+        }
     };
 }
 
@@ -749,7 +710,6 @@ var _props = require("./props");
 function _createComponentInstance(vnode) {
     const component = {
         vnode,
-        _propsProxy: vnode.value.isFactory || vnode.value.isFactory === undefined ? (0, _props._createPropsProxy)(vnode.props) : null,
         name: vnode.value.name,
         isMounted: false,
         methods: {},
@@ -779,12 +739,14 @@ function _createComponentInstance(vnode) {
                     // Get props object instance from current virtual node
                     const { props  } = component.vnode;
                     // Browse default, and inject them if it does not exist on props
-                    for(let i in value)if (!props.hasOwnProperty(i) || props[i] == null) // @ts-ignore - FIXME : Type error
+                    for(let i in value)// @ts-ignore - FIXME : Type error
+                    if (!props.hasOwnProperty(i) || props[i] == null) // @ts-ignore - FIXME : Type error
                     props[i] = value[i];
                 }
             }
         }
     };
+    component._propsProxy = vnode.value.isFactory || vnode.value.isFactory === undefined ? (0, _props._createPropsProxy)(vnode.props, component) : null;
     return component;
 }
 function _mountComponent(component) {
@@ -839,6 +801,12 @@ function _recursivelyUpdateMountState(node, doMount) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "shallowPropsCompare", ()=>shallowPropsCompare);
+// let _trackedProps = new Set<string>()
+// export const _getTrackedProps = ():string[] => {
+// 	const all = [ ..._trackedProps.values() ]
+// 	_trackedProps.clear()
+// 	return all
+// }
 parcelHelpers.export(exports, "_createPropsProxy", ()=>_createPropsProxy);
 var _common = require("./common");
 const shallowPropsCompare = (a, b, childrenCheck = true)=>// Same amount of properties ?
@@ -852,7 +820,7 @@ const shallowPropsCompare = (a, b, childrenCheck = true)=>// Same amount of prop
             // Find is -> halt when any node type differs (so, the inverse)
             return !(c.type === d.type && (c.type === (0, _common._VNodeTypes_ELEMENT) ? c.value === d.value : true));
         }) : b.hasOwnProperty(key) && a[key] === b[key]);
-function _createPropsProxy(props) {
+function _createPropsProxy(props, component) {
     // console.log("_createPropsProxy", props)
     return {
         proxy: new Proxy(props, {
@@ -860,6 +828,7 @@ function _createPropsProxy(props) {
                 // if ( propName === _proxyPrivateAccess )
                 // 	return props
                 // TODO : Track dependencies like for state
+                // _trackedProps.add( propName as string )
                 return propName in props ? props[propName] : void 0;
             },
             set () {
@@ -1025,6 +994,14 @@ function changed(detectChanges, executeHandler) {
         return;
     }
     // Get first state
+    if (Array.isArray(detectChanges)) {
+        let _detectChanges = detectChanges;
+        detectChanges = ()=>_detectChanges.map((dependency)=>{
+                // Custom change function
+                if (typeof dependency === "function") return dependency();
+                else if (typeof dependency === "object" && dependency._isState) return dependency.value;
+            });
+    }
     let state = detectChanges();
     // Stored previous unmount handler
     let previousUnmountHandler;
@@ -1037,8 +1014,7 @@ function changed(detectChanges, executeHandler) {
         const executeResult = executeHandler.apply(null, state.concat(oldState));
         // const executeResult = executeHandler( state, oldState )
         // Get previous unmount handler from return or cancel it
-        previousUnmountHandler = // _typeof(executeResult, "f")
-        typeof executeResult == "function" ? executeResult : null;
+        previousUnmountHandler = typeof executeResult == "function" ? executeResult : null;
     }
     // After component just rendered
     let firstRender = true;
@@ -1057,5 +1033,5 @@ function changed(detectChanges, executeHandler) {
     });
 }
 
-},{"./diff":"6sa8r","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["eJHQY"], "eJHQY", "parcelRequirea1a1")
+},{"./diff":"6sa8r","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},[], null, "parcelRequirea1a1")
 
