@@ -1,4 +1,5 @@
 import {
+	_dispatch,
 	_VNodeTypes_CONTAINERS, ComponentFunction, LifecycleHandler, MountHandler,
 	RenderFunction, VNode
 } from "./common";
@@ -41,14 +42,14 @@ export function _createComponentInstance
 		vnode,
 		name: (vnode.value as RenderFunction).name,
 		isMounted: false,
-		methods: {},
+		//methods: {},
 		_isDirty: false,
 		_render: vnode.value as RenderFunction,
 		_mountHandlers: [],
 		_renderHandlers: [],
 		_unmountHandlers: [],
 		_afterRenderHandlers: [],
-		_affectedNodesByStates: [],
+		//_affectedNodesByStates: [],
 		_isRendering: false,
 		_defaultProps: {},
 		// Component API is given to every functional or factory component
@@ -69,13 +70,13 @@ export function _createComponentInstance
 				// Otherwise, we are on a plain object that we'll have to mutate
 				else {
 					// Get props object instance from current virtual node
-					const { props } = component.vnode
+					//const { props } = component.vnode
 					// Browse default, and inject them if it does not exist on props
-					for ( let i in value )
-						// @ts-ignore - FIXME : Type error
-						if ( !props.hasOwnProperty(i) || props[ i ] == null )
-							// @ts-ignore - FIXME : Type error
-							props[ i ] = value[ i ]
+					Object.keys( value ).map( (currentValue, i) => {
+						// if ( !props.hasOwnProperty(i) || props[ i ] == null )
+						if ( !(i in component.vnode.props) )
+							component.vnode.props[ i ] = currentValue
+					})
 				}
 			}
 		}
@@ -90,19 +91,19 @@ export function _createComponentInstance
 
 export function _mountComponent ( component:ComponentInstance ) {
 	// Call every mount handler and store returned unmount handlers
-	component._mountHandlers.forEach( handler => {
-		const mountedReturn = handler.apply( component, [] );
+	const total = component._mountHandlers.length
+	for ( let i = 0; i < total; ++i ) {
+		const mountedReturn = component._mountHandlers[ i ].apply( component, [] );
 		if ( typeof mountedReturn === "function" )
 			component._unmountHandlers.push( mountedReturn )
-	})
+	}
 	// Reset mount handlers, no need to keep them
 	component._mountHandlers = []
 	component.isMounted = true;
 }
 
 export function _unmountComponent ( component:ComponentInstance ) {
-	// TODO : While optim ? Do bench !
-	component._unmountHandlers.forEach( h => h.apply( component, [] ) )
+	_dispatch(component._unmountHandlers, component, [])
 	component.isMounted = false;
 	// Cut component branch from virtual node to allow GC to destroy component
 	delete component.vnode._component
@@ -122,8 +123,10 @@ export function _unmountComponent ( component:ComponentInstance ) {
 
 export function _recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 	if ( node.type > _VNodeTypes_CONTAINERS ) {
-		// TODO : While optim ? Do bench !
-		node.props.children.forEach( child => {
+		const total = node.props.children.length
+		for ( let i = 0; i < total; ++i ) {
+			const child = node.props.children[ i ]
+			_recursivelyUpdateMountState( child, doMount )
 			// FIXME : Is it necessary ?
 			// Remove all event listeners
 			// if ( child.type === VNodeTypes.ELEMENT ) {
@@ -133,8 +136,7 @@ export function _recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 			// 		child.dom.removeEventListener
 			// 	})
 			// }
-			_recursivelyUpdateMountState( child, doMount )
-		})
+		}
 		if ( node._component )
 			doMount ? _mountComponent( node._component ) : _unmountComponent( node._component )
 	}

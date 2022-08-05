@@ -20,7 +20,7 @@ function renderAbstractNodeToString ( node:IAbstractNode ) {
 		Object.keys( nodeElement.attributes ).forEach( key => {
 			// FIXME : Replace all ?
 			const value = nodeElement.attributes[key]
-			if (value)
+			if ( value )
 				buffer += ` ${key}="${(value+'').replace(/"/g, '&quot;')}"`
 		})
 		if ( nodeElement.children.length === 0 )

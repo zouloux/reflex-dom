@@ -146,3 +146,10 @@ export interface DefaultReflexProps<
 	// Children are created by h here, so it's VNode, not string or number
 	children	?:VNode<any>[]
 }
+
+
+export function _dispatch ( handlers:Function[], scope:any, args:any[] ) {
+	const total = handlers.length
+	for ( let i = 0; i < total; ++i )
+		handlers[ i ].apply( scope, args )
+}

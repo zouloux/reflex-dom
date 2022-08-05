@@ -1,4 +1,5 @@
 import {
+	_dispatch,
 	_VNodeTypes_COMPONENT, _VNodeTypes_CONTAINERS, _VNodeTypes_ELEMENT, _VNodeTypes_LIST,
 	_VNodeTypes_NULL, _VNodeTypes_TEXT, ComponentFunction, ComponentReturn, INodeEnv,
 	RenderDom, RenderFunction, VNode
@@ -162,7 +163,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 				value = value.filter( v => v !== true && !!v ).join(" ").trim()
 			// Manage style as object only
 			else if ( name == "style" && typeof value == "object" ) {
-				// FIXME : Can it be optimized ? Maybe only setStyle when needed ?
+				// https://esbench.com/bench/62ecb9866c89f600a5701b47
 				Object.keys( value ).forEach(
 					k => setStyle( (dom as HTMLElement).style, k, value[k] )
 				);
@@ -197,10 +198,9 @@ function registerKey ( parentNode:VNode, childNode:VNode ) {
  * @param nodeEnv
  */
 function injectChildren ( parentDom:Element, node:VNode, nodeEnv:INodeEnv ) {
-	let childIndex = -1
 	const totalChildren = node.props.children.length
-	while ( ++childIndex < totalChildren ) {
-		const child = node.props.children[ childIndex ]
+	for ( let i = 0; i< totalChildren; ++i ) {
+		const child = node.props.children[ i ]
 		_diffNode( child, null, nodeEnv )
 		registerKey( node, child )
 		if ( child.dom )
@@ -251,19 +251,15 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 		return;
 	}
 	// Register keys of new children to detect changes without having to search
-	// FIXME : Check perfs with a simple foreach
-	// newChildren.forEach( child => registerKey( newParentNode, child ) )
 	const total = newChildren.length
 	if ( !total ) return;
-	let i = 0
-	do {
+	let i:number
+	for ( i = 0; i < total; ++i )
 		registerKey( newParentNode, newChildren[ i ] )
-	} while ( ++i < total )
 	// Browse all new nodes
 	const oldParentKeys = oldParentNode._keys
 	let collapseCount = 0
-	i = 0
-	do {
+	for ( i = 0; i < total; ++i ) {
 		// Collapsed corresponding index between old and new nodes
 		// To be able to detect moves or if just collapsing because a top sibling
 		// has been removed
@@ -283,12 +279,12 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 		/** MOVE & UPDATE KEYED CHILD **/
 		if (
 			newChildNode.key
+			// FIXME : OPTIM - Maybe do a has before the get ?
 			&& ( oldChildNode = oldParentKeys?.get( newChildNode.key ) )
 			&& oldChildNode.type === newChildNode.type
 			&& (
-				newChildNode.type === _VNodeTypes_ELEMENT
-				? oldChildNode.value === newChildNode.value
-				: true
+				newChildNode.type !== _VNodeTypes_ELEMENT
+				|| oldChildNode.value === newChildNode.value
 			)
 		) {
 			// console.log("move keyed", newChildNode, oldChildNode)
@@ -303,6 +299,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 		}
 		// Has key, but not found in old
 		/** CREATE HAS KEY**/
+		// FIXME : OPTIM - Maybe do a has before the get ?
 		else if ( newChildNode.key && oldParentKeys && !oldParentKeys.get( newChildNode.key ) ) {
 			// console.log("create from key", newChildNode)
 			_diffNode( newChildNode, null, nodeEnv )
@@ -317,9 +314,8 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			&& ( oldChildNode = oldChildren[ i ] )
 			&& oldChildNode.type === newChildNode.type
 			&& (
-				newChildNode.type === _VNodeTypes_ELEMENT
-				? oldChildNode.value === newChildNode.value
-				: true
+				newChildNode.type !== _VNodeTypes_ELEMENT
+				|| oldChildNode.value === newChildNode.value
 			)
 		) {
 			// console.log("update in place", newChildNode, oldChildNode)
@@ -334,14 +330,10 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
 		}
-	} while ( ++i < total )
+	}
 	// Remove old children which are not reused
-	// FIXME : Faster loop ? Test with simple forEach
-	// for ( const oldChildNode of oldChildren ) {
 	const totalOld = oldChildren.length
-	if ( totalOld === 0 ) return;
-	i = 0
-	do {
+	for ( i = 0; i < totalOld; ++i ) {
 		const oldChildNode = oldChildren[ i ]
 		if ( oldChildNode && !oldChildNode._keep ) {
 			// Call unmount handlers
@@ -352,7 +344,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			updateNodeRef( oldChildNode )
 			parentDom.removeChild( dom )
 		}
-	} while ( ++i < totalOld )
+	}
 }
 
 // ----------------------------------------------------------------------------- DIFF NODE
@@ -477,7 +469,7 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = ne
 		if ( !newNode._component.isMounted )
 			_recursivelyUpdateMountState( newNode, true )
 		// Execute after render handlers
-		newNode._component._renderHandlers.forEach( h => h() )
+		_dispatch( newNode._component._renderHandlers, newNode._component, [] )
 	}
 	// Diff children for node that are containers and not components
 	else if ( newNode.type > _VNodeTypes_CONTAINERS )

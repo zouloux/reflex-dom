@@ -38,12 +38,9 @@ export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) 
 					// Find is -> halt when any node type differs (so, the inverse)
 					return !(
 						c.type === d.type
-						// FIXME : Create a function for this peace of code ?
-						// FIXME : Less bytes into bundle but maybe less performant
 						&& (
-							c.type === _VNodeTypes_ELEMENT
-							? c.value === d.value
-							: true
+							c.type !== _VNodeTypes_ELEMENT
+							|| c.value === d.value
 						)
 					)
 				})

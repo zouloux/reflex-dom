@@ -43,19 +43,19 @@ export function h ( value:any, props:any, ...children:any[] ) {
 	// Target children, do not merge, we do not allow usage of both children arrays
 	props.children = props.children ? props.children : children
 	// Browse children to patch types
-	let childIndex = props.children.length
-	while ( childIndex-- ) {
-		const child = props.children[ childIndex ]
+	const total = props.children.length
+	for (let i = 0; i < total; ++i) {
+		const child = props.children[ i ]
 		const typeofChild = typeof child
 		// Detect text nodes
 		if ( typeofChild === "string" || typeofChild === "number" )
-			props.children[ childIndex ] = _createVNode( _VNodeTypes_TEXT, child )
+			props.children[ i ] = _createVNode( _VNodeTypes_TEXT, child )
 		// Detect array nodes
 		else if ( Array.isArray(child) )
-			props.children[ childIndex ] = _createVNode( _VNodeTypes_LIST, null, { children: child } )
+			props.children[ i ] = _createVNode( _VNodeTypes_LIST, null, { children: child } )
 		// Detect null nodes (it means we have a condition )
 		else if ( child === null )
-			props.children[ childIndex ] = _createVNode( _VNodeTypes_NULL )
+			props.children[ i ] = _createVNode( _VNodeTypes_NULL )
 	}
 	// Virtual node type here can be only component or element
 	// Other types are created elsewhere

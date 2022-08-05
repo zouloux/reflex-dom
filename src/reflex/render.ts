@@ -1,4 +1,4 @@
-import { _VNodeTypes_ROOT, IAbstractDocument, IAbstractElement, VNode } from "./common";
+import { _dispatch, _VNodeTypes_ROOT, IAbstractDocument, IAbstractElement, VNode } from "./common";
 import { _diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
 import { _createVNode } from "./jsx";
 import { ComponentInstance } from "./component";
@@ -25,8 +25,13 @@ function updateDirtyComponents () {
 	if ( process.env.NODE_ENV !== "production" )
 		p = require("./debug").trackPerformances("Update dirty components")
 	// TODO : Update with depth ! Deepest first ? Or last ?
-	componentsToUpdate.forEach( component => {
+	const total = componentsToUpdate.length
+	for ( let i = 0; i < total; ++i ) {
+		const component = componentsToUpdate[ i ]
 		_diffNode( component.vnode, component.vnode )
+		_dispatch(component._afterRenderHandlers, component, [])
+		component._afterRenderHandlers = []
+		component._isDirty = false
 		// if ( component._affectedNodesByStates.length == 0 )
 		// 	_diffNode( component.vnode, component.vnode )
 		// else for ( let i = 0; i < component._affectedNodesByStates.length; ++i ) {
@@ -37,10 +42,7 @@ function updateDirtyComponents () {
 		// 	for ( let j = 0; j < newNodes.length; ++j )
 		// 		_diffNode( newNodes[j], oldNodes[j] )
 		// }
-		component._afterRenderHandlers.forEach( handler => handler() )
-		component._afterRenderHandlers = []
-		component._isDirty = false
-	})
+	}
 	componentsToUpdate = []
 	p?.();
 }

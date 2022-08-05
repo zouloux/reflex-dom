@@ -142,50 +142,7 @@
       this[globalName] = mainExports;
     }
   }
-})({"eJHQY":[function(require,module,exports) {
-// Import it like any other v-dom lib
-var _reflex = require("../src/reflex");
-// Reflex components can be pure functions or factory functions
-function ReflexApp(props) {
-    // How basic state works
-    const counter = (0, _reflex.state)(0);
-    const increment = ()=>counter.value++;
-    const reset = ()=>counter.value = 0;
-    // No need to use ref for locally scoped variables
-    let firstUpdate = true;
-    // Detect changes of states or props
-    (0, _reflex.changed)([
-        counter
-    ], (newValue)=>{
-        console.log(`Counter just updated to ${newValue}`, firstUpdate);
-        firstUpdate = false;
-    });
-    // How refs of dom elements works
-    const title = (0, _reflex.ref)();
-    (0, _reflex.mounted)(()=>console.log(title.dom.innerHTML));
-    // Returns a render function
-    // Classes can be arrays ! Falsy elements of the array will be discarded
-    return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
-            class: [
-                "ReflexApp",
-                props.modifier,
-                false
-            ]
-        }, /*#__PURE__*/ (0, _reflex.h)("h1", {
-            ref: title
-        }, "Hello from Reflex ", props.emoji), /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: increment
-        }, "Increment"), "\xa0", /*#__PURE__*/ (0, _reflex.h)("button", {
-            onClick: reset
-        }, "Reset"), "\xa0", /*#__PURE__*/ (0, _reflex.h)("span", null, "Counter : ", counter.value));
-}
-// Render it like any other v-dom library
-(0, _reflex.render)(/*#__PURE__*/ (0, _reflex.h)(ReflexApp, {
-    modifier: "ReflexApp-lightMode",
-    emoji: "\uD83D\uDC4B"
-}), document.body);
-
-},{"../src/reflex":"cuBJf"}],"cuBJf":[function(require,module,exports) {
+})({"cuBJf":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /// <reference lib="dom" />
@@ -379,7 +336,7 @@ function _diffElement(newNode, oldNode, nodeEnv) {
             // Manage class as arrays
             if (name1 == "class" && Array.isArray(value)) value = value.filter((v)=>v !== true && !!v).join(" ").trim();
             else if (name1 == "style" && typeof value == "object") {
-                // FIXME : Can it be optimized ? Maybe only setStyle when needed ?
+                // https://esbench.com/bench/62ecb9866c89f600a5701b47
                 Object.keys(value).forEach((k)=>setStyle(dom.style, k, value[k]));
                 continue;
             }
@@ -406,10 +363,9 @@ function _diffElement(newNode, oldNode, nodeEnv) {
  * @param node
  * @param nodeEnv
  */ function injectChildren(parentDom, node, nodeEnv) {
-    let childIndex = -1;
     const totalChildren = node.props.children.length;
-    while(++childIndex < totalChildren){
-        const child = node.props.children[childIndex];
+    for(let i = 0; i < totalChildren; ++i){
+        const child = node.props.children[i];
         _diffNode(child, null, nodeEnv);
         registerKey(node, child);
         if (child.dom) parentDom.appendChild(child.dom);
@@ -444,18 +400,14 @@ function _diffChildren(newParentNode, oldParentNode, nodeEnv) {
         return;
     }
     // Register keys of new children to detect changes without having to search
-    // FIXME : Check perfs with a simple foreach
-    // newChildren.forEach( child => registerKey( newParentNode, child ) )
     const total = newChildren.length;
     if (!total) return;
-    let i = 0;
-    do registerKey(newParentNode, newChildren[i]);
-    while (++i < total);
+    let i;
+    for(i = 0; i < total; ++i)registerKey(newParentNode, newChildren[i]);
     // Browse all new nodes
     const oldParentKeys = oldParentNode._keys;
     let collapseCount = 0;
-    i = 0;
-    do {
+    for(i = 0; i < total; ++i){
         // Collapsed corresponding index between old and new nodes
         // To be able to detect moves or if just collapsing because a top sibling
         // has been removed
@@ -464,7 +416,7 @@ function _diffChildren(newParentNode, oldParentNode, nodeEnv) {
         let oldChildNode = oldChildren[i];
         if (oldChildNode && oldChildNode.key && newParentNode._keys && !newParentNode._keys.has(oldChildNode.key)) collapseCount++;
         // Has key, same key found in old, same type on both
-        /** MOVE & UPDATE KEYED CHILD **/ if (newChildNode.key && (oldChildNode = oldParentKeys?.get(newChildNode.key)) && oldChildNode.type === newChildNode.type && (newChildNode.type === (0, _common._VNodeTypes_ELEMENT) ? oldChildNode.value === newChildNode.value : true)) {
+        /** MOVE & UPDATE KEYED CHILD **/ if (newChildNode.key && (oldChildNode = oldParentKeys?.get(newChildNode.key)) && oldChildNode.type === newChildNode.type && (newChildNode.type !== (0, _common._VNodeTypes_ELEMENT) || oldChildNode.value === newChildNode.value)) {
             // console.log("move keyed", newChildNode, oldChildNode)
             _diffNode(newChildNode, oldChildNode, nodeEnv);
             oldChildNode._keep = true;
@@ -478,7 +430,7 @@ function _diffChildren(newParentNode, oldParentNode, nodeEnv) {
             _diffNode(newChildNode, null, nodeEnv);
             parentDom.insertBefore(newChildNode.dom, parentDom.children[i]);
             collapseCount--;
-        } else if (i in oldChildren && (oldChildNode = oldChildren[i]) && oldChildNode.type === newChildNode.type && (newChildNode.type === (0, _common._VNodeTypes_ELEMENT) ? oldChildNode.value === newChildNode.value : true)) {
+        } else if (i in oldChildren && (oldChildNode = oldChildren[i]) && oldChildNode.type === newChildNode.type && (newChildNode.type !== (0, _common._VNodeTypes_ELEMENT) || oldChildNode.value === newChildNode.value)) {
             // console.log("update in place", newChildNode, oldChildNode)
             _diffNode(newChildNode, oldChildNode, nodeEnv);
             oldChildNode._keep = true;
@@ -488,14 +440,10 @@ function _diffChildren(newParentNode, oldParentNode, nodeEnv) {
             parentDom.insertBefore(newChildNode.dom, parentDom.children[i]);
             collapseCount--;
         }
-    }while (++i < total);
+    }
     // Remove old children which are not reused
-    // FIXME : Faster loop ? Test with simple forEach
-    // for ( const oldChildNode of oldChildren ) {
     const totalOld = oldChildren.length;
-    if (totalOld === 0) return;
-    i = 0;
-    do {
+    for(i = 0; i < totalOld; ++i){
         const oldChildNode = oldChildren[i];
         if (oldChildNode && !oldChildNode._keep) {
             // Call unmount handlers
@@ -506,7 +454,7 @@ function _diffChildren(newParentNode, oldParentNode, nodeEnv) {
             updateNodeRef(oldChildNode);
             parentDom.removeChild(dom);
         }
-    }while (++i < totalOld);
+    }
 }
 function _renderComponentNode(node) {
     // Select current component before rendering
@@ -611,7 +559,7 @@ function _diffNode(newNode, oldNode, nodeEnv = newNode._nodeEnv) {
         // If component is not mounted yet, mount it recursively
         if (!newNode._component.isMounted) (0, _component._recursivelyUpdateMountState)(newNode, true);
         // Execute after render handlers
-        newNode._component._renderHandlers.forEach((h)=>h());
+        (0, _common._dispatch)(newNode._component._renderHandlers, newNode._component, []);
     } else if (newNode.type > (0, _common._VNodeTypes_CONTAINERS)) _diffChildren(newNode, oldNode, nodeEnv);
 }
 
@@ -625,6 +573,7 @@ parcelHelpers.export(exports, "_VNodeTypes_ROOT", ()=>_VNodeTypes_ROOT);
 parcelHelpers.export(exports, "_VNodeTypes_ELEMENT", ()=>_VNodeTypes_ELEMENT);
 parcelHelpers.export(exports, "_VNodeTypes_COMPONENT", ()=>_VNodeTypes_COMPONENT);
 parcelHelpers.export(exports, "_VNodeTypes_LIST", ()=>_VNodeTypes_LIST);
+parcelHelpers.export(exports, "_dispatch", ()=>_dispatch);
 const _VNodeTypes_NULL = 0;
 const _VNodeTypes_TEXT = 1;
 const _VNodeTypes_CONTAINERS = 4;
@@ -632,6 +581,10 @@ const _VNodeTypes_ROOT = 5;
 const _VNodeTypes_ELEMENT = 6;
 const _VNodeTypes_COMPONENT = 7;
 const _VNodeTypes_LIST = 8;
+function _dispatch(handlers, scope, args) {
+    const total = handlers.length;
+    for(let i = 0; i < total; ++i)handlers[i].apply(scope, args);
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"j7FRh":[function(require,module,exports) {
 exports.interopDefault = function(a) {
@@ -720,16 +673,16 @@ function h(value, props, ...children) {
     // Target children, do not merge, we do not allow usage of both children arrays
     props.children = props.children ? props.children : children;
     // Browse children to patch types
-    let childIndex = props.children.length;
-    while(childIndex--){
-        const child = props.children[childIndex];
+    const total = props.children.length;
+    for(let i = 0; i < total; ++i){
+        const child = props.children[i];
         const typeofChild = typeof child;
         // Detect text nodes
-        if (typeofChild === "string" || typeofChild === "number") props.children[childIndex] = _createVNode((0, _common._VNodeTypes_TEXT), child);
-        else if (Array.isArray(child)) props.children[childIndex] = _createVNode((0, _common._VNodeTypes_LIST), null, {
+        if (typeofChild === "string" || typeofChild === "number") props.children[i] = _createVNode((0, _common._VNodeTypes_TEXT), child);
+        else if (Array.isArray(child)) props.children[i] = _createVNode((0, _common._VNodeTypes_LIST), null, {
             children: child
         });
-        else if (child === null) props.children[childIndex] = _createVNode((0, _common._VNodeTypes_NULL));
+        else if (child === null) props.children[i] = _createVNode((0, _common._VNodeTypes_NULL));
     }
     // Virtual node type here can be only component or element
     // Other types are created elsewhere
@@ -755,14 +708,14 @@ function _createComponentInstance(vnode) {
         vnode,
         name: vnode.value.name,
         isMounted: false,
-        methods: {},
+        //methods: {},
         _isDirty: false,
         _render: vnode.value,
         _mountHandlers: [],
         _renderHandlers: [],
         _unmountHandlers: [],
         _afterRenderHandlers: [],
-        _affectedNodesByStates: [],
+        //_affectedNodesByStates: [],
         _isRendering: false,
         _defaultProps: {},
         // Component API is given to every functional or factory component
@@ -778,14 +731,13 @@ function _createComponentInstance(vnode) {
                 if (component._propsProxy) // Get current props from proxy as plain browsable object
                 // Override props on proxy with defaults on a new object
                 component._propsProxy.set(Object.assign({}, value, component._propsProxy.get()));
-                else {
-                    // Get props object instance from current virtual node
-                    const { props  } = component.vnode;
-                    // Browse default, and inject them if it does not exist on props
-                    for(let i in value)// @ts-ignore - FIXME : Type error
-                    if (!props.hasOwnProperty(i) || props[i] == null) // @ts-ignore - FIXME : Type error
-                    props[i] = value[i];
-                }
+                else // Get props object instance from current virtual node
+                //const { props } = component.vnode
+                // Browse default, and inject them if it does not exist on props
+                Object.keys(value).map((currentValue, i)=>{
+                    // if ( !props.hasOwnProperty(i) || props[ i ] == null )
+                    if (!(i in component.vnode.props)) component.vnode.props[i] = currentValue;
+                });
             }
         }
     };
@@ -794,17 +746,17 @@ function _createComponentInstance(vnode) {
 }
 function _mountComponent(component) {
     // Call every mount handler and store returned unmount handlers
-    component._mountHandlers.forEach((handler)=>{
-        const mountedReturn = handler.apply(component, []);
+    const total = component._mountHandlers.length;
+    for(let i = 0; i < total; ++i){
+        const mountedReturn = component._mountHandlers[i].apply(component, []);
         if (typeof mountedReturn === "function") component._unmountHandlers.push(mountedReturn);
-    });
+    }
     // Reset mount handlers, no need to keep them
     component._mountHandlers = [];
     component.isMounted = true;
 }
 function _unmountComponent(component) {
-    // TODO : While optim ? Do bench !
-    component._unmountHandlers.forEach((h)=>h.apply(component, []));
+    (0, _common._dispatch)(component._unmountHandlers, component, []);
     component.isMounted = false;
     // Cut component branch from virtual node to allow GC to destroy component
     delete component.vnode._component;
@@ -823,19 +775,20 @@ function _unmountComponent(component) {
 }
 function _recursivelyUpdateMountState(node, doMount) {
     if (node.type > (0, _common._VNodeTypes_CONTAINERS)) {
-        // TODO : While optim ? Do bench !
-        node.props.children.forEach((child)=>{
-            // FIXME : Is it necessary ?
-            // Remove all event listeners
-            // if ( child.type === VNodeTypes.ELEMENT ) {
-            // 	const listeners = child.dom[ _DOM_PRIVATE_LISTENERS_KEY ]
-            // 	Object.keys( listeners ).forEach( event => {
-            // 		console.log( event )
-            // 		child.dom.removeEventListener
-            // 	})
-            // }
+        const total = node.props.children.length;
+        for(let i = 0; i < total; ++i){
+            const child = node.props.children[i];
             _recursivelyUpdateMountState(child, doMount);
-        });
+        // FIXME : Is it necessary ?
+        // Remove all event listeners
+        // if ( child.type === VNodeTypes.ELEMENT ) {
+        // 	const listeners = child.dom[ _DOM_PRIVATE_LISTENERS_KEY ]
+        // 	Object.keys( listeners ).forEach( event => {
+        // 		console.log( event )
+        // 		child.dom.removeEventListener
+        // 	})
+        // }
+        }
         if (node._component) doMount ? _mountComponent(node._component) : _unmountComponent(node._component);
     }
 }
@@ -861,7 +814,7 @@ const shallowPropsCompare = (a, b, childrenCheck = true)=>// Same amount of prop
             // Here we inverted condition to match diff.ts checks
             // Condition is -> check if same nodes types
             // Find is -> halt when any node type differs (so, the inverse)
-            return !(c.type === d.type && (c.type === (0, _common._VNodeTypes_ELEMENT) ? c.value === d.value : true));
+            return !(c.type === d.type && (c.type !== (0, _common._VNodeTypes_ELEMENT) || c.value === d.value));
         }) : b.hasOwnProperty(key) && a[key] === b[key]);
 function _createPropsProxy(props, component) {
     // console.log("_createPropsProxy", props)
@@ -929,22 +882,24 @@ let componentsToUpdate = [];
 function updateDirtyComponents() {
     let p;
     // TODO : Update with depth ! Deepest first ? Or last ?
-    componentsToUpdate.forEach((component)=>{
+    const total = componentsToUpdate.length;
+    for(let i = 0; i < total; ++i){
+        const component = componentsToUpdate[i];
         (0, _diff._diffNode)(component.vnode, component.vnode);
-        // if ( component._affectedNodesByStates.length == 0 )
-        // 	_diffNode( component.vnode, component.vnode )
-        // else for ( let i = 0; i < component._affectedNodesByStates.length; ++i ) {
-        // 	const oldNodes = component._affectedNodesByStates[ i ]
-        // 	component._affectedNodesByStates[i] = []
-        // 	renderComponentNode( component.vnode, component )
-        // 	const newNodes = component._affectedNodesByStates[ i ]
-        // 	for ( let j = 0; j < newNodes.length; ++j )
-        // 		_diffNode( newNodes[j], oldNodes[j] )
-        // }
-        component._afterRenderHandlers.forEach((handler)=>handler());
+        (0, _common._dispatch)(component._afterRenderHandlers, component, []);
         component._afterRenderHandlers = [];
         component._isDirty = false;
-    });
+    // if ( component._affectedNodesByStates.length == 0 )
+    // 	_diffNode( component.vnode, component.vnode )
+    // else for ( let i = 0; i < component._affectedNodesByStates.length; ++i ) {
+    // 	const oldNodes = component._affectedNodesByStates[ i ]
+    // 	component._affectedNodesByStates[i] = []
+    // 	renderComponentNode( component.vnode, component )
+    // 	const newNodes = component._affectedNodesByStates[ i ]
+    // 	for ( let j = 0; j < newNodes.length; ++j )
+    // 		_diffNode( newNodes[j], oldNodes[j] )
+    // }
+    }
     componentsToUpdate = [];
     p?.();
 }
@@ -1076,5 +1031,5 @@ function changed(detectChanges, executeHandler) {
     });
 }
 
-},{"./diff":"6sa8r","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["eJHQY"], "eJHQY", "parcelRequirea1a1")
+},{"./diff":"6sa8r","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},[], null, "parcelRequirea1a1")
 
