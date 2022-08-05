@@ -2,7 +2,7 @@
 
 __Reflex__ is a tiny and fast virtual-dom library with __factory based functional components__.
 
-- 🦋 Super lightweight and 0 dependency, about ![~3kb](./bits/reflex.es2017.min.js.svg) min-zipped ( [See bundle](https://unpkg.com/@zouloux/reflex) )
+- 🦋 Super lightweight and __0 dependency__, about ![~3kb](./bits/reflex.es2017.min.js.svg) min-zipped
 - 🏎 Highly performant ( [Proof](#performances) )
 - 🔋 Batteries included with [factory extensions](#factory-extensions)
 - 🤓 Typed JSX
@@ -555,13 +555,14 @@ This feature is WIP
 
 Reflex goal is to be __as performant as possible__ and __as light as possible__.
 Reflex will never be as performant than [Solid](https://github.com/solidjs) (because of the Virtual DOM bottleneck), but targets to be more performant than Preact and React in a lot of cases.
-Library weight will be around `3kb gzipped`. It may be a bit more if we add some useful features. Not used features can be tree-shaken if you use a bundler (like Parcel or Vite).
+Library weight will be around `3kb gzipped`. It may grow a bit over time if we add some useful features. Features not used in your project can be tree-shaken if you use a bundler (like Parcel or Vite).
 [See note](./CODEGOLF.md) about code golfing.
 
 ![Benchmark](./benchmark.jpg)
 
-For now Reflex performances are between petit-dom and Preact. It can be greatly improved since Reflex is still in beta!
+> Check official benchmark on [js-framework-benchmark](https://krausest.github.io/js-framework-benchmark/2022/table_chrome_104.0.5112.79.html)
 
+For now Reflex performances are between petit-dom and Preact. It can be greatly improved since Reflex is still in beta!
 About size, see [Reflex bundle](https://unpkg.com/@zouloux/reflex) vs [Preact bundle](https://unpkg.com/preact) (without states)
 
 ### Demos
