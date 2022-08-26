@@ -32,7 +32,7 @@ export type {
 import type { ReflexIntrinsicElements } from "./jsx-types"
 export type {
 	ComponentChild, DOMAttributes, HTMLAttributes, DefaultReflexAttributes,
-	SVGAttributes, ReflexIntrinsicElements, CSSProperties
+	SVGAttributes, ReflexIntrinsicElements, CSSProperties, ClassName, ClassNameItem
 } from "./jsx-types"
 
 // Declare global JSX types
@@ -41,6 +41,7 @@ export type {
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-8.html#per-file-jsx-factories
 declare global {
 	namespace JSX {
+		// FIXME : Why when class?:ClassName, IntrinsicElements becomes incompatible ?
 		// @ts-ignore
 		interface IntrinsicElements extends ReflexIntrinsicElements {}
 		// TODO : Element & ElementClass for factory functions

@@ -338,9 +338,9 @@ export interface CSSProperties extends AllCSSProperties, DOMCSSProperties {
 
 // ----------------------------------------------------------------------------- HTML ATTRIBUTES
 
-type ClassNameItem = string|number|boolean
+export type ClassNameItem = string|boolean
 
-type ClassName = (
+export type ClassName = (
 	| ClassNameItem
 	// Classes as array can have on level deep of classes
 	| (ClassNameItem | (ClassNameItem[]))[]

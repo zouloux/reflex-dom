@@ -1,5 +1,6 @@
 import { IRefOrRefs } from "./ref";
 import { ComponentInstance, IComponentAPI } from "./component";
+import { ClassNameItem } from "./jsx-types";
 
 // ----------------------------------------------------------------------------- DOCUMENT INTERFACE
 
@@ -149,7 +150,7 @@ export interface DefaultReflexProps<
 
 // Helper to add class props when extending component props interface
 export interface HasClassProp {
-	class ?: string[]
+	class ?: ClassNameItem | ClassNameItem[]
 }
 
 export function _dispatch ( handlers:Function[], scope:any, args:any[] ) {
