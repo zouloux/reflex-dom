@@ -9,6 +9,7 @@
 export { state } from "./states"
 export { getCurrentComponent } from "./diff"
 export { ref, refs } from "./ref"
+export { defaultProps } from "./props"
 export { mounted, unmounted, changed } from "./lifecycle"
 export { render, invalidateComponent } from "./render"
 

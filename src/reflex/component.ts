@@ -1,9 +1,7 @@
 import {
-	_dispatch,
-	_VNodeTypes_CONTAINERS, ComponentFunction, LifecycleHandler, MountHandler,
-	RenderFunction, VNode
+	_dispatch, _VNodeTypes_CONTAINERS, ComponentFunction, LifecycleHandler,
+	MountHandler, RenderFunction, VNode
 } from "./common";
-import { _createPropsProxy, IPropsProxy } from "./props";
 
 // ----------------------------------------------------------------------------- TYPES
 
@@ -11,22 +9,22 @@ export interface ComponentInstance <GProps extends object = object> { // FIXME :
 	vnode				:VNode<GProps, ComponentFunction>
 	name				:string
 	isMounted			:boolean;
-	methods				:Record<string, Function>
+	children			?:VNode
 	_isDirty			?:boolean
-	_propsProxy			:IPropsProxy<GProps>
+	_props				?:GProps
 	_render				:RenderFunction
 	_mountHandlers		:MountHandler[]
 	_renderHandlers		:LifecycleHandler[]
 	_unmountHandlers	:LifecycleHandler[]
-	_affectedNodesByStates	:VNode[][]
+	// _affectedNodesByStates	:VNode[][]
 	_isRendering			:boolean
 	_afterRenderHandlers	:any[]
-	_defaultProps			?:Partial<GProps>
 	_componentAPI 		:IComponentAPI<GProps>
+	_defaultProps		?:Partial<GProps>
 }
 
 export interface IComponentAPI <GProps extends object = object> {
-	defaultProps		?:Partial<GProps>
+	// defaultProps		?:Partial<GProps>
 	shouldUpdate		?: (newProps:GProps, oldProps:GProps) => boolean
 }
 
@@ -38,54 +36,22 @@ export function _createComponentInstance
 	( vnode:VNode<GProps, ComponentFunction> )
 	:ComponentInstance
 {
-	const component:Partial<ComponentInstance> = {
+	return {
 		vnode,
 		name: (vnode.value as RenderFunction).name,
 		isMounted: false,
-		//methods: {},
 		_isDirty: false,
 		_render: vnode.value as RenderFunction,
 		_mountHandlers: [],
 		_renderHandlers: [],
 		_unmountHandlers: [],
+		_props: {},
 		_afterRenderHandlers: [],
 		//_affectedNodesByStates: [],
 		_isRendering: false,
-		_defaultProps: {},
 		// Component API is given to every functional or factory component
-		_componentAPI: {
-			get defaultProps () { return component._defaultProps },
-			// FIXME : Move to props.ts ?
-			set defaultProps ( value:Partial<GProps> ) {
-				// Register default props for the getter
-				component._defaultProps = value
-				// If we have a proxy
-				if ( component._propsProxy ) {
-					// Get current props from proxy as plain browsable object
-					// Override props on proxy with defaults on a new object
-					component._propsProxy.set(
-						Object.assign({}, value as GProps, component._propsProxy.get())
-					)
-				}
-				// Otherwise, we are on a plain object that we'll have to mutate
-				else {
-					// Get props object instance from current virtual node
-					//const { props } = component.vnode
-					// Browse default, and inject them if it does not exist on props
-					Object.keys( value ).map( (currentValue, i) => {
-						// if ( !props.hasOwnProperty(i) || props[ i ] == null )
-						if ( !(i in component.vnode.props) )
-							component.vnode.props[ i ] = currentValue
-					})
-				}
-			}
-		}
+		_componentAPI: {}
 	}
-	component._propsProxy = (
-		( vnode.value.isFactory || vnode.value.isFactory === undefined )
-		? _createPropsProxy( vnode.props, component as ComponentInstance ) : null
-	);
-	return component as ComponentInstance;
 }
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 
@@ -110,7 +76,6 @@ export function _unmountComponent ( component:ComponentInstance ) {
 	delete component.vnode
 	// FIXME : Do we need to do this ? Is it efficient or is it just noise ?
 	// delete component.vnode
-	// delete component.propsProxy
 	// delete component._mountHandlers;
 	// delete component._renderHandlers;
 	// delete component._unmountHandlers;

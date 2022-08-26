@@ -7,7 +7,7 @@ import {
 import { _cloneVNode } from "./jsx";
 import { IInternalRef } from "./ref";
 import { _createComponentInstance, _recursivelyUpdateMountState, ComponentInstance } from "./component";
-import { shallowPropsCompare } from "./props";
+import { injectDefaults, shallowPropsCompare } from "./props";
 
 // ----------------------------------------------------------------------------- CONSTANTS
 
@@ -353,18 +353,26 @@ export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<an
 	// Select current component before rendering
 	_currentComponent = node._component;
 	// FIXME: Before render handlers ?
-	// FIXME: Optimize rendering with a hook ?
 	// Execute rendering
 	_currentComponent._isRendering = true
-	// Use regular ref and do not use proxy if we are sure we are on a functional component
-	let props = node.props
-	// @ts-ignore - FIXME : Type
-	// if ( !node.value.isFactory && _currentComponent.isFactory ) {
-	if ( _currentComponent._propsProxy ) {
-		_currentComponent._propsProxy.set( node.props )
-		props = _currentComponent._propsProxy.proxy
+	// Use instance of props created with the component
+	// We can use v-node props directly if we know this component is stateless
+	const { isFactory } = node.value
+	const props = ( isFactory === false ? node.props : _currentComponent._props )
+	// Inject new props into props instance
+	if ( isFactory !== false ) {
+		Object.assign( props, node.props )
+		// On updates, for factory components, prune props
+		if ( isFactory ) for ( let i in props )
+			if ( !(i in node.props) )
+				delete props[i]
 	}
-	// TODO : Add ref as second argument ? Is it useful ?
+	// Inject default props after prune
+	// FIXME : Optim : Since default props is set once, can't we juste not prune default props ?
+	if ( _currentComponent._defaultProps )
+		injectDefaults( props, _currentComponent._defaultProps )
+	// Render component with props instance and component API instance
+	// FIXME : Add ref as second argument ? Is it useful ?
 	const result = _currentComponent._render.apply(
 		_currentComponent, [ props, _currentComponent._componentAPI ]
 	)
@@ -421,41 +429,35 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = ne
 				renderResult = result
 			}
 		}
-		// TODO : DOC
+		// Keep old component instance
 		else {
 			newNode._component = component
 			component.vnode = newNode as VNode<object, ComponentFunction>
 		}
-		// TODO : DOC - Optim should update
+		// Here we check if this component should update
+		// By default, we always update component on refreshes
 		let shouldUpdate = true
+		// If this component hasn't rendered yet ( functional components only )
 		if ( !renderResult && oldNode && !component.vnode.value.isFactory ) {
-			if ( component._componentAPI.shouldUpdate )
-				shouldUpdate = component._componentAPI.shouldUpdate( newNode.props, oldNode.props )
-			else {
-				// Copy new props to a new object
-				// TODO : DOC
-				// let newProps = Object.assign({}, newNode.props)
-				// if ( !newProps.children )
-				// 	newProps.children = oldNode.props.children
-				// console.log(newProps, oldNode.props)
-				shouldUpdate = shallowPropsCompare( newNode.props, oldNode.props )
-			}
-			// console.log("SHOULD UPDATE", newNode, oldNode, shouldUpdate)
-			// TODO : DOC
-			if ( !shouldUpdate ) {
-				newNode.props.children = oldNode.props.children
+			shouldUpdate = (
+				// Use shouldUpdate function on component API
+				component._componentAPI.shouldUpdate
+				? component._componentAPI.shouldUpdate( newNode.props, oldNode.props )
+				// Otherwise shallow props compare with children check
+				: !shallowPropsCompare( newNode.props, oldNode.props, true )
+			)
+			// Keep dom reference from old node
+			if ( !shouldUpdate )
 				newNode.dom = oldNode.dom
-			}
 		}
 		// If this component needs a render (factory function), render it
 		if ( !renderResult && shouldUpdate )
 			renderResult = _renderComponentNode<VNode>( newNode as VNode<object, ComponentFunction> )
-		// TODO : Cross assign node to component
 		// We rendered something (not reusing old component)
 		if ( renderResult ) {
-			_diffNode( renderResult, oldNode?.props.children[0], nodeEnv )
+			_diffNode( renderResult, component.children, nodeEnv )
+			component.children = renderResult
 			newNode.dom = renderResult.dom
-			newNode.props.children = [ renderResult ]
 		}
 	}
 	// Inject node env into node, now that it has been diffed and rendered
@@ -469,7 +471,8 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = ne
 		if ( !newNode._component.isMounted )
 			_recursivelyUpdateMountState( newNode, true )
 		// Execute after render handlers
-		_dispatch( newNode._component._renderHandlers, newNode._component, [] )
+		if ( newNode.value.isFactory !== false )
+			_dispatch( newNode._component._renderHandlers, newNode._component, [] )
 	}
 	// Diff children for node that are containers and not components
 	else if ( newNode.type > _VNodeTypes_CONTAINERS )

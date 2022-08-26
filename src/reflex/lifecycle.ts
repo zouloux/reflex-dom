@@ -25,10 +25,16 @@ type ArrayOfDependencies	<GState extends TChangeDetector>	= (IState<any>|(() => 
 
 export function changed <GState extends TChangeDetector> ( detectChanges:DetectChanges<GState>|ArrayOfDependencies<GState>|TrackHandler<GState>, executeHandler?:TrackHandler<GState> ) {
 	const component = getCurrentComponent()
+	// Do not continue if we use changed into a functional component
+	// Because changed() is called at each render, it would cause handler to be
+	// added at each render. Here we have only one listener
+	// if ( component.vnode.value.isFactory === false )
+	// 	return
+
 	// No executeHandler function means detectChanges has been omitted.
 	// Do not check any change, just call executeHandler after every render.
 	if ( !executeHandler ) {
-		component._renderHandlers.push( detectChanges as  TrackHandler<GState> );
+		component._renderHandlers.push( detectChanges as TrackHandler<GState> );
 		return;
 	}
 	// Get first state

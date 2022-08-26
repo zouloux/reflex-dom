@@ -13,9 +13,9 @@ export function init () {
 	p();
 }
 
-injectCodeViewer([
-	"demos/1-props-demo/index.tsx",
-	"demos/1-props-demo/PropsDemoApp.tsx",
-	"demos/1-props-demo/UserComponent.tsx"
-], 1);
+// injectCodeViewer([
+// 	"demos/1-props-demo/index.tsx",
+// 	"demos/1-props-demo/PropsDemoApp.tsx",
+// 	"demos/1-props-demo/UserComponent.tsx"
+// ], 1);
 init();

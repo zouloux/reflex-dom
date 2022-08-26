@@ -1,28 +1,44 @@
 import { _VNodeTypes_ELEMENT } from "./common";
 import { getCurrentComponent } from "./diff";
-import { ComponentInstance } from "./component";
+
+export function injectDefaults <GProps> ( props:GProps, defaults:Partial<GProps> ) {
+	for ( let i in defaults )
+		if ( !(i in props) )
+			props[ i ] = defaults[ i ]
+}
+
+export function defaultProps <
+	GProps extends object,
+	GDefaults extends Partial<GProps>,
+	// FIXME : Narrow type here
+	GReturn = GProps & GDefaults
+> ( props:GProps, defaults:GDefaults ):GReturn {
+	getCurrentComponent()._defaultProps = defaults
+	injectDefaults( props, defaults )
+	return props as never as GReturn
+}
 
 // Shallow compare two objects, applied only for props between new and old virtual nodes.
 // Will not compare "children" which is always different
 // https://esbench.com/bench/62a138846c89f600a5701904
 // TODO : re-bench against with for i in loop (test small and huge props)
 
+
+
 /**
  * TODO : DOC
- * @param a
- * @param b
- * @param childrenCheck
  */
 export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) => (
 	// Same amount of properties ?
 	Object.keys( a ).length === Object.keys( b ).length
 	// Every property exists in other object ?
 	&& Object.keys( a ).every( key =>
-		// Check children
-		(key === "children" && childrenCheck) ? (
+		( childrenCheck && key === "children" ) ? (
 			// Same array instances -> we validate directly without browsing children
 			a[ key ] === b[ key ]
-			// Or, we need to check all children
+			// Two empty arrays -> we validate directly without browsing children
+			|| ( (a as any[]).length === 0 && (b as any[]).length === 0 )
+			// We need to check deeper
 			|| (
 				// check if children props exists on props b
 				b[ key ]
@@ -47,49 +63,6 @@ export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) 
 			)
 		)
 		// Class prop check between a and b objects
-		: (b.hasOwnProperty(key) && a[key] === b[key])
+		: b.hasOwnProperty(key) && a[key] === b[key]
 	)
 )
-
-
-// Props proxy exists because we need a way to get updated props in a factory
-// component. Because factory function is executed once, props object passed
-// as first argument cannot be updated. Proxy helps us here because it will
-// allow us to mock props but with every props updated.
-// A caveat is that props is not iterable because proxy is a dynamic key / value
-// object. Not really concerning because it makes no sense to iterate over
-// a props object.
-export type IPropsProxy <GProps extends object> = {
-	proxy	: GProps,
-	set		: ( newData:GProps ) => void
-	get		: () => GProps
-}
-
-// let _trackedProps = new Set<string>()
-// export const _getTrackedProps = ():string[] => {
-// 	const all = [ ..._trackedProps.values() ]
-// 	_trackedProps.clear()
-// 	return all
-// }
-
-export function _createPropsProxy <GProps extends object = object> ( props:GProps, component:ComponentInstance ) : IPropsProxy<GProps> {
-	// console.log("_createPropsProxy", props)
-	return {
-		proxy: new Proxy(props, {
-			get ( target:{}, propName:string|symbol ):any {
-				// if ( propName === _proxyPrivateAccess )
-				// 	return props
-				// TODO : Track dependencies like for state
-				// _trackedProps.add( propName as string )
-				return propName in props ? props[ propName ] : void 0
-			},
-			set ():boolean {
-				if ( process.env.NODE_ENV == "production" ) return false
-				throw new Error(`Reflex - PropsProxy.set // Setting values to props manually is not allowed.`)
-			}
-		}) as GProps,
-		// This method will set new props object (we override first argument of createPropsProxy)
-		set ( newProps:GProps ) { props = newProps },
-		get () { return props }
-	}
-}

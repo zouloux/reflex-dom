@@ -4,23 +4,24 @@ import {
 } from "./common";
 
 // FIXME : Is it an array ? Maybe its working as single prop
-let _dataListenersForNextNode = []
-
-export function addDataListenerForNextNode ( listener ) {
-	_dataListenersForNextNode.push( listener )
-}
-
-function triggerDataListenerForNode ( node:VNode ) {
-	_dataListenersForNextNode.forEach( handler => handler( node ) )
-	_dataListenersForNextNode = []
-}
+// let _dataListenersForNextNode = []
+//
+// export function addDataListenerForNextNode ( listener ) {
+// 	_dataListenersForNextNode.push( listener )
+// }
+//
+// function triggerDataListenerForNode ( node:VNode ) {
+// 	_dataListenersForNextNode.forEach( handler => handler( node ) )
+// 	_dataListenersForNextNode = []
+// }
 
 // NOTE : Keep it in a function and do not inline this
 // It seems to be V8 optimized. @see Preact source code
 export function _createVNode ( type:VNodeTypes, value = null, props:any = {}, key?, _ref? ):VNode {
-	const node:VNode = { type, value, props, key, _ref }
+	return { type, value, props, key, _ref }
+	// const node:VNode = { type, value, props, key, _ref }
 	// triggerDataListenerForNode( node )
-	return node;
+	// return node;
 }
 
 export function _cloneVNode ( vnode:VNode ) {
@@ -44,7 +45,7 @@ export function h ( value:any, props:any, ...children:any[] ) {
 	props.children = props.children ? props.children : children
 	// Browse children to patch types
 	const total = props.children.length
-	for (let i = 0; i < total; ++i) {
+	for ( let i = 0; i < total; ++i ) {
 		const child = props.children[ i ]
 		const typeofChild = typeof child
 		// Detect text nodes
