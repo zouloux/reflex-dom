@@ -160,7 +160,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 				name = "class"
 			// Manage class as arrays
 			if ( name == "class" && Array.isArray( value ) )
-				value = value.filter( v => v !== true && !!v ).join(" ").trim()
+				value = value.flat( 1 ).filter( v => v !== true && !!v ).join(" ").trim()
 			// Manage style as object only
 			else if ( name == "style" && typeof value == "object" ) {
 				// https://esbench.com/bench/62ecb9866c89f600a5701b47

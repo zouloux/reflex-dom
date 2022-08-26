@@ -23,8 +23,6 @@ export function defaultProps <
 // https://esbench.com/bench/62a138846c89f600a5701904
 // TODO : re-bench against with for i in loop (test small and huge props)
 
-
-
 /**
  * TODO : DOC
  */
@@ -62,7 +60,7 @@ export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) 
 				})
 			)
 		)
-		// Class prop check between a and b objects
+		// Prop check between a and b objects
 		: b.hasOwnProperty(key) && a[key] === b[key]
 	)
 )

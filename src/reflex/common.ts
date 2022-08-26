@@ -147,6 +147,10 @@ export interface DefaultReflexProps<
 	children	?:VNode<any>[]
 }
 
+// Helper to add class props when extending component props interface
+export interface HasClassProp {
+	class ?: string[]
+}
 
 export function _dispatch ( handlers:Function[], scope:any, args:any[] ) {
 	const total = handlers.length

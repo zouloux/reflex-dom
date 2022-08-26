@@ -23,16 +23,10 @@ export type { ComponentInstance, IComponentAPI } from "./component"
 export type {
 	VNode, IAbstractNode, IAbstractText, IAbstractElement, IAbstractDocument,
 	IAbstractComment, INodeEnv, AbstractNodeTypes, DefaultReflexBaseProps,
-	DefaultReflexProps
+	DefaultReflexProps, HasClassProp
 } from "./common"
 
-
 // ----------------------------------------------------------------------------- JSX TYPES
-
-// Helper to add class props when extending component props interface
-export interface HasClassProp {
-	class ?: string[]
-}
 
 // Import / Export JSX types without creating a useless empty module into the bundle
 import type { ReflexIntrinsicElements } from "./jsx-types"
@@ -47,6 +41,7 @@ export type {
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-8.html#per-file-jsx-factories
 declare global {
 	namespace JSX {
+		// @ts-ignore
 		interface IntrinsicElements extends ReflexIntrinsicElements {}
 		// TODO : Element & ElementClass for factory functions
 		//type Element <GProps extends object = object> = VNode

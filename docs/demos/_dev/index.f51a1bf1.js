@@ -198,7 +198,15 @@ function DevApp() {
     });
     return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
             ref: r
-        }, /*#__PURE__*/ (0, _reflex.h)("h1", null, "Hello"), /*#__PURE__*/ (0, _reflex.h)(TestComponent, null), /*#__PURE__*/ (0, _reflex.h)(TestSVG, null), /*#__PURE__*/ (0, _reflex.h)("div", null, "After SVG ", 12));
+        }, /*#__PURE__*/ (0, _reflex.h)("h1", {
+            class: [
+                "test",
+                [
+                    "test2",
+                    false
+                ]
+            ]
+        }, "Hello"), /*#__PURE__*/ (0, _reflex.h)(TestComponent, null), /*#__PURE__*/ (0, _reflex.h)(TestSVG, null), /*#__PURE__*/ (0, _reflex.h)("div", null, "After SVG ", 12));
 }
 // -----------------------------------------------------------------------------
 (0, _debug.setReflexDebug)(true);

@@ -338,6 +338,14 @@ export interface CSSProperties extends AllCSSProperties, DOMCSSProperties {
 
 // ----------------------------------------------------------------------------- HTML ATTRIBUTES
 
+type ClassNameItem = string|number|boolean
+
+type ClassName = (
+	| ClassNameItem
+	// Classes as array can have on level deep of classes
+	| (ClassNameItem | (ClassNameItem[]))[]
+)
+
 export interface HTMLAttributes
 	<
 		GDom extends Element = Element,
@@ -371,8 +379,8 @@ export interface HTMLAttributes
 	challenge?: string;
 	checked?: boolean;
 	cite?: string;
-	class?: string|string[];
-	className?: string|string[];
+	class?: ClassName
+	className?: ClassName
 	cols?: number;
 	colSpan?: number;
 	content?: string;

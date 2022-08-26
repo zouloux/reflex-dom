@@ -72,7 +72,7 @@ function DevApp () {
 	})
 
 	return () => <div ref={ r }>
-		<h1>Hello</h1>
+		<h1 class={["test", ["test2", false && "ok"]]}>Hello</h1>
 		<TestComponent />
 		<TestSVG />
 		<div>After SVG {12}</div>
