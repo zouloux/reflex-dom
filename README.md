@@ -32,21 +32,23 @@ Scope is shared between the factory and the render function.
 
 ```tsx
 function FactoryComponent ( props ) {
-    // factory extensions and component logic goes here
-    // render function returning node tree goes there
+    // Factory extensions and component logic goes here ( factory phase )
+    // ...
+  
+    // Render function returning node tree goes there ( in a function )
     return () => <div>...</div>
 }
 ```
 
 #### Improvements 👍
 - __Simpler__ : Classic React Hooks like `useCallback`, `useEvent` and `useMemo` becomes __useless__ and does not exist in __Reflex__.<br>
-- __Fewer bugs__ : [Stale closure] issues (https://dmitripavlutin.com/react-hooks-stale-closures/) vanishes.<br>
+- __Fewer bugs__ : [Stale closure issues](https://dmitripavlutin.com/react-hooks-stale-closures/) vanishes.<br>
 - __Cleaner__ : Also, hooks dependencies array to keep state scopes ([#1](https://itnext.io/how-to-work-with-intervals-in-react-hooks-f29892d650f2), [#2](https://overreacted.io/a-complete-guide-to-useeffect/)) are not needed with __[factory extensions](#factory-extensions)__.
 - __Back to basics__ : Using `useRef` to store stateless values does not exist anymore. In __Reflex__, `ref` is used only to target dom node or components, `let` is used to declare local variables like it would normally do.
 
 #### Tradeoffs 👎
 - __Stateless vs stateful__ : When a component is going from stateless to stateful, the `return <div>...` needs to be refactored to `return () => <div>...`
-- __Props__ : Props cannot be destructured [because props is a Proxy](#props)
+- __Props__ : Props cannot be destructured in the factory phase [because props is mutated](#props)
 - Surely more but I got biases :)
 
 ---
@@ -145,19 +147,9 @@ function StatelessComponent ( props ) {
 }
 ```
 
-> Because Stateless and Stateful components are written differently, Reflex can  optimize render of Stateless components by keeping old virtual-node tree, if props did not change between renders. We have better performances without adding anything to our app.
-> No need to memoize anything.
+> Because Stateless and Stateful components are written differently, Reflex can  optimize render of Stateless components by keeping old virtual-node tree, if props did not change between renders. We have better performances without adding any logic to our app.
 
-```tsx
-function ChangingComponent ( props ) {
-  // If "connectedUser.name" does not changes between "ChangingComponent" renders,
-  // "StatelessComponent" does not need to re-render.
-  return () => <div>
-    ...
-    <StatelessComponent name={ connectedUser.name } />
-  </div>
-}
-```
+> Also, `shouldUpdate` can be set by component (Stateful or Stateless), if you have specific optimization logic to avoid useless renders. 
 
 ### Stateful components with factory pattern
 
@@ -166,17 +158,17 @@ This is where it changes from React. Stateful components in Reflex follows the _
 ```tsx
 function StatefulComponent ( props ) {
     // This is the "factory phase"
-    // This part of the component is executed once, when component is created and not updated.
+    // This part of the component is executed once, when component is created, and not at each render.
     
-    // Create a state for this component, like in React or Solid 
+    // Create a state for this component, like in React or Solid
     const currentNumber = state( 0 )
-    const incrementNumber = () => currentNumber.set( currentNumber.value + 1 )
+    const incrementNumber = () => currentNumber.value ++
     
     // The component needs to return a function which will render the component
     return () => <div class="StatefulComponent">
         {/* Update state when button is clicked */}
         <button onClick={ incrementNumber }>
-            Click to increment current number: {currentNumber.value}
+            Click to increment current number: { currentNumber.value }
         </button>
     </div>
 }
@@ -186,12 +178,12 @@ function StatefulComponent ( props ) {
 
 ### Props
 
-In Stateful components, "props" is a __Proxy__ object (like in Solid). Because factory phase is executed once, at component's creation, we need a way to access new props values at each render, this is possible thanks to __Proxy__ [#1](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Proxy), [#2](https://caniuse.com/?search=proxy).
+In Stateful components, `props` is an object which is mutated from props given by parent component. Because factory phase is executed once at component's creation (like in Solid).
 
 ```tsx
 function PropsComponent ( props ) {
     function logName () {
-        // ✅ Will log latest name, even if component rendered several times
+        // ✅ Will log latest name, even if parent component changed the props
         console.log( props.name )
     }
     return () => <div>
@@ -215,25 +207,28 @@ function PropsComponent ( props )  {
 
 ### Default props
 
-Default props are configurable in factory and pure functional components.
+Default props are configurable in factory and pure functional components the same way, using `defaultProps`.
 
 ```tsx
-function PureComponent (props, component) {
-    component.defaultProps = {	
-        title: "Default title"
-    }
-    console.log("Render", props.title)
-    return <div>{ props.title }</div>
-}
+
+// For stateful components
 function FactoryComponent (props, component) {
-    component.defaultProps = {
-        title: "Default title"
-    }
+    defaultProps(props, {
+      title: "Default title"
+    })
     console.log("Factory", props.title)
     return () => <div>{ props.title }</div>
 }
+
+// Also available in Stateless components
+function PureComponent ( props ) {
+    defaultProps(props, {
+        title: "Default title"
+    })	
+    console.log("Render", props.title)
+    return <div>{ props.title }</div>
+}
 ```
-> This feature is WIP and may change in RC
 
 # Factory extensions
 
@@ -298,7 +293,6 @@ function MyComponent () {
     function showref () {
         // Log component dom element
         console.log('DOM', otherComponentRef.dom )
-      
         // Log component instance
         console.log('Component', otherComponentRef.component )
     }
@@ -496,7 +490,7 @@ function Parent () {
     </div>
 }
 ```
-> This feature is WIP and will certainly change in RC
+> /!\  This feature is WIP and will certainly change in RC
 
 ### CSS classes as array
 
@@ -601,6 +595,7 @@ Also available on Esm.sh
 - [x] JSX Types and runtime
 - [x] State invalidation refacto
 - [x] New `changed` API which can listen to `states`, `props` and custom handlers with simple API
+- [x] Props is not a proxy anymore but a mutated object
 
 #### Work in progress / TODO
 - [ ] WIP - Imperative handles through component instance
