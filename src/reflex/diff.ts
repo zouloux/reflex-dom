@@ -110,7 +110,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 	if ( oldNode ) for ( let name in oldNode.props ) {
 		// Do not process children and remove only if not in new node
 		if (
-			name == "children"
+			name === "children" || name === "key" || name === "ref"
 			|| (name in newNode.props && newNode.props[ name ] === oldNode.props[ name ])
 		)
 			continue;
@@ -133,7 +133,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 		let value = newNode.props[ name ];
 		// Do not continue if attribute or event did not change
 		if (
-			name == "children"
+			name === "children" || name === "key" || name === "ref"
 			|| !value
 			|| ( oldNode && name in oldNode.props && oldNode.props[ name ] === value )
 		)
