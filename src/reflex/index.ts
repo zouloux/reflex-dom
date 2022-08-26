@@ -26,7 +26,13 @@ export type {
 	DefaultReflexProps
 } from "./common"
 
+
 // ----------------------------------------------------------------------------- JSX TYPES
+
+// Helper to add class props when extending component props interface
+export interface HasClassProp {
+	class ?: string[]
+}
 
 // Import / Export JSX types without creating a useless empty module into the bundle
 import type { ReflexIntrinsicElements } from "./jsx-types"
