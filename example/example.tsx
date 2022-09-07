@@ -1,4 +1,3 @@
-// Import it like any other v-dom lib
 import { h, render, state, changed, ref, mounted } from "../src/reflex";
 
 // Reflex components can be pure functions or factory functions

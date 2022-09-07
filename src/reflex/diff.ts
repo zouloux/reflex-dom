@@ -361,6 +361,7 @@ export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<an
 	const props = ( isFactory === false ? node.props : _currentComponent._props )
 	// Inject new props into props instance
 	if ( isFactory !== false ) {
+		// BENCH : https://esbench.com/bench/630b6f6c6c89f600a5701bc4
 		Object.assign( props, node.props )
 		// On updates, for factory components, prune props
 		if ( isFactory ) for ( let i in props )
