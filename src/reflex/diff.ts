@@ -201,7 +201,7 @@ function injectChildren ( parentDom:Element, node:VNode, nodeEnv:INodeEnv ) {
 	const totalChildren = node.props.children.length
 	for ( let i = 0; i< totalChildren; ++i ) {
 		const child = node.props.children[ i ]
-		_diffNode( child, null, nodeEnv )
+		diffNode( child, null, nodeEnv )
 		registerKey( node, child )
 		if ( child.dom )
 			parentDom.appendChild( child.dom )
@@ -288,7 +288,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			)
 		) {
 			// console.log("move keyed", newChildNode, oldChildNode)
-			_diffNode( newChildNode, oldChildNode, nodeEnv )
+			diffNode( newChildNode, oldChildNode, nodeEnv )
 			oldChildNode._keep = true;
 			// Check if index changed, compare with collapsed index to detect moves
 			const collapsedIndex = i + collapseCount
@@ -302,7 +302,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 		// FIXME : OPTIM - Maybe do a has before the get ?
 		else if ( newChildNode.key && oldParentKeys && !oldParentKeys.get( newChildNode.key ) ) {
 			// console.log("create from key", newChildNode)
-			_diffNode( newChildNode, null, nodeEnv )
+			diffNode( newChildNode, null, nodeEnv )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
 		}
@@ -319,14 +319,14 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			)
 		) {
 			// console.log("update in place", newChildNode, oldChildNode)
-			_diffNode( newChildNode, oldChildNode, nodeEnv )
+			diffNode( newChildNode, oldChildNode, nodeEnv )
 			oldChildNode._keep = true;
 		}
 		// Not found
 		/** CREATE **/
 		else {
 			// console.log("create no key", newChildNode)
-			_diffNode( newChildNode, null, nodeEnv )
+			diffNode( newChildNode, null, nodeEnv )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
 		}
@@ -383,7 +383,7 @@ export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<an
 	return result as GReturn
 }
 
-export function _diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = newNode._nodeEnv ) {
+export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = newNode._nodeEnv ) {
 	// IMPORTANT : Here we clone node if we got the same instance
 	// 			   Otherwise, altering props.children after render will fuck everything up
 	// Clone identical nodes to be able to diff them
@@ -456,7 +456,7 @@ export function _diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = ne
 			renderResult = _renderComponentNode<VNode>( newNode as VNode<object, ComponentFunction> )
 		// We rendered something (not reusing old component)
 		if ( renderResult ) {
-			_diffNode( renderResult, component.children, nodeEnv )
+			diffNode( renderResult, component.children, nodeEnv )
 			component.children = renderResult
 			newNode.dom = renderResult.dom
 		}

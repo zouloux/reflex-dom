@@ -1,5 +1,5 @@
 import { _dispatch, _VNodeTypes_ROOT, IAbstractDocument, IAbstractElement, VNode } from "./common";
-import { _diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
+import { diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
 import { _createVNode } from "./jsx";
 import { ComponentInstance } from "./component";
 
@@ -10,7 +10,7 @@ export function render ( rootNode:VNode, parentElement:HTMLElement|IAbstractElem
 	// This node is never rendered, we just attach it to the parentElement and render its children
 	const root = _createVNode( _VNodeTypes_ROOT, null, { children: [rootNode] } )
 	root.dom = parentElement as HTMLElement
-	_diffNode( root, parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ], {
+	diffNode( root, parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ], {
 		isSVG: false,
 		document: documentInterface
 	})
@@ -28,7 +28,7 @@ function updateDirtyComponents () {
 	const total = componentsToUpdate.length
 	for ( let i = 0; i < total; ++i ) {
 		const component = componentsToUpdate[ i ]
-		_diffNode( component.vnode, component.vnode )
+		diffNode( component.vnode, component.vnode )
 		_dispatch(component._afterRenderHandlers, component, [])
 		component._afterRenderHandlers = []
 		component._isDirty = false

@@ -1,4 +1,4 @@
-import { _diffNode, getCurrentComponent } from "./diff";
+import { diffNode, getCurrentComponent } from "./diff";
 import { invalidateComponent } from "./render";
 
 // ----------------------------------------------------------------------------- INITIAL VALUE
@@ -42,7 +42,7 @@ export function state <GType> (
 	function _setAndInvalidate ( newValue:GType, resolve?:Function ) {
 		initialValue = stateOptions.filter ? stateOptions.filter( newValue, initialValue as GType ) : newValue
 		if ( stateOptions.directInvalidation ) {
-			_diffNode( component.vnode, component.vnode )
+			diffNode( component.vnode, component.vnode )
 			resolve?.();
 		}
 		else {

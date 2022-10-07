@@ -142,7 +142,49 @@
       this[globalName] = mainExports;
     }
   }
-})({"cuBJf":[function(require,module,exports) {
+})({"eJHQY":[function(require,module,exports) {
+var _reflex = require("../src/reflex");
+// Reflex components can be pure functions or factory functions
+function ReflexApp(props) {
+    // How basic state works
+    const counter = (0, _reflex.state)(0);
+    const increment = ()=>counter.value++;
+    const reset = ()=>counter.value = 0;
+    // No need to use ref for locally scoped variables
+    let firstUpdate = true;
+    // Detect changes of states or props
+    (0, _reflex.changed)([
+        counter
+    ], (newValue)=>{
+        console.log(`Counter just updated to ${newValue}`, firstUpdate);
+        firstUpdate = false;
+    });
+    // How refs of dom elements works
+    const title = (0, _reflex.ref)();
+    (0, _reflex.mounted)(()=>console.log(title.dom.innerHTML));
+    // Returns a render function
+    // Classes can be arrays ! Falsy elements of the array will be discarded
+    return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
+            class: [
+                "ReflexApp",
+                props.modifier,
+                false
+            ]
+        }, /*#__PURE__*/ (0, _reflex.h)("h1", {
+            ref: title
+        }, "Hello from Reflex ", props.emoji), /*#__PURE__*/ (0, _reflex.h)("button", {
+            onClick: increment
+        }, "Increment"), "\xa0", /*#__PURE__*/ (0, _reflex.h)("button", {
+            onClick: reset
+        }, "Reset"), "\xa0", /*#__PURE__*/ (0, _reflex.h)("span", null, "Counter : ", counter.value));
+}
+// Render it like any other v-dom library
+(0, _reflex.render)(/*#__PURE__*/ (0, _reflex.h)(ReflexApp, {
+    modifier: "ReflexApp-lightMode",
+    emoji: "\uD83D\uDC4B"
+}), document.body);
+
+},{"../src/reflex":"cuBJf"}],"cuBJf":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /// <reference lib="dom" />
@@ -152,6 +194,7 @@ parcelHelpers.defineInteropFlag(exports);
 // Export public API
 parcelHelpers.export(exports, "state", ()=>(0, _states.state));
 parcelHelpers.export(exports, "getCurrentComponent", ()=>(0, _diff.getCurrentComponent));
+parcelHelpers.export(exports, "diffNode", ()=>(0, _diff.diffNode));
 parcelHelpers.export(exports, "ref", ()=>(0, _ref.ref));
 parcelHelpers.export(exports, "refs", ()=>(0, _ref.refs));
 parcelHelpers.export(exports, "defaultProps", ()=>(0, _props.defaultProps));
@@ -190,7 +233,7 @@ function state(initialValue, stateOptions = {}) {
     function _setAndInvalidate(newValue, resolve) {
         initialValue = stateOptions.filter ? stateOptions.filter(newValue, initialValue) : newValue;
         if (stateOptions.directInvalidation) {
-            (0, _diff._diffNode)(component.vnode, component.vnode);
+            (0, _diff.diffNode)(component.vnode, component.vnode);
             resolve?.();
         } else {
             resolve && component._afterRenderHandlers.push(resolve);
@@ -240,7 +283,7 @@ parcelHelpers.export(exports, "getCurrentComponent", ()=>getCurrentComponent);
  */ parcelHelpers.export(exports, "_diffChildren", ()=>_diffChildren);
 // ----------------------------------------------------------------------------- DIFF NODE
 parcelHelpers.export(exports, "_renderComponentNode", ()=>_renderComponentNode);
-parcelHelpers.export(exports, "_diffNode", ()=>_diffNode);
+parcelHelpers.export(exports, "diffNode", ()=>diffNode);
 var _common = require("./common");
 var _jsx = require("./jsx");
 var _component = require("./component");
@@ -368,7 +411,7 @@ function _diffElement(newNode, oldNode, nodeEnv) {
     const totalChildren = node.props.children.length;
     for(let i = 0; i < totalChildren; ++i){
         const child = node.props.children[i];
-        _diffNode(child, null, nodeEnv);
+        diffNode(child, null, nodeEnv);
         registerKey(node, child);
         if (child.dom) parentDom.appendChild(child.dom);
     }
@@ -420,7 +463,7 @@ function _diffChildren(newParentNode, oldParentNode, nodeEnv) {
         // Has key, same key found in old, same type on both
         /** MOVE & UPDATE KEYED CHILD **/ if (newChildNode.key && (oldChildNode = oldParentKeys?.get(newChildNode.key)) && oldChildNode.type === newChildNode.type && (newChildNode.type !== (0, _common._VNodeTypes_ELEMENT) || oldChildNode.value === newChildNode.value)) {
             // console.log("move keyed", newChildNode, oldChildNode)
-            _diffNode(newChildNode, oldChildNode, nodeEnv);
+            diffNode(newChildNode, oldChildNode, nodeEnv);
             oldChildNode._keep = true;
             // Check if index changed, compare with collapsed index to detect moves
             const collapsedIndex = i + collapseCount;
@@ -429,16 +472,16 @@ function _diffChildren(newParentNode, oldParentNode, nodeEnv) {
             if (oldChildren.indexOf(oldChildNode) !== collapsedIndex) parentDom.insertBefore(newChildNode.dom, parentDom.children[collapsedIndex + 1]);
         } else if (newChildNode.key && oldParentKeys && !oldParentKeys.get(newChildNode.key)) {
             // console.log("create from key", newChildNode)
-            _diffNode(newChildNode, null, nodeEnv);
+            diffNode(newChildNode, null, nodeEnv);
             parentDom.insertBefore(newChildNode.dom, parentDom.children[i]);
             collapseCount--;
         } else if (i in oldChildren && (oldChildNode = oldChildren[i]) && oldChildNode.type === newChildNode.type && (newChildNode.type !== (0, _common._VNodeTypes_ELEMENT) || oldChildNode.value === newChildNode.value)) {
             // console.log("update in place", newChildNode, oldChildNode)
-            _diffNode(newChildNode, oldChildNode, nodeEnv);
+            diffNode(newChildNode, oldChildNode, nodeEnv);
             oldChildNode._keep = true;
         } else {
             // console.log("create no key", newChildNode)
-            _diffNode(newChildNode, null, nodeEnv);
+            diffNode(newChildNode, null, nodeEnv);
             parentDom.insertBefore(newChildNode.dom, parentDom.children[i]);
             collapseCount--;
         }
@@ -470,6 +513,7 @@ function _renderComponentNode(node) {
     const props = isFactory === false ? node.props : _currentComponent._props;
     // Inject new props into props instance
     if (isFactory !== false) {
+        // BENCH : https://esbench.com/bench/630b6f6c6c89f600a5701bc4
         Object.assign(props, node.props);
         // On updates, for factory components, prune props
         if (isFactory) {
@@ -490,7 +534,7 @@ function _renderComponentNode(node) {
     _currentComponent = null;
     return result;
 }
-function _diffNode(newNode, oldNode, nodeEnv = newNode._nodeEnv) {
+function diffNode(newNode, oldNode, nodeEnv = newNode._nodeEnv) {
     // IMPORTANT : Here we clone node if we got the same instance
     // 			   Otherwise, altering props.children after render will fuck everything up
     // Clone identical nodes to be able to diff them
@@ -543,7 +587,7 @@ function _diffNode(newNode, oldNode, nodeEnv = newNode._nodeEnv) {
         if (!renderResult && shouldUpdate) renderResult = _renderComponentNode(newNode);
         // We rendered something (not reusing old component)
         if (renderResult) {
-            _diffNode(renderResult, component.children, nodeEnv);
+            diffNode(renderResult, component.children, nodeEnv);
             component.children = renderResult;
             newNode.dom = renderResult.dom;
         }
@@ -825,7 +869,7 @@ function render(rootNode, parentElement, documentInterface = document) {
         ]
     });
     root.dom = parentElement;
-    (0, _diff._diffNode)(root, parentElement[0, _diff._DOM_PRIVATE_VIRTUAL_NODE_KEY], {
+    (0, _diff.diffNode)(root, parentElement[0, _diff._DOM_PRIVATE_VIRTUAL_NODE_KEY], {
         isSVG: false,
         document: documentInterface
     });
@@ -839,7 +883,7 @@ function updateDirtyComponents() {
     const total = componentsToUpdate.length;
     for(let i = 0; i < total; ++i){
         const component = componentsToUpdate[i];
-        (0, _diff._diffNode)(component.vnode, component.vnode);
+        (0, _diff.diffNode)(component.vnode, component.vnode);
         (0, _common._dispatch)(component._afterRenderHandlers, component, []);
         component._afterRenderHandlers = [];
         component._isDirty = false;
@@ -990,5 +1034,5 @@ function changed(detectChanges, executeHandler) {
     });
 }
 
-},{"./diff":"6sa8r","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},[], null, "parcelRequirea1a1")
+},{"./diff":"6sa8r","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["eJHQY"], "eJHQY", "parcelRequirea1a1")
 

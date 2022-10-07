@@ -7,3 +7,4 @@ tests/
 .gitignore
 tsconfig.json
 demos/
+bits/
