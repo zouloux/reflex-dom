@@ -5,7 +5,6 @@ import {
 	_VNodeTypes_ELEMENT,
 	_VNodeTypes_LIST,
 	_VNodeTypes_NULL,
-	_VNodeTypes_STATE,
 	_VNodeTypes_TEXT,
 	ComponentFunction,
 	ComponentReturn,

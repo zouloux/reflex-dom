@@ -1,33 +1,40 @@
 import {
-	_VNodeTypes_COMPONENT, _VNodeTypes_ELEMENT, _VNodeTypes_LIST, _VNodeTypes_NULL,
-	_VNodeTypes_TEXT, VNode, VNodeTypes
+	_VNodeTypes_COMPONENT,
+	_VNodeTypes_ELEMENT,
+	_VNodeTypes_LIST,
+	_VNodeTypes_NULL,
+	_VNodeTypes_TEXT,
+	VNode,
+	VNodeTypes
 } from "./common";
-import { IState } from "./states";
+// import { IState } from "./states";
 
 
-let _trackedNodesBySignals:IState<any>[] = []
-
-export function _trackNextNode ( stateObject:IState<any> ) {
-	_trackedNodesBySignals.push( stateObject )
-}
-
-export function _resetTrackedNode ( stateID:number ) {
-
-}
+// let _trackedNodesBySignals:IState<any>[] = []
+//
+// export function _trackNextNode ( stateObject:IState<any> ) {
+// 	_trackedNodesBySignals.push( stateObject )
+// }
+//
+// export function _resetTrackedNode ( stateID:number ) {
+//
+// }
+//
+// function afterNode (node:VNode) {
+// 	if ( _trackedNodesBySignals.length > 0 ) {
+// 		_trackedNodesBySignals.forEach( s => s.pushInvalidatedNode(node) )
+// 		_trackedNodesBySignals = []
+// 	}
+// }
 
 // NOTE : Keep it in a function and do not inline this
 // It seems to be V8 optimized. @see Preact source code
 export function _createVNode ( type:VNodeTypes, value = null, props:any = {}, key?, _ref? ):VNode {
-	// return { type, value, props, key, _ref }
-	const node:VNode = { type, value, props, key, _ref }
-
-	if ( _trackedNodesBySignals.length > 0 ) {
-		_trackedNodesBySignals.forEach( s => s.pushInvalidatedNode(node) )
-		_trackedNodesBySignals = []
-	}
-
-	return node;
+	return { type, value, props, key, _ref }
+	// const node:VNode = { type, value, props, key, _ref }
+	// return node;
 }
+
 
 export function _cloneVNode ( vnode:VNode ) {
 	const newNode = Object.assign({}, vnode)
@@ -42,7 +49,7 @@ export function h ( value:any, props:any, ...children:any[] ) {
 	// Because jsx may pass null as argument
 	if ( props == null ) props = {}
 	// Remove __source and __self in debug mode
-	if ( process.env.NODE_ENV != "production" ) {
+	if ( process.env.NODE_ENV !== "production" ) {
 		delete props.__source
 		delete props.__self
 	}
@@ -59,8 +66,8 @@ export function h ( value:any, props:any, ...children:any[] ) {
 		// Detect array nodes
 		else if ( Array.isArray(child) )
 			props.children[ i ] = _createVNode( _VNodeTypes_LIST, null, { children: child } )
-		// Detect null nodes (it means we have a condition )
-		else if ( child === null )
+		// Detect null and boolean nodes (it means we have a condition )
+		else if ( child === null || typeofChild === "boolean" )
 			props.children[ i ] = _createVNode( _VNodeTypes_NULL )
 	}
 	// Virtual node type here can be only component or element

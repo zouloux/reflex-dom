@@ -82,7 +82,8 @@ export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler>
 
 export const _VNodeTypes_NULL = 0
 export const _VNodeTypes_TEXT = 1
-export const _VNodeTypes_STATE = 2
+// export const _VNodeTypes_BOOLEAN = 2
+export const _VNodeTypes_STATE = 3
 export const _VNodeTypes_CONTAINERS = 4
 export const _VNodeTypes_ROOT = 5
 export const _VNodeTypes_ELEMENT = 6
@@ -92,6 +93,7 @@ export const _VNodeTypes_LIST = 8
 export type VNodeTypes = (
 	typeof _VNodeTypes_NULL |
 	typeof _VNodeTypes_TEXT |
+	// typeof _VNodeTypes_BOOLEAN |
 	typeof _VNodeTypes_STATE |
 	typeof _VNodeTypes_CONTAINERS |
 	typeof _VNodeTypes_ROOT |

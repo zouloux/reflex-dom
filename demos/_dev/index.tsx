@@ -28,7 +28,7 @@ function DevApp () {
 		<div>
 			<button onClick={ toggle }>Toggle</button>
 			<br class="2" />
-			{ testStateB.value && <div>OK B</div>}
+			{ testStateB.value && <span>OK B</span>}
 			<br class="3" />
 		</div>
 	</div>

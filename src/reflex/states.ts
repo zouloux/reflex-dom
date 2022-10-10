@@ -1,7 +1,6 @@
 import { diffNode, getCurrentComponent } from "./diff";
 import { invalidateComponent } from "./render";
 import { _VNodeTypes_STATE, VNode, VNodeTypes } from "./common";
-import { _trackNextNode } from "./jsx";
 
 // ----------------------------------------------------------------------------- INITIAL VALUE
 
@@ -24,7 +23,7 @@ export type IState<GType> = {
 interface IStateOptions<GType> {
 	filter				?:(newValue:GType, oldValue:GType) => GType,
 	directInvalidation	?:boolean
-	atomic				?:boolean
+	// atomic				?:boolean
 }
 
 // ----------------------------------------------------------------------------- STATE
@@ -46,15 +45,15 @@ export function state <GType> (
 	function _setAndInvalidate ( newValue:GType, resolve?:Function ) {
 		initialValue = stateOptions.filter ? stateOptions.filter( newValue, initialValue as GType ) : newValue
 
-		if ( stateOptions.atomic ) {
-			console.log('Invalidated nodes:', invalidatedNodes)
+/*		if ( stateOptions.atomic ) {
+			console.log('Invalidated nodes:')
+			invalidatedNodes.forEach( n => console.log(n))
 			invalidatedNodes.map( node => {
-
 				//diffNode( node,  )
 			})
 			invalidatedNodes = []
 			resolve?.();
-		}
+		}*/
 
 		if ( stateOptions.directInvalidation ) {
 			diffNode( component.vnode, component.vnode )
@@ -69,8 +68,8 @@ export function state <GType> (
 	// Return public API with value get/set and set function
 	const stateObject:IState<GType> = {
 		get value () {
-			if ( component._isRendering && stateOptions.atomic ) {
-				_trackNextNode( stateObject )
+			// if ( component._isRendering && stateOptions.atomic ) {
+			// 	_trackNextNode( stateObject )
 				// const nodes = _getTrackedNode()
 				// console.log( nodes )
 				// invalidatedNodes.push( _getCurrentNode() )
@@ -80,7 +79,7 @@ export function state <GType> (
 				// console.log('>', component._affectedNodesByStates[affectedNodesIndex].length, node)
 				// component._affectedNodesByStates[affectedNodesIndex].push( node )
 				// })
-			}
+			// }
 			return initialValue as GType
 		},
 		pushInvalidatedNode ( node:VNode ) {
