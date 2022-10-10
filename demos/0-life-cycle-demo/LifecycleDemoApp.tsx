@@ -1,6 +1,6 @@
-import { h, state, ref, refs, mounted, unmounted } from "../../src/reflex";
+import { h, state, ref, refs, mounted, unmounted } from "../../src";
 import { colorList, createUID, foodList, pickRandom } from "../common/demoHelpers";
-import { IComponentAPI } from "../../src/reflex/component";
+import { IComponentAPI } from "../../src";
 
 function SubChild ( props ) {
 	const titleRef = ref<HTMLTableCellElement>()

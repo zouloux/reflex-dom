@@ -1,4 +1,4 @@
-import { h, state } from "../../src/reflex";
+import { h, state } from "../../src";
 import { colorList, createUID, foodList, pickRandom, rand } from "../common/demoHelpers";
 
 // ----------------------------------------------------------------------------- HELPERS

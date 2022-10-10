@@ -1,4 +1,4 @@
-import { changed, h, state } from "../../src/reflex";
+import { changed, h, state } from "../../src";
 
 interface IChangedTestProps {
 	total:number

@@ -1,8 +1,8 @@
-import { h, ref } from "../../src/reflex";
-import { createStore } from "../../src/store/store";
-import { storeState } from "../../src/store/reflexStoreState";
+import { h, ref } from "../../src";
 import { colorList, createUID, foodList, pickRandom, rand } from "../common/demoHelpers";
-import { IComponentAPI } from "../../src/reflex/component";
+import { IComponentAPI } from "../../src";
+import { createStore } from "@zouloux/store";
+import { storeState } from "@zouloux/store/dist/adapter-reflex";
 
 // ----------------------------------------------------------------------------- STORE
 

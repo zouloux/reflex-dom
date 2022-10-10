@@ -1,5 +1,5 @@
 import Prism from "prismjs"
-import { changed, h, mounted, refs, state } from "../../../src/reflex";
+import { changed, h, mounted, refs, state } from "../../../src";
 import * as path from "path";
 // @ts-ignore
 import S from "./CodeViewer.module.less"

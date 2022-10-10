@@ -1,5 +1,5 @@
-import { h, render } from "../../src/reflex";
-import { trackPerformances, setReflexDebug } from "../../src/reflex/debug";
+import { h, render } from "../../src";
+import { trackPerformances, setReflexDebug } from "../../src/debug";
 import { LifecycleDemoApp } from "./LifecycleDemoApp";
 import { injectCodeViewer } from "../common/codeViewerHelpers";
 

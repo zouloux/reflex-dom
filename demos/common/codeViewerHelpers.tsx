@@ -1,4 +1,4 @@
-import { render, h } from "../../src/reflex";
+import { render, h } from "../../src";
 import { CodeViewer } from "./CodeViewer/CodeViewer";
 
 

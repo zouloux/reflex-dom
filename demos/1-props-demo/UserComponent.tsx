@@ -1,4 +1,4 @@
-import { changed, defaultProps, h, ref } from "../../src/reflex";
+import { changed, defaultProps, h, ref } from "../../src";
 
 export interface IUser {
 	firstname	:string

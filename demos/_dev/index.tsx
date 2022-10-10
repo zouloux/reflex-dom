@@ -1,14 +1,14 @@
-import { h, render, state } from "../../src/reflex";
-import { trackPerformances, setReflexDebug } from "../../src/reflex/debug";
+import { h, render, state } from "../../src";
+import { trackPerformances, setReflexDebug } from "../../src/debug";
 
 // -----------------------------------------------------------------------------
 
 function DevApp () {
 
-	const testStateA = state(0, {atomic: true})
+	const testStateA = state(0)
 	const increment = e => testStateA.value ++
 
-	const testStateB = state( false, {atomic: true} )
+	const testStateB = state( false )
 	const toggle = e => testStateB.value = !testStateB.value
 
 	const arrayFromStateA = () => {

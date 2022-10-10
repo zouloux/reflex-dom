@@ -1,4 +1,4 @@
-import { h, render, state, changed, ref, mounted } from "../src/reflex";
+import { h, render, state, changed, ref, mounted } from "../src";
 
 // Reflex components can be pure functions or factory functions
 function ReflexApp ( props ) {

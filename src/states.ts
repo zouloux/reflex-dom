@@ -91,7 +91,7 @@ export function state <GType> (
 		),
 		// changed() knows if it's a state
 		get type () { return _VNodeTypes_STATE as VNodeTypes },
-		// Use signal as a getter without .value
+		// Use state as a getter without .value
 		toString () { return stateObject.value + '' }
 	}
 	return stateObject
