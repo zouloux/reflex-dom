@@ -1,5 +1,5 @@
 import { getCurrentComponent } from "./diff";
-import { LifecycleHandler, MountHandler } from "./common";
+import { _VNodeTypes_STATE, LifecycleHandler, MountHandler } from "./common";
 import { IInternalState, IState } from "./states";
 
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
@@ -45,7 +45,7 @@ export function changed <GState extends TChangeDetector> ( detectChanges:DetectC
 			if ( typeof dependency === "function" )
 				return dependency()
 			// State
-			else if ( typeof dependency === "object" && (dependency as IInternalState<any>)._isState )
+			else if ( typeof dependency === "object" && (dependency as IInternalState<any>).type === _VNodeTypes_STATE )
 				return ( dependency as IState<any> ).value
 			if ( process.env.NODE_ENV !== "production" )
 				throw new Error("Reflex - Changed can track states or functions only. changed([state, () => prop.value], ...)")

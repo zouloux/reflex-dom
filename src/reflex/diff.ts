@@ -1,8 +1,18 @@
 import {
 	_dispatch,
-	_VNodeTypes_COMPONENT, _VNodeTypes_CONTAINERS, _VNodeTypes_ELEMENT, _VNodeTypes_LIST,
-	_VNodeTypes_NULL, _VNodeTypes_TEXT, ComponentFunction, ComponentReturn, INodeEnv,
-	RenderDom, RenderFunction, VNode
+	_VNodeTypes_COMPONENT,
+	_VNodeTypes_CONTAINERS,
+	_VNodeTypes_ELEMENT,
+	_VNodeTypes_LIST,
+	_VNodeTypes_NULL,
+	_VNodeTypes_STATE,
+	_VNodeTypes_TEXT,
+	ComponentFunction,
+	ComponentReturn,
+	INodeEnv,
+	RenderDom,
+	RenderFunction,
+	VNode
 } from "./common";
 import { _cloneVNode } from "./jsx";
 import { IInternalRef } from "./ref";
@@ -399,6 +409,9 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 		|| newNode.type === _VNodeTypes_ELEMENT
 		// || newNode.type === _VNodeTypes_LIST
 		|| newNode.type === _VNodeTypes_NULL
+
+
+		// || newNode.type === _VNodeTypes_STATE
 	) {
 		// Clone node env for children, to avoid env to propagate on siblings
 		nodeEnv = Object.assign({}, nodeEnv)

@@ -2,26 +2,31 @@ import {
 	_VNodeTypes_COMPONENT, _VNodeTypes_ELEMENT, _VNodeTypes_LIST, _VNodeTypes_NULL,
 	_VNodeTypes_TEXT, VNode, VNodeTypes
 } from "./common";
+import { IState } from "./states";
 
-// FIXME : Is it an array ? Maybe its working as single prop
-// let _dataListenersForNextNode = []
-//
-// export function addDataListenerForNextNode ( listener ) {
-// 	_dataListenersForNextNode.push( listener )
-// }
-//
-// function triggerDataListenerForNode ( node:VNode ) {
-// 	_dataListenersForNextNode.forEach( handler => handler( node ) )
-// 	_dataListenersForNextNode = []
-// }
+
+let _trackedNodesBySignals:IState<any>[] = []
+
+export function _trackNextNode ( stateObject:IState<any> ) {
+	_trackedNodesBySignals.push( stateObject )
+}
+
+export function _resetTrackedNode ( stateID:number ) {
+
+}
 
 // NOTE : Keep it in a function and do not inline this
 // It seems to be V8 optimized. @see Preact source code
 export function _createVNode ( type:VNodeTypes, value = null, props:any = {}, key?, _ref? ):VNode {
-	return { type, value, props, key, _ref }
-	// const node:VNode = { type, value, props, key, _ref }
-	// triggerDataListenerForNode( node )
-	// return node;
+	// return { type, value, props, key, _ref }
+	const node:VNode = { type, value, props, key, _ref }
+
+	if ( _trackedNodesBySignals.length > 0 ) {
+		_trackedNodesBySignals.forEach( s => s.pushInvalidatedNode(node) )
+		_trackedNodesBySignals = []
+	}
+
+	return node;
 }
 
 export function _cloneVNode ( vnode:VNode ) {
@@ -60,11 +65,7 @@ export function h ( value:any, props:any, ...children:any[] ) {
 	}
 	// Virtual node type here can be only component or element
 	// Other types are created elsewhere
-	const type = (
-		typeof value === "function"
-		? _VNodeTypes_COMPONENT
-		: _VNodeTypes_ELEMENT
-	)
+	const type = ( typeof value === "function" ? _VNodeTypes_COMPONENT : _VNodeTypes_ELEMENT )
 	// Create and return the virtual node
 	return _createVNode( type, value, props, props.key, props.ref )
 }
@@ -73,10 +74,11 @@ export function h ( value:any, props:any, ...children:any[] ) {
 /*
 let $ = []
 let a = 0
+let st = state()
 
 h('div', {}, [
 	h('h1', {className: $}, [ 	// -> h1
-		"Content ", $			// -> h1
+		"Content ", st			// -> text[1]
 	]),
 	h('ul', {}, $.map( a => a )),// -> ul
 	h('p', {}, [$]),			// -> p

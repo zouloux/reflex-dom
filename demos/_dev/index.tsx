@@ -1,81 +1,36 @@
-import { changed, h, mounted, ref, render, state } from "../../src/reflex";
+import { h, render, state } from "../../src/reflex";
 import { trackPerformances, setReflexDebug } from "../../src/reflex/debug";
-import { colorList, createUID, foodList, pickRandom } from "../common/demoHelpers";
-import { renderToString } from "../../src/reflex/renderToString";
 
 // -----------------------------------------------------------------------------
 
-interface IItem {
-	id:string
-	name:string
-}
+function DevApp () {
 
-function ListItem (props) {
-	const item:IItem = props.item
-	return <li>{ item.id } : { item.name }</li>
-}
+	const testStateA = state(0, {atomic: true})
+	const increment = e => testStateA.value ++
 
+	const testStateB = state( false, {atomic: true} )
+	const toggle = e => testStateB.value = !testStateB.value
 
-function TestComponent () {
-	const list = state<IItem[]>([])
-	function addItems () {
+	const arrayFromStateA = () => {
 		const items = []
-		for ( let i = 0; i < 10; i++ ) {
-			items.push({
-				id: createUID(),
-				name: pickRandom( colorList ) + ' ' + pickRandom( foodList )
-			})
-		}
-		list.value = [ ...list.value, ...items ]
+		for ( let i = 0; i < testStateA.value; i++ )
+			items.push( i )
+		return items;
 	}
 
-
-
-	// addItems();
-	// FIXME : Does not target correct node (it target first child)
-	// return () => <div class={["TestComponent", list.value.length]}>
-	return () => <div class={["TestComponent"]}>
-		<button onClick={ addItems }>Add Items</button>
-		<ul>
-			{list.value.map( item =>
-				<ListItem
-					key={ item.id }
-					item={ item }
-				/>
-			)}
-		</ul>
-		<span>Length: {list.value.length}</span>
+	return () => <div>
+		<h1>Hello</h1>
+		<button onClick={ increment }>Increment</button>
+		<br class="1" />
+		<label>Test state : {testStateA.value}</label>
+		<div>Nope</div>
+		<div class={"test" + testStateA.value}>OK A</div>
 		<div>
-			Has children :&nbsp;
-			{
-				list.value.length > 0
-				? <span>YES</span>
-				: null
-			}
+			<button onClick={ toggle }>Toggle</button>
+			<br class="2" />
+			{ testStateB.value && <div>OK B</div>}
+			<br class="3" />
 		</div>
-	</div>
-}
-
-
-function TestSVG () {
-	//return <div class={["test"]} nope onClick={e => {}}> {"ok"}</div>
-	return <svg height="210" width="500">
-		<polygon points="200,10 250,190 160,210" style="fill:lime;stroke:purple;stroke-width:1" />
-	</svg>
-}
-
-function DevApp () {
-	const r = ref<HTMLDivElement>();
-
-	mounted(() => {
-		console.log( "DOM", r.dom );
-	})
-
-	return () => <div ref={ r }>
-		<h1 class={["test", ["test2", false && "ok"]]}>Hello</h1>
-		<TestComponent />
-		<TestSVG />
-		<div>After SVG {12}</div>
 	</div>
 }
 
@@ -85,12 +40,10 @@ setReflexDebug( true )
 
 export function init () {
 	const p = trackPerformances("Root rendering")
-	// console.log(<div><h1>Test</h1></div>)
 	const a = <DevApp />
-	console.log('A', a );
 	render( a, document.getElementById('App') )
-	const string = renderToString( a )
-	console.log( string );
+	// const string = renderToString( a )
+	// console.log( string );
 	// render( a, document.getElementById('App') )
 	p();
 }
