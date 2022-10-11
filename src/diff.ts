@@ -110,7 +110,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 		return dom
 	else if ( newNode.type === _VNodeTypes_LIST ) {
 		// FIXME : Check ?
-		_diffChildren( newNode, oldNode )
+		diffChildren( newNode, oldNode )
 		return dom
 	}
 	// For typescript only, (FIXME : Check if removed from build)
@@ -227,7 +227,7 @@ let previousParentContainerDom:Element
  * @param oldParentNode
  * @param nodeEnv
  */
-export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEnv?:INodeEnv ) {
+export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEnv?:INodeEnv ) {
 	// console.log( "_diffChildren", newParentNode, oldParentNode );
 	// TODO : DOC
 	let parentDom = (newParentNode.dom ?? previousParentContainerDom) as Element
@@ -408,8 +408,6 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 		|| newNode.type === _VNodeTypes_ELEMENT
 		// || newNode.type === _VNodeTypes_LIST
 		|| newNode.type === _VNodeTypes_NULL
-
-
 		// || newNode.type === _VNodeTypes_STATE
 	) {
 		// Clone node env for children, to avoid env to propagate on siblings
@@ -489,5 +487,5 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 	}
 	// Diff children for node that are containers and not components
 	else if ( newNode.type > _VNodeTypes_CONTAINERS )
-		_diffChildren( newNode, oldNode, nodeEnv )
+		diffChildren( newNode, oldNode, nodeEnv )
 }

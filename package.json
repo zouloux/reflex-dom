@@ -1,7 +1,7 @@
 {
 	"name": "@zouloux/reflex",
 	"type": "module",
-	"version": "0.10.5",
+	"version": "0.10.6",
 	"description": "Reflex is a tiny 3kb virtual-dom library with factory based functional components.",
 	"main": "./dist/index.es2017.cjs",
 	"module": "./dist/index.es2020.mjs",
@@ -11,7 +11,7 @@
 		"reset": "rm -rf node_modules && npm i",
 		"clean": "rm -rf .parcel-cache dist docs",
 		"build": "npm run clean && tsbundle build",
-		"dev" : "parcel serve dev --no-source-maps",
+		"dev": "parcel serve dev --no-source-maps",
 		"docs": "static-http ./docs/",
 		"publish": "npm run clean && tsbundle publish"
 	},
