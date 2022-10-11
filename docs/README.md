@@ -1,5 +1,7 @@
 # Reflex documentation
 
+!> This new documentation is in work in progress.
+
 ## Table of contents
 
 - <a href="#how-to-install">Installation</a>

@@ -22,8 +22,7 @@ __Reflex__ is a tiny and fast virtual-dom UI lib with __factory based functional
 ![](./docs/_images/example.png)
 ![](./docs/_images/example.gif)
 
-[//]: # (Transfert to code sandbox)
-[//]: # (- [See this example running]&#40;https://zouloux.github.io/reflex/example/example.html&#41;)
+[→ Play with this example on CodeSandbox](https://codesandbox.io/s/reflex-example-9v6pgl?file=/src/index.tsx)
 
 ---
 
