@@ -39,11 +39,11 @@ function StatefulComponent ( props ) {
     const number = state( 0 )
     // ...
     // Render function returning node tree goes there ( in a function )
-    return () => <div>... { number }</div>
+    return () => <div>Current number is { number }</div>
 }
 ```
 
-> Reflex uses the same functional component for stateless than React
+> Reflex uses the same functional component for stateless than React and Preact.
 
 ```tsx
 function StatelessComponent ( props ) {
@@ -65,4 +65,4 @@ function StatelessComponent ( props ) {
 
 ---
 
-## [→ See online documentation](https://zouloux.github.io/reflex/)
+### [→ See online documentation](https://zouloux.github.io/reflex/)
