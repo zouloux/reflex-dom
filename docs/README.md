@@ -2,112 +2,6 @@
 
 !> This new documentation is in work in progress.
 
-## Table of contents
-
-- <a href="#how-to-install">Installation</a>
-- <a href="#because-code-samples-are-better-than-a-thousand-words">Code samples</a>
-	- <a href="#simple-dom-rendering">Rendering</a>
-	- <a href="#stateless-and-pure-components">Stateless</a>
-	- <a href="#stateful-components-with-factory-pattern">Stateful and Factory Pattern</a>
-	- <a href="#props">Props</a>
-	- <a href="#default-props">Default props</a>
-- <a href="#factory-extensions">Factory extensions</a>
-	- <a href="#state">State</a>
-	- <a href="#ref">Ref</a>
-	- <a href="#refs-aka-multi-ref">Refs</a>
-	- <a href="#mounted-and-unmounted">Mounted & Unmounted</a>
-	- <a href="#changed">Changed</a>
-- <a href="#more">More</a>
-	- <a href="#automatic-forwardref">Automatic forwardRef</a>
-	- <a href="#css-classes-as-array">CSS classes as array</a>
-- <a href="#about">About</a>
-	- <a href="#things-missing">Things missing</a>
-	- <a href="#performances">Performances</a>
-	- <a href="#demos">Demos</a>
-	- <a href="#unpkg-and-esmsh">Unpkg and Esmsh</a>
-	- <a href="#roadmap">Roadmap</a>
-	- <a href="#thanks">Thanks</a>
-
-## How to install
-
-Install it with `npm i @zouloux/reflex`.
-
-#### With typescript
-You will need at least those options into `tsconfig.json` :
-```json
-{
-    "compilerOptions": {
-        "jsxFactory": "h",
-        "jsx": "react"
-    }
-}
-```
-
-#### With babel
-```json
-{
-  "presets": [
-    [
-      "@babel/preset-react",
-      { "runtime": "automatic" }
-    ]
-  ],
-  "plugins": [
-    [
-      "@babel/plugin-transform-react-jsx",
-      { "pragma" : "h" }
-    ]
-  ]
-}
-```
-
-## More
-
-Reflex is slim, but it still has some cool features for greater DX.
-
-### Automatic forwardRef
-
-When attaching a ref from inside the component, an from the parent, it will just work as expected.
-
-```tsx
-function Child () {
-    // Works, will have component instance and div element
-    const root = ref()
-    return () => <div ref={ root }></div>
-}
-function Parent () {
-    // Also works without forwardRef
-    // will have component instance and div element
-    const child = ref()
-    return () => <div>
-      <Child ref={ child } />
-    </div>
-}
-```
-> /!\  This feature is WIP and will certainly change in RC
-
-### CSS classes as array
-
-CSS classes can be set as an array. Falsy values will be automatically filtered out.
-
-```tsx
-function PureComponent ( props ) {
-    const classes = [
-        "PureComponent",
-        props.modifier ? `PureComponent-${props.modifier}` : null,
-        props.disabled && "disabled",
-        ...props.classes
-    ]
-  return <div class={ classes }></div>
-}
-// Will have class="PureComponent PureComponent-big ParentComponent_pureComponent"
-// Disabled is filtered out because props.disabled is not defined
-const component = <PureComponent
-  modifier="big"
-  classes={["ParentComponent_pureComponent"]}
-/>
-```
-
 ## About
 
 ### History
@@ -133,12 +27,6 @@ Things missing from Solid :
 Things missing from Preact :
 - Not so much I guess?
 
-### Atomic rendering
-
-Reflex will implement atomic rendering for states. Which means that when a state changes, not all the component is diffed, but only the affected dom nodes.
-See Jason Miller post : https://twitter.com/_developit/status/1549001036802625536
-This feature is WIP
-
 ### Performances
 
 Reflex goal is to be __as performant as possible__ and __as light as possible__.
@@ -152,11 +40,6 @@ Library weight will be around `3kb gzipped`. It may grow a bit over time if we a
 
 For now Reflex performances are between petit-dom and Preact. It can be greatly improved since Reflex is still in beta!
 About size, see [Reflex bundle](https://unpkg.com/@zouloux/reflex) vs [Preact bundle](https://unpkg.com/preact) (without states)
-
-### Demos
-
-[Click here](https://zouloux.github.io/reflex/demos/) to see some demo (WIP)
-
 
 ### Unpkg and Esmsh
 

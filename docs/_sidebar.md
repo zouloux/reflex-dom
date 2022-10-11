@@ -22,7 +22,5 @@
   - [State](/learn-reflex/02.state.md)
   - [Store](/learn-reflex/03.store.md)
 
-- Get started
-  - [Create Reflex App](/get-started/create-reflex-app.md)
-  - [Install with npm](/get-started/install-with-npm.md)
+- [Get started](/get-started/)
 
