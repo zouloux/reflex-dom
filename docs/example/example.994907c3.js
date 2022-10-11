@@ -232,8 +232,8 @@ function state(initialValue, stateOptions = {}) {
     let invalidatedNodes = [];
     // const affectedNodesIndex = component._affectedNodesByStates.push([]) - 1
     // Set value and invalidate or render component
-    function _setAndInvalidate(newValue, resolve) {
-        initialValue = stateOptions.filter ? stateOptions.filter(newValue, initialValue) : newValue;
+    function _setAndInvalidate(newValue1, resolve) {
+        initialValue = stateOptions.filter ? stateOptions.filter(newValue1, initialValue) : newValue1;
         /*		if ( stateOptions.atomic ) {
 			console.log('Invalidated nodes:')
 			invalidatedNodes.forEach( n => console.log(n))
@@ -273,7 +273,7 @@ function state(initialValue, stateOptions = {}) {
         set value (newValue){
             _setAndInvalidate(newValue);
         },
-        set: (newValue)=>new Promise((resolve)=>_setAndInvalidate(_prepareInitialValue(newValue, initialValue), resolve)),
+        set: (newValue1)=>new Promise((resolve)=>_setAndInvalidate(_prepareInitialValue(newValue1, initialValue), resolve)),
         // changed() knows if it's a state
         get type () {
             return 0, _common._VNodeTypes_STATE;
@@ -392,13 +392,13 @@ function _diffElement(newNode, oldNode, nodeEnv) {
         // Insert HTML directly without warning
         if (name1 == "innerHTML") dom.innerHTML = value;
         else if (name1.startsWith("on")) {
-            const { eventName , eventKey , useCapture  } = getEventNameAndKey(name1, dom);
+            const { eventName: eventName1 , eventKey: eventKey1 , useCapture: useCapture1  } = getEventNameAndKey(name1, dom);
             // Init a collection of handlers on the dom object as private property
             if (!dom[_DOM_PRIVATE_LISTENERS_KEY]) dom[_DOM_PRIVATE_LISTENERS_KEY] = new Map();
             // Store original listener to be able to remove it later
-            dom[_DOM_PRIVATE_LISTENERS_KEY][eventKey] = value;
+            dom[_DOM_PRIVATE_LISTENERS_KEY][eventKey1] = value;
             // And attach listener
-            dom.addEventListener(eventName, value, useCapture);
+            dom.addEventListener(eventName1, value, useCapture1);
         } else {
             // className as class for non jsx components
             if (name1 == "className") name1 = "class";
@@ -513,14 +513,14 @@ function _diffChildren(newParentNode, oldParentNode, nodeEnv) {
     // Remove old children which are not reused
     const totalOld = oldChildren.length;
     for(i = 0; i < totalOld; ++i){
-        const oldChildNode = oldChildren[i];
-        if (oldChildNode && !oldChildNode._keep) {
+        const oldChildNode1 = oldChildren[i];
+        if (oldChildNode1 && !oldChildNode1._keep) {
             // Call unmount handlers
-            (0, _component._recursivelyUpdateMountState)(oldChildNode, false);
+            (0, _component._recursivelyUpdateMountState)(oldChildNode1, false);
             // Remove ref
-            const { dom  } = oldChildNode;
-            oldChildNode.dom = null;
-            updateNodeRef(oldChildNode);
+            const { dom  } = oldChildNode1;
+            oldChildNode1.dom = null;
+            updateNodeRef(oldChildNode1);
             parentDom.removeChild(dom);
         }
     }

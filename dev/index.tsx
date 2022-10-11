@@ -1,5 +1,5 @@
-import { h, render, state } from "../../src";
-import { trackPerformances, setReflexDebug } from "../../src/debug";
+import { h, render, state } from "../src";
+import { trackPerformances, setReflexDebug } from "../src/debug";
 
 // -----------------------------------------------------------------------------
 
