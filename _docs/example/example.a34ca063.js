@@ -143,48 +143,48 @@
     }
   }
 })({"eJHQY":[function(require,module,exports) {
-var _reflex = require("../src/reflex");
+var _src = require("../src");
 // Reflex components can be pure functions or factory functions
 function ReflexApp(props) {
     // How basic state works
-    const counter = (0, _reflex.state)(0);
+    const counter = (0, _src.state)(0);
     const increment = ()=>counter.value++;
     const reset = ()=>counter.value = 0;
     // No need to use ref for locally scoped variables
     let firstUpdate = true;
     // Detect changes of states or props
-    (0, _reflex.changed)([
+    (0, _src.changed)([
         counter
     ], (newValue)=>{
         console.log(`Counter just updated to ${newValue}`, firstUpdate);
         firstUpdate = false;
     });
     // How refs of dom elements works
-    const title = (0, _reflex.ref)();
-    (0, _reflex.mounted)(()=>console.log(title.dom.innerHTML));
+    const title = (0, _src.ref)();
+    (0, _src.mounted)(()=>console.log(title.dom.innerHTML));
     // Returns a render function
     // Classes can be arrays ! Falsy elements of the array will be discarded
-    return ()=>/*#__PURE__*/ (0, _reflex.h)("div", {
+    return ()=>/*#__PURE__*/ (0, _src.h)("div", {
             class: [
                 "ReflexApp",
                 props.modifier,
                 false
             ]
-        }, /*#__PURE__*/ (0, _reflex.h)("h1", {
+        }, /*#__PURE__*/ (0, _src.h)("h1", {
             ref: title
-        }, "Hello from Reflex ", props.emoji), /*#__PURE__*/ (0, _reflex.h)("button", {
+        }, "Hello from Reflex ", props.emoji), /*#__PURE__*/ (0, _src.h)("button", {
             onClick: increment
-        }, "Increment"), "\xa0", /*#__PURE__*/ (0, _reflex.h)("button", {
+        }, "Increment"), "\xa0", /*#__PURE__*/ (0, _src.h)("button", {
             onClick: reset
-        }, "Reset"), "\xa0", /*#__PURE__*/ (0, _reflex.h)("span", null, "Counter : ", counter.value));
+        }, "Reset"), "\xa0", /*#__PURE__*/ (0, _src.h)("span", null, "Counter : ", counter.value));
 }
 // Render it like any other v-dom library
-(0, _reflex.render)(/*#__PURE__*/ (0, _reflex.h)(ReflexApp, {
+(0, _src.render)(/*#__PURE__*/ (0, _src.h)(ReflexApp, {
     modifier: "ReflexApp-lightMode",
     emoji: "\uD83D\uDC4B"
 }), document.body);
 
-},{"../src/reflex":"cuBJf"}],"cuBJf":[function(require,module,exports) {
+},{"../src":"57jqn"}],"57jqn":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /// <reference lib="dom" />
@@ -214,7 +214,7 @@ var _lifecycle = require("./lifecycle");
 var _render = require("./render");
 var _jsx = require("./jsx");
 
-},{"./states":"jPtHd","./diff":"6sa8r","./ref":"fdaPH","./props":"bJNzu","./lifecycle":"8Qw9Y","./render":"krTG7","./jsx":"beq5O","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"jPtHd":[function(require,module,exports) {
+},{"./states":"cYDB0","./diff":"b4Uwz","./ref":"wwDZq","./props":"b1mhR","./lifecycle":"5y75G","./render":"a15DI","./jsx":"gZCED","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"cYDB0":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "_prepareInitialValue", ()=>_prepareInitialValue);
@@ -222,17 +222,27 @@ parcelHelpers.export(exports, "_prepareInitialValue", ()=>_prepareInitialValue);
 parcelHelpers.export(exports, "state", ()=>state);
 var _diff = require("./diff");
 var _render = require("./render");
+var _common = require("./common");
 const _prepareInitialValue = (initialValue, oldValue)=>typeof initialValue == "function" ? initialValue(oldValue) : initialValue;
 function state(initialValue, stateOptions = {}) {
     // Prepare initial value if it's a function
     initialValue = _prepareInitialValue(initialValue);
     // Get current extended component
     const component = (0, _diff.getCurrentComponent)();
+    let invalidatedNodes = [];
     // const affectedNodesIndex = component._affectedNodesByStates.push([]) - 1
     // Set value and invalidate or render component
     function _setAndInvalidate(newValue, resolve) {
         initialValue = stateOptions.filter ? stateOptions.filter(newValue, initialValue) : newValue;
-        if (stateOptions.directInvalidation) {
+        /*		if ( stateOptions.atomic ) {
+			console.log('Invalidated nodes:')
+			invalidatedNodes.forEach( n => console.log(n))
+			invalidatedNodes.map( node => {
+				//diffNode( node,  )
+			})
+			invalidatedNodes = []
+			resolve?.();
+		}*/ if (stateOptions.directInvalidation) {
             (0, _diff.diffNode)(component.vnode, component.vnode);
             resolve?.();
         } else {
@@ -241,28 +251,42 @@ function state(initialValue, stateOptions = {}) {
         }
     }
     // Return public API with value get/set and set function
-    return {
+    const stateObject = {
         get value () {
-            // if ( component._isRendering ) {
-            // 	addDataListenerForNextNode( node => {
-            // 		console.log('>', component._affectedNodesByStates[affectedNodesIndex].length, node)
-            // 		component._affectedNodesByStates[affectedNodesIndex].push( node )
-            // 	})
+            // if ( component._isRendering && stateOptions.atomic ) {
+            // 	_trackNextNode( stateObject )
+            // const nodes = _getTrackedNode()
+            // console.log( nodes )
+            // invalidatedNodes.push( _getCurrentNode() )
+            // _trackNode( node => {
+            // 	invalidatedNodes.push( node )
+            // console.log("Affected node", node)
+            // console.log('>', component._affectedNodesByStates[affectedNodesIndex].length, node)
+            // component._affectedNodesByStates[affectedNodesIndex].push( node )
+            // })
             // }
             return initialValue;
+        },
+        pushInvalidatedNode (node) {
+            invalidatedNodes.push(node);
         },
         set value (newValue){
             _setAndInvalidate(newValue);
         },
         set: (newValue)=>new Promise((resolve)=>_setAndInvalidate(_prepareInitialValue(newValue, initialValue), resolve)),
-        // Changed knows if it's a state
-        get _isState () {
-            return true;
+        // changed() knows if it's a state
+        get type () {
+            return 0, _common._VNodeTypes_STATE;
+        },
+        // Use state as a getter without .value
+        toString () {
+            return stateObject.value + "";
         }
     };
+    return stateObject;
 }
 
-},{"./diff":"6sa8r","./render":"krTG7","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"6sa8r":[function(require,module,exports) {
+},{"./diff":"b4Uwz","./render":"a15DI","./common":"a9KbK","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"b4Uwz":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "_DOM_PRIVATE_VIRTUAL_NODE_KEY", ()=>_DOM_PRIVATE_VIRTUAL_NODE_KEY);
@@ -605,11 +629,12 @@ function diffNode(newNode, oldNode, nodeEnv = newNode._nodeEnv) {
     } else if (newNode.type > (0, _common._VNodeTypes_CONTAINERS)) _diffChildren(newNode, oldNode, nodeEnv);
 }
 
-},{"./common":"8NUdO","./jsx":"beq5O","./component":"jK9Qg","./props":"bJNzu","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"8NUdO":[function(require,module,exports) {
+},{"./common":"a9KbK","./jsx":"gZCED","./component":"9IiKg","./props":"b1mhR","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"a9KbK":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "_VNodeTypes_NULL", ()=>_VNodeTypes_NULL);
 parcelHelpers.export(exports, "_VNodeTypes_TEXT", ()=>_VNodeTypes_TEXT);
+parcelHelpers.export(exports, "_VNodeTypes_STATE", ()=>_VNodeTypes_STATE);
 parcelHelpers.export(exports, "_VNodeTypes_CONTAINERS", ()=>_VNodeTypes_CONTAINERS);
 parcelHelpers.export(exports, "_VNodeTypes_ROOT", ()=>_VNodeTypes_ROOT);
 parcelHelpers.export(exports, "_VNodeTypes_ELEMENT", ()=>_VNodeTypes_ELEMENT);
@@ -618,6 +643,7 @@ parcelHelpers.export(exports, "_VNodeTypes_LIST", ()=>_VNodeTypes_LIST);
 parcelHelpers.export(exports, "_dispatch", ()=>_dispatch);
 const _VNodeTypes_NULL = 0;
 const _VNodeTypes_TEXT = 1;
+const _VNodeTypes_STATE = 3;
 const _VNodeTypes_CONTAINERS = 4;
 const _VNodeTypes_ROOT = 5;
 const _VNodeTypes_ELEMENT = 6;
@@ -658,19 +684,25 @@ exports.export = function(dest, destName, get) {
     });
 };
 
-},{}],"beq5O":[function(require,module,exports) {
+},{}],"gZCED":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-// FIXME : Is it an array ? Maybe its working as single prop
-// let _dataListenersForNextNode = []
+// import { IState } from "./states";
+// let _trackedNodesBySignals:IState<any>[] = []
 //
-// export function addDataListenerForNextNode ( listener ) {
-// 	_dataListenersForNextNode.push( listener )
+// export function _trackNextNode ( stateObject:IState<any> ) {
+// 	_trackedNodesBySignals.push( stateObject )
 // }
 //
-// function triggerDataListenerForNode ( node:VNode ) {
-// 	_dataListenersForNextNode.forEach( handler => handler( node ) )
-// 	_dataListenersForNextNode = []
+// export function _resetTrackedNode ( stateID:number ) {
+//
+// }
+//
+// function afterNode (node:VNode) {
+// 	if ( _trackedNodesBySignals.length > 0 ) {
+// 		_trackedNodesBySignals.forEach( s => s.pushInvalidatedNode(node) )
+// 		_trackedNodesBySignals = []
+// 	}
 // }
 // NOTE : Keep it in a function and do not inline this
 // It seems to be V8 optimized. @see Preact source code
@@ -680,10 +712,11 @@ parcelHelpers.export(exports, "h", ()=>h) // TRACKING TEST
  /*
 let $ = []
 let a = 0
+let st = state()
 
 h('div', {}, [
 	h('h1', {className: $}, [ 	// -> h1
-		"Content ", $			// -> h1
+		"Content ", st			// -> text[1]
 	]),
 	h('ul', {}, $.map( a => a )),// -> ul
 	h('p', {}, [$]),			// -> p
@@ -700,7 +733,6 @@ function _createVNode(type, value = null, props = {}, key, _ref) {
         _ref
     };
 // const node:VNode = { type, value, props, key, _ref }
-// triggerDataListenerForNode( node )
 // return node;
 }
 function _cloneVNode(vnode) {
@@ -726,7 +758,7 @@ function h(value, props, ...children) {
         else if (Array.isArray(child)) props.children[i] = _createVNode((0, _common._VNodeTypes_LIST), null, {
             children: child
         });
-        else if (child === null) props.children[i] = _createVNode((0, _common._VNodeTypes_NULL));
+        else if (child === null || typeofChild === "boolean") props.children[i] = _createVNode((0, _common._VNodeTypes_NULL));
     }
     // Virtual node type here can be only component or element
     // Other types are created elsewhere
@@ -735,7 +767,7 @@ function h(value, props, ...children) {
     return _createVNode(type, value, props, props.key, props.ref);
 }
 
-},{"./common":"8NUdO","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"jK9Qg":[function(require,module,exports) {
+},{"./common":"a9KbK","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"9IiKg":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // ----------------------------------------------------------------------------- CREATE COMPONENT INSTANCE
@@ -812,7 +844,7 @@ function _recursivelyUpdateMountState(node, doMount) {
     }
 }
 
-},{"./common":"8NUdO","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"bJNzu":[function(require,module,exports) {
+},{"./common":"a9KbK","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"b1mhR":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "injectDefaults", ()=>injectDefaults);
@@ -839,7 +871,7 @@ const shallowPropsCompare = (a, b, childrenCheck = true)=>// Same amount of prop
             return !(c.type === d.type && (c.type !== (0, _common._VNodeTypes_ELEMENT) || c.value === d.value));
         }) : b.hasOwnProperty(key) && a[key] === b[key]);
 
-},{"./common":"8NUdO","./diff":"6sa8r","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"krTG7":[function(require,module,exports) {
+},{"./common":"a9KbK","./diff":"b4Uwz","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"a15DI":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // ----------------------------------------------------------------------------- RENDER
@@ -914,7 +946,7 @@ function invalidateComponent(component) {
     }
 }
 
-},{"./common":"8NUdO","./diff":"6sa8r","./jsx":"beq5O","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"fdaPH":[function(require,module,exports) {
+},{"./common":"a9KbK","./diff":"b4Uwz","./jsx":"gZCED","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"wwDZq":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ref", ()=>ref);
@@ -965,7 +997,7 @@ function refs() {
     return value;
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"8Qw9Y":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"5y75G":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
@@ -973,6 +1005,7 @@ parcelHelpers.export(exports, "mounted", ()=>mounted);
 parcelHelpers.export(exports, "unmounted", ()=>unmounted);
 parcelHelpers.export(exports, "changed", ()=>changed);
 var _diff = require("./diff");
+var _common = require("./common");
 function mounted(handler) {
     // FIXME : In dev mode, maybe check if component is mounted ?
     (0, _diff.getCurrentComponent)()._mountHandlers.push(handler);
@@ -1000,7 +1033,7 @@ function changed(detectChanges, executeHandler) {
         detectChanges = ()=>_detectChanges.map((dependency)=>{
                 // Custom change function
                 if (typeof dependency === "function") return dependency();
-                else if (typeof dependency === "object" && dependency._isState) return dependency.value;
+                else if (typeof dependency === "object" && dependency.type === (0, _common._VNodeTypes_STATE)) return dependency.value;
             });
     }
     let state = detectChanges();
@@ -1034,5 +1067,5 @@ function changed(detectChanges, executeHandler) {
     });
 }
 
-},{"./diff":"6sa8r","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["eJHQY"], "eJHQY", "parcelRequirea1a1")
+},{"./diff":"b4Uwz","./common":"a9KbK","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["eJHQY"], "eJHQY", "parcelRequirea1a1")
 
