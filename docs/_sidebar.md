@@ -1,6 +1,6 @@
 
 
-- [What is reflex](/README.md)
+- [What is reflex](/)
 
 - Learn API
   - [Basics](/api/basics/)
@@ -16,11 +16,15 @@
     - [Changed](/api/factory-extensions/05.changed.md)
     - [Custom Extensions](/api/factory-extensions/06.custom-extensions.md)
 
-- Learn Reflex with Code Sandbox
-  - [Hello World](/learn-reflex/00.hello-world.md)
-  - [Props](/learn-reflex/01.props.md)
-  - [State](/learn-reflex/02.state.md)
-  - [Store](/learn-reflex/03.store.md)
+[//]: # (- Learn Reflex with Code Sandbox)
+
+[//]: # (  - [Hello World]&#40;/learn-reflex/00.hello-world.md&#41;)
+
+[//]: # (  - [Props]&#40;/learn-reflex/01.props.md&#41;)
+
+[//]: # (  - [State]&#40;/learn-reflex/02.state.md&#41;)
+
+[//]: # (  - [Store]&#40;/learn-reflex/03.store.md&#41;)
 
 - [Get started](/get-started/)
 
