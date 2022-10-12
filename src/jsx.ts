@@ -29,14 +29,14 @@ import {
 
 // NOTE : Keep it in a function and do not inline this
 // It seems to be V8 optimized. @see Preact source code
-export function _createVNode ( type:VNodeTypes, value = null, props:any = {}, key?, _ref? ):VNode {
+export function createVNode ( type:VNodeTypes, value = null, props:any = {}, key?, _ref? ):VNode {
 	return { type, value, props, key, _ref }
 	// const node:VNode = { type, value, props, key, _ref }
 	// return node;
 }
 
 
-export function _cloneVNode ( vnode:VNode ) {
+export function cloneVNode ( vnode:VNode ) {
 	const newNode = Object.assign({}, vnode)
 	// IMPORTANT : also clone props object
 	newNode.props = Object.assign({}, vnode.props)
@@ -62,19 +62,19 @@ export function h ( value:any, props:any, ...children:any[] ) {
 		const typeofChild = typeof child
 		// Detect text nodes
 		if ( typeofChild === "string" || typeofChild === "number" )
-			props.children[ i ] = _createVNode( _VNodeTypes_TEXT, child )
+			props.children[ i ] = createVNode( _VNodeTypes_TEXT, child )
 		// Detect array nodes
 		else if ( Array.isArray(child) )
-			props.children[ i ] = _createVNode( _VNodeTypes_LIST, null, { children: child } )
+			props.children[ i ] = createVNode( _VNodeTypes_LIST, null, { children: child } )
 		// Detect null and boolean nodes (it means we have a condition )
 		else if ( child === null || typeofChild === "boolean" )
-			props.children[ i ] = _createVNode( _VNodeTypes_NULL )
+			props.children[ i ] = createVNode( _VNodeTypes_NULL )
 	}
 	// Virtual node type here can be only component or element
 	// Other types are created elsewhere
 	const type = ( typeof value === "function" ? _VNodeTypes_COMPONENT : _VNodeTypes_ELEMENT )
 	// Create and return the virtual node
-	return _createVNode( type, value, props, props.key, props.ref )
+	return createVNode( type, value, props, props.key, props.ref )
 }
 
 // TRACKING TEST

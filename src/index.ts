@@ -7,11 +7,12 @@
 
 // Export public API
 export { state } from "./states"
-export { getCurrentComponent, diffNode, diffChildren } from "./diff"
+export { getCurrentComponent, diffNode, diffChildren, diffElement } from "./diff"
 export { ref, refs } from "./ref"
 export { defaultProps } from "./props"
 export { mounted, unmounted, changed } from "./lifecycle"
 export { render, invalidateComponent } from "./render"
+export { recursivelyUpdateMountState } from "./component"
 
 // Also export createElement for JSX pragma React
 export { h, h as createElement } from "./jsx"
@@ -23,7 +24,7 @@ export type { ComponentInstance, IComponentAPI } from "./component"
 export type {
 	VNode, IAbstractNode, IAbstractText, IAbstractElement, IAbstractDocument,
 	IAbstractComment, INodeEnv, AbstractNodeTypes, DefaultReflexBaseProps,
-	DefaultReflexProps, HasClassProp
+	DefaultReflexProps, HasClassProp, dispatch
 } from "./common"
 
 // ----------------------------------------------------------------------------- JSX TYPES

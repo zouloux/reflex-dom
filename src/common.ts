@@ -157,7 +157,7 @@ export interface HasClassProp {
 	class ?: ClassNameItem | ClassNameItem[]
 }
 
-export function _dispatch ( handlers:Function[], scope:any, args:any[] ) {
+export function dispatch ( handlers:Function[], scope:any, args:any[] ) {
 	const total = handlers.length
 	for ( let i = 0; i < total; ++i )
 		handlers[ i ].apply( scope, args )

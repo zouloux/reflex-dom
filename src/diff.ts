@@ -1,5 +1,5 @@
 import {
-	_dispatch,
+	dispatch,
 	_VNodeTypes_COMPONENT,
 	_VNodeTypes_CONTAINERS,
 	_VNodeTypes_ELEMENT,
@@ -13,9 +13,9 @@ import {
 	RenderFunction,
 	VNode
 } from "./common";
-import { _cloneVNode } from "./jsx";
+import { cloneVNode } from "./jsx";
 import { IInternalRef } from "./ref";
-import { _createComponentInstance, _recursivelyUpdateMountState, ComponentInstance } from "./component";
+import { _createComponentInstance, recursivelyUpdateMountState, ComponentInstance } from "./component";
 import { injectDefaults, shallowPropsCompare } from "./props";
 
 // ----------------------------------------------------------------------------- CONSTANTS
@@ -82,7 +82,7 @@ function updateNodeRef ( node:VNode ) {
  * @param oldNode
  * @param nodeEnv
  */
-export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) {
+export function diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) {
 	// TODO : DOC
 	let dom:RenderDom
 	if ( oldNode ) {
@@ -255,7 +255,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEn
 		&& oldChildren.length > 0
 	) {
 		// FIXME : Check if unmount is correct ? Order ? Events ?
-		_recursivelyUpdateMountState( oldParentNode, false )
+		recursivelyUpdateMountState( oldParentNode, false )
 		parentDom.innerHTML = ''
 		return;
 	}
@@ -346,7 +346,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEn
 		const oldChildNode = oldChildren[ i ]
 		if ( oldChildNode && !oldChildNode._keep ) {
 			// Call unmount handlers
-			_recursivelyUpdateMountState( oldChildNode, false );
+			recursivelyUpdateMountState( oldChildNode, false );
 			// Remove ref
 			const { dom } = oldChildNode
 			oldChildNode.dom = null;
@@ -397,7 +397,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 	// 			   Otherwise, altering props.children after render will fuck everything up
 	// Clone identical nodes to be able to diff them
 	if ( oldNode && oldNode === newNode )
-		newNode = _cloneVNode( oldNode )
+		newNode = cloneVNode( oldNode )
 	// Transfer id for refs
 	if ( oldNode && oldNode._id )
 		newNode._id = oldNode._id
@@ -413,7 +413,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 		// Clone node env for children, to avoid env to propagate on siblings
 		nodeEnv = Object.assign({}, nodeEnv)
 		// Compute dom element for this node
-		newNode.dom = _diffElement( newNode, oldNode, nodeEnv )
+		newNode.dom = diffElement( newNode, oldNode, nodeEnv )
 	}
 	// Diff component node
 	else if ( newNode.type === _VNodeTypes_COMPONENT ) {
@@ -480,10 +480,10 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 	if ( newNode.type === _VNodeTypes_COMPONENT ) {
 		// If component is not mounted yet, mount it recursively
 		if ( !newNode._component.isMounted )
-			_recursivelyUpdateMountState( newNode, true )
+			recursivelyUpdateMountState( newNode, true )
 		// Execute after render handlers
 		if ( newNode.value.isFactory !== false )
-			_dispatch( newNode._component._renderHandlers, newNode._component, [] )
+			dispatch( newNode._component._renderHandlers, newNode._component, [] )
 	}
 	// Diff children for node that are containers and not components
 	else if ( newNode.type > _VNodeTypes_CONTAINERS )

@@ -20,7 +20,7 @@ export type IState<GType> = {
 	toString():string
 }
 
-interface IStateOptions<GType> {
+export interface IStateOptions<GType> {
 	filter				?:(newValue:GType, oldValue:GType) => GType,
 	directInvalidation	?:boolean
 	// atomic				?:boolean

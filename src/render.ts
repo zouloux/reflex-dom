@@ -1,6 +1,6 @@
-import { _dispatch, _VNodeTypes_ROOT, IAbstractDocument, IAbstractElement, VNode } from "./common";
+import { dispatch, _VNodeTypes_ROOT, IAbstractDocument, IAbstractElement, VNode } from "./common";
 import { diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
-import { _createVNode } from "./jsx";
+import { createVNode } from "./jsx";
 import { ComponentInstance } from "./component";
 
 // ----------------------------------------------------------------------------- RENDER
@@ -8,7 +8,7 @@ import { ComponentInstance } from "./component";
 export function render ( rootNode:VNode, parentElement:HTMLElement|IAbstractElement, documentInterface:Document|IAbstractDocument = document ) {
 	// When using render, we create a new root node to detect new renders
 	// This node is never rendered, we just attach it to the parentElement and render its children
-	const root = _createVNode( _VNodeTypes_ROOT, null, { children: [rootNode] } )
+	const root = createVNode( _VNodeTypes_ROOT, null, { children: [rootNode] } )
 	root.dom = parentElement as HTMLElement
 	diffNode( root, parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ], {
 		isSVG: false,
@@ -29,7 +29,7 @@ function updateDirtyComponents () {
 	for ( let i = 0; i < total; ++i ) {
 		const component = componentsToUpdate[ i ]
 		diffNode( component.vnode, component.vnode )
-		_dispatch(component._afterRenderHandlers, component, [])
+		dispatch(component._afterRenderHandlers, component, [])
 		component._afterRenderHandlers = []
 		component._isDirty = false
 		// if ( component._affectedNodesByStates.length == 0 )
@@ -48,12 +48,12 @@ function updateDirtyComponents () {
 }
 
 // Internal fast microtask polyfill
-const _microtask = self.queueMicrotask ? self.queueMicrotask : h => self.setTimeout( h, 0 )
+const microtask = self.queueMicrotask ? self.queueMicrotask : h => self.setTimeout( h, 0 )
 
 export function invalidateComponent ( component:ComponentInstance ) {
 	// Queue rendering before end of frame
 	if ( !componentsToUpdate.length )
-		_microtask( updateDirtyComponents );
+		microtask( updateDirtyComponents );
 	// Invalidate this component once
 	if ( !component._isDirty ) {
 		component._isDirty = true

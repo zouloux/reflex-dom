@@ -1,5 +1,5 @@
 import {
-	_dispatch, _VNodeTypes_CONTAINERS, ComponentFunction, LifecycleHandler,
+	dispatch, _VNodeTypes_CONTAINERS, ComponentFunction, LifecycleHandler,
 	MountHandler, RenderFunction, VNode
 } from "./common";
 
@@ -69,7 +69,7 @@ export function _mountComponent ( component:ComponentInstance ) {
 }
 
 export function _unmountComponent ( component:ComponentInstance ) {
-	_dispatch(component._unmountHandlers, component, [])
+	dispatch(component._unmountHandlers, component, [])
 	component.isMounted = false;
 	// Cut component branch from virtual node to allow GC to destroy component
 	delete component.vnode._component
@@ -86,12 +86,12 @@ export function _unmountComponent ( component:ComponentInstance ) {
 	// TODO : Remove all listeners ?
 }
 
-export function _recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
+export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 	if ( node.type > _VNodeTypes_CONTAINERS ) {
 		const total = node.props.children.length
 		for ( let i = 0; i < total; ++i ) {
 			const child = node.props.children[ i ]
-			_recursivelyUpdateMountState( child, doMount )
+			recursivelyUpdateMountState( child, doMount )
 			// FIXME : Is it necessary ?
 			// Remove all event listeners
 			// if ( child.type === VNodeTypes.ELEMENT ) {
