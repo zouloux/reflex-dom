@@ -15,7 +15,7 @@ export { render, invalidateComponent } from "./render"
 export { recursivelyUpdateMountState } from "./component"
 
 // Also export createElement for JSX pragma React
-export { h, h as createElement } from "./jsx"
+export { h, h as createElement, createVNode, cloneVNode } from "./jsx"
 
 // Export types ( do not export too much to keep it simple )
 export type { IState, TInitialValue } from "./states"
