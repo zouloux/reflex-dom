@@ -7,7 +7,7 @@
 
 // Export public API
 export { state } from "./states"
-export { getCurrentComponent, diffNode, diffChildren, diffElement } from "./diff"
+export { getCurrentComponent, diffNode, diffChildren } from "./diff"
 export { ref, refs } from "./ref"
 export { defaultProps } from "./props"
 export { mounted, unmounted, changed } from "./lifecycle"

@@ -51,7 +51,10 @@ export interface INodeEnv {
 
 // ----------------------------------------------------------------------------- INTERNAL - CREATE COMPONENT
 
-export type THasIsFactoryProp = { isFactory?: boolean }
+export type TComponentFunctionProperties = {
+	isFactory		?: boolean
+	renderFilter	?:( component:ComponentInstance, renderResult:VNode ) => void
+}
 
 export type RenderDom = Element | Text | Comment
 
@@ -60,7 +63,7 @@ export type RenderDom = Element | Text | Comment
 export type RenderFunction <GProps extends object = object> = ( props?:GProps, componentAPI?:IComponentAPI ) => VNode
 export type ComponentReturn <GProps extends object = object> = RenderFunction<GProps> | VNode
 export type FactoryComponent <GProps extends object = object> = ( props?:GProps ) => RenderFunction
-export type ComponentFunction <GProps extends object = object> = ( RenderFunction<GProps> | FactoryComponent<GProps> ) & THasIsFactoryProp
+export type ComponentFunction <GProps extends object = object> = ( RenderFunction<GProps> | FactoryComponent<GProps> ) & TComponentFunctionProperties
 
 export type LifecycleHandler <GReturn = void> = (...rest) => GReturn
 export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler>
@@ -104,7 +107,7 @@ export type VNodeTypes = (
 
 export type VNodeElementValue = keyof (HTMLElementTagNameMap|SVGElementTagNameMap)
 export type VNodeTextValue = string
-export type VNodeValue = ( VNodeElementValue | VNodeTextValue | ComponentFunction ) & THasIsFactoryProp
+export type VNodeValue = ( VNodeElementValue | VNodeTextValue | ComponentFunction ) & TComponentFunctionProperties
 
 export interface VNode <
 	GProps extends DefaultReflexProps	= DefaultReflexProps,

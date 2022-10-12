@@ -82,7 +82,7 @@ function updateNodeRef ( node:VNode ) {
  * @param oldNode
  * @param nodeEnv
  */
-export function diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) {
+export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) {
 	// TODO : DOC
 	let dom:RenderDom
 	if ( oldNode ) {
@@ -358,6 +358,11 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEn
 
 // ----------------------------------------------------------------------------- DIFF NODE
 
+// let _componentRenderHook
+// export function setComponentRenderHook ( handler ) {
+// 	_componentRenderHook = handler
+// }
+
 export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any, ComponentFunction> ) :GReturn {
 	// Select current component before rendering
 	_currentComponent = node._component;
@@ -383,9 +388,12 @@ export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<an
 		injectDefaults( props, _currentComponent._defaultProps )
 	// Render component with props instance and component API instance
 	// FIXME : Add ref as second argument ? Is it useful ?
-	const result = _currentComponent._render.apply(
+	let result = _currentComponent._render.apply(
 		_currentComponent, [ props, _currentComponent._componentAPI ]
 	)
+	// Filter rendering on function for tools
+	if ( _currentComponent.vnode.value.renderFilter )
+		result = _currentComponent.vnode.value.renderFilter( _currentComponent, result )
 	_currentComponent._isRendering = false
 	// Unselect current component
 	_currentComponent = null
@@ -413,7 +421,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 		// Clone node env for children, to avoid env to propagate on siblings
 		nodeEnv = Object.assign({}, nodeEnv)
 		// Compute dom element for this node
-		newNode.dom = diffElement( newNode, oldNode, nodeEnv )
+		newNode.dom = _diffElement( newNode, oldNode, nodeEnv )
 	}
 	// Diff component node
 	else if ( newNode.type === _VNodeTypes_COMPONENT ) {
