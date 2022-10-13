@@ -1,5 +1,5 @@
 import {
-	dispatch,
+	_dispatch,
 	_VNodeTypes_COMPONENT,
 	_VNodeTypes_CONTAINERS,
 	_VNodeTypes_ELEMENT,
@@ -365,7 +365,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEn
 
 export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any, ComponentFunction> ) :GReturn {
 	// Select current component before rendering
-	_currentComponent = node._component;
+	_currentComponent = node.component;
 	// FIXME: Before render handlers ?
 	// Execute rendering
 	_currentComponent._isRendering = true
@@ -389,7 +389,7 @@ export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<an
 	// Render component with props instance and component API instance
 	// FIXME : Add ref as second argument ? Is it useful ?
 	let result = _currentComponent._render.apply(
-		_currentComponent, [ props, _currentComponent._componentAPI ]
+		_currentComponent, [ props ]
 	)
 	// Filter rendering on function for tools
 	if ( _currentComponent.vnode.value.renderFilter )
@@ -426,13 +426,13 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 	// Diff component node
 	else if ( newNode.type === _VNodeTypes_COMPONENT ) {
 		// Transfer component instance from old node to new node
-		let component:ComponentInstance = oldNode?._component
+		let component:ComponentInstance = oldNode?.component
 		// Check if we need to instantiate component
 		let renderResult:VNode
 		if ( !component ) {
 			// Create component instance (without new keyword for better performances)
 			component = _createComponentInstance( newNode as VNode<object, ComponentFunction> )
-			newNode._component = component
+			newNode.component = component
 			component._render = newNode.value as RenderFunction
 			// Execute component's function and check what is returned
 			const result = _renderComponentNode( newNode as VNode<object, ComponentFunction> )
@@ -450,7 +450,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 		}
 		// Keep old component instance
 		else {
-			newNode._component = component
+			newNode.component = component
 			component.vnode = newNode as VNode<object, ComponentFunction>
 		}
 		// Here we check if this component should update
@@ -460,8 +460,8 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 		if ( !renderResult && oldNode && !component.vnode.value.isFactory ) {
 			shouldUpdate = (
 				// Use shouldUpdate function on component API
-				component._componentAPI.shouldUpdate
-				? component._componentAPI.shouldUpdate( newNode.props, oldNode.props )
+				component.shouldUpdate
+				? component.shouldUpdate( newNode.props, oldNode.props )
 				// Otherwise shallow props compare with children check
 				: !shallowPropsCompare( newNode.props, oldNode.props, true )
 			)
@@ -487,11 +487,11 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 	// Now that component and its children are ready
 	if ( newNode.type === _VNodeTypes_COMPONENT ) {
 		// If component is not mounted yet, mount it recursively
-		if ( !newNode._component.isMounted )
+		if ( !newNode.component.isMounted )
 			recursivelyUpdateMountState( newNode, true )
 		// Execute after render handlers
 		if ( newNode.value.isFactory !== false )
-			dispatch( newNode._component._renderHandlers, newNode._component, [] )
+			_dispatch( newNode.component._renderHandlers, newNode.component )
 	}
 	// Diff children for node that are containers and not components
 	else if ( newNode.type > _VNodeTypes_CONTAINERS )

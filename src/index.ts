@@ -24,7 +24,7 @@ export type { ComponentInstance, IComponentAPI } from "./component"
 export type {
 	VNode, IAbstractNode, IAbstractText, IAbstractElement, IAbstractDocument,
 	IAbstractComment, INodeEnv, AbstractNodeTypes, DefaultReflexBaseProps,
-	DefaultReflexProps, HasClassProp, dispatch
+	DefaultReflexProps, HasClassProp
 } from "./common"
 
 // ----------------------------------------------------------------------------- JSX TYPES

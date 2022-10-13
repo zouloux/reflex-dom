@@ -34,10 +34,9 @@ export type ComponentChild =
 	| object
 	| bigint
 
-export interface DefaultReflexAttributes<
-	GDom extends Element = Element,
-	GComponent extends ComponentInstance = ComponentInstance,
-> extends DefaultReflexBaseProps<GDom, GComponent> {
+export interface DefaultReflexAttributes
+	<GDom extends Element = Element> extends DefaultReflexBaseProps<GDom>
+{
 	// Children here can be string or number
 	children	?:(ComponentChild|number|string)[]
 }
@@ -347,12 +346,8 @@ export type ClassName = (
 )
 
 export interface HTMLAttributes
-	<
-		GDom extends Element = Element,
-		GComponent extends ComponentInstance = ComponentInstance,
-	>
-	extends DefaultReflexAttributes<GDom, GComponent>,
-	DOMAttributes<GDom>
+	<GDom extends Element = Element>
+	extends DefaultReflexAttributes<GDom>, DOMAttributes<GDom>
 {
 	// Standard HTML Attributes
 	accept?: string;
@@ -557,11 +552,8 @@ export interface HTMLAttributes
 // ----------------------------------------------------------------------------- SVG ATTRIBUTES
 
 export interface SVGAttributes
-	<
-		GDom extends Element = SVGElement,
-		GComponent extends ComponentInstance = ComponentInstance,
-	>
-	extends HTMLAttributes<GDom, GComponent> {
+	<GDom extends Element = SVGElement>
+	extends HTMLAttributes<GDom> {
 	accentHeight?: number | string;
 	accumulate?: 'none' | 'sum';
 	additive?: 'replace' | 'sum';

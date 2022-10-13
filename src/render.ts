@@ -1,4 +1,4 @@
-import { dispatch, _VNodeTypes_ROOT, IAbstractDocument, IAbstractElement, VNode } from "./common";
+import { _dispatch, _VNodeTypes_ROOT, IAbstractDocument, IAbstractElement, VNode } from "./common";
 import { diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
 import { createVNode } from "./jsx";
 import { ComponentInstance } from "./component";
@@ -29,7 +29,7 @@ function updateDirtyComponents () {
 	for ( let i = 0; i < total; ++i ) {
 		const component = componentsToUpdate[ i ]
 		diffNode( component.vnode, component.vnode )
-		dispatch(component._afterRenderHandlers, component, [])
+		_dispatch( component._afterRenderHandlers, component )
 		component._afterRenderHandlers = []
 		component._isDirty = false
 		// if ( component._affectedNodesByStates.length == 0 )

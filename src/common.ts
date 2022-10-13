@@ -129,20 +129,19 @@ export interface VNode <
 	props			:GProps
 	key				:string	// Allow numbers ?
 	dom				?:RenderDom
+	component		?:GComponent
+
+	// Private members (will be mangled)
 	_nodeEnv		?:INodeEnv
 	_keys			?:Map<string, VNode>
-	_ref			?:IRefOrRefs<GDom, GComponent>
-	_component		?:ComponentInstance
+	_ref			?:IRefOrRefs<GDom>
 	_keep			?:boolean
 	_id				?:number
 }
 
-export interface DefaultReflexBaseProps<
-	GDom extends Element = Element,
-	GComponent extends ComponentInstance = ComponentInstance
-> {
+export interface DefaultReflexBaseProps<GDom extends Element = Element> {
 	key			?:string;
-	ref			?:IRefOrRefs<GDom, GComponent>
+	ref			?:IRefOrRefs<GDom>
 	innerHTML	?:string
 	children	?:any[]
 }
@@ -150,7 +149,7 @@ export interface DefaultReflexBaseProps<
 export interface DefaultReflexProps<
 	GDom extends Element = Element,
 	GComponent extends ComponentInstance = ComponentInstance,
-> extends DefaultReflexBaseProps<GDom, GComponent> {
+> extends DefaultReflexBaseProps<GDom> {
 	// Children are created by h here, so it's VNode, not string or number
 	children	?:VNode<any>[]
 }
@@ -160,8 +159,6 @@ export interface HasClassProp {
 	class ?: ClassNameItem | ClassNameItem[]
 }
 
-export function dispatch ( handlers:Function[], scope:any, args:any[] ) {
-	const total = handlers.length
-	for ( let i = 0; i < total; ++i )
-		handlers[ i ].apply( scope, args )
+export function _dispatch ( handlers:Function[], scope:any ) {
+	handlers.forEach( h => h.apply(scope) )
 }

@@ -1,63 +1,41 @@
 import { ComponentFunction, VNode, DefaultReflexProps } from "./common";
-import { ComponentInstance } from "./component";
 
 // ----------------------------------------------------------------------------- REF
 
-export interface IRef <
-	GDom extends Element = Element,
-	GComponent extends ComponentInstance = ComponentInstance,
-> {
+export interface IRef <GDom extends Element = Element> {
 	dom				:GDom
-	component		:GComponent
 }
 
-export interface IInternalRef <
-	GDom extends Element = Element,
-	GComponent extends ComponentInstance = ComponentInstance,
-> extends IRef {
+export interface IInternalRef <GDom extends Element = Element> extends IRef {
 	_setFromVNode	: ( vnode:VNode<DefaultReflexProps, ComponentFunction> ) => void
 }
 
-export function ref <
-	GDom extends Element = Element,
-	GComponent extends ComponentInstance = ComponentInstance,
-> ():IRef<GDom, GComponent> {
-	const value:IInternalRef<GDom, GComponent> = {
-		component: null,
+export function ref <GDom extends Element = Element> ():IRef<GDom> {
+	const value:IInternalRef<GDom> = {
 		dom: null,
-		_setFromVNode ( vNode:VNode<DefaultReflexProps, ComponentFunction, GDom, GComponent> ) {
+		_setFromVNode ( vNode:VNode<DefaultReflexProps, ComponentFunction, GDom> ) {
 			value.dom 		= vNode.dom as GDom;
-			value.component = vNode._component as GComponent;
 		}
 	}
-	return value as never as IRef<GDom, GComponent>;
+	return value as never as IRef<GDom>;
 }
 
 // ----------------------------------------------------------------------------- REFS
 
-export interface IRefs <
-	GDom extends Element = Element,
-	GComponent extends ComponentInstance = ComponentInstance,
-> {
-	list 	: IRef<GDom, GComponent>[]
+export interface IRefs <GDom extends Element = Element> {
+	list 	: IRef<GDom>[]
 	atIndex	: (index:number) => any
 }
 
-export interface IInternalRefs <
-	GDom extends Element = Element,
-	GComponent extends ComponentInstance = ComponentInstance,
-> extends IRefs {
-	_setFromVNode	: ( vnode:VNode<DefaultReflexProps, ComponentFunction> ) => void
+export interface IInternalRefs <GDom extends Element = Element> extends IRefs {
+	_setFromVNode	: ( vNode:VNode<DefaultReflexProps, ComponentFunction> ) => void
 }
 
-export function refs <
-	GDom extends Element = Element,
-	GComponent extends ComponentInstance = ComponentInstance,
-> ():IRefs<GDom, GComponent> {
+export function refs <GDom extends Element = Element> ():IRefs<GDom> {
 	let _counter = 0;
 	let _list = []
 
-	function registerAtIndex ( vNode, index ) {
+	function registerAtIndex ( vNode:VNode, index ) {
 		// Delete
 		if ( !vNode.dom )
 			_list = _list.filter( (_, i) => i !== index )
@@ -66,13 +44,11 @@ export function refs <
 		// else if ( !list[index] || list[index].dom != vNode.dom ) {
 		else {
 			_list[ index ] = {
-				dom 		: vNode.dom as GDom,
-				component	: vNode._component as GComponent,
+				dom 		: vNode.dom as GDom
 			}
 		}
-
 	}
-	const value:IInternalRefs<GDom, GComponent> = {
+	const value:IInternalRefs<GDom> = {
 		get list () { return _list },
 		_setFromVNode ( vNode:VNode<DefaultReflexProps, ComponentFunction> ) {
 			// Set vNode id from counter.
@@ -92,14 +68,11 @@ export function refs <
 			}
 		}
 	}
-
-	return value as never as IRefs<GDom, GComponent>;
+	return value as never as IRefs<GDom>;
 }
 
-export type IRefOrRefs <
-	GDom extends Element = Element,
-	GComponent extends ComponentInstance = ComponentInstance,
-> = IRef<GDom, GComponent> | IRefs<GDom, GComponent>
+
+export type IRefOrRefs <GDom extends Element = Element> = IRef<GDom> | IRefs<GDom>
 
 // FIXME : When using web components with original dom not from Reflex
 // FIXME : Move it in module web-components ?

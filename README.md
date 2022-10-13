@@ -6,7 +6,8 @@ __Reflex__ is a tiny and fast virtual-dom UI lib with __factory based functional
 - 🏎 Highly performant ( [Proof](#performances) )
 - 🔋 Batteries included with [factory extensions](#factory-extensions)
 - 🤓 Typed JSX
-- 🍰 Easier to learn
+- 🍰 Easy to learn
+- 🤘️ HMR Support for Vite
 
 [![npm](https://img.shields.io/npm/v/@zouloux/reflex.svg)](http://npm.im/@zouloux/reflex)
 ![](https://img.shields.io/badge/Build-passing-success)

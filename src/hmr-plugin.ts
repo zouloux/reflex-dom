@@ -1,4 +1,9 @@
 
+// TODO : It does not work every time
+// TODO : <App><Child /></App>
+// TODO : Edit Child, it works, edit App, it works, edit Child again, does not work
+// TODO : Child function is maybe cached into App or maybe reflex optimizer (same props) ?
+
 // Import reflex lib from module and not helper, easier
 const injectedCodeBefore = (reflexLibImport, reflexRefreshLibImport) => `
 // Injected code - Reflex Refresh plugin

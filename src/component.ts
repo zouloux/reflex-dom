@@ -1,5 +1,5 @@
 import {
-	dispatch, _VNodeTypes_CONTAINERS, ComponentFunction, LifecycleHandler,
+	_dispatch, _VNodeTypes_CONTAINERS, ComponentFunction, LifecycleHandler,
 	MountHandler, RenderFunction, VNode
 } from "./common";
 
@@ -10,22 +10,22 @@ export interface ComponentInstance <GProps extends object = object> { // FIXME :
 	name				:string
 	isMounted			:boolean;
 	children			?:VNode
+	shouldUpdate		?: (newProps:GProps, oldProps:GProps) => boolean
+
+	// Private members, will be mangled
 	_isDirty			?:boolean
 	_props				?:GProps
 	_render				:RenderFunction
 	_mountHandlers		:MountHandler[]
 	_renderHandlers		:LifecycleHandler[]
 	_unmountHandlers	:LifecycleHandler[]
-	// _affectedNodesByStates	:VNode[][]
 	_isRendering			:boolean
 	_afterRenderHandlers	:any[]
-	_componentAPI 		:IComponentAPI<GProps>
 	_defaultProps		?:Partial<GProps>
 }
 
 export interface IComponentAPI <GProps extends object = object> {
 	// defaultProps		?:Partial<GProps>
-	shouldUpdate		?: (newProps:GProps, oldProps:GProps) => boolean
 }
 
 // ----------------------------------------------------------------------------- CREATE COMPONENT INSTANCE
@@ -49,8 +49,6 @@ export function _createComponentInstance
 		_afterRenderHandlers: [],
 		//_affectedNodesByStates: [],
 		_isRendering: false,
-		// Component API is given to every functional or factory component
-		_componentAPI: {}
 	}
 }
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
@@ -59,7 +57,7 @@ export function _mountComponent ( component:ComponentInstance ) {
 	// Call every mount handler and store returned unmount handlers
 	const total = component._mountHandlers.length
 	for ( let i = 0; i < total; ++i ) {
-		const mountedReturn = component._mountHandlers[ i ].apply( component, [] );
+		const mountedReturn = component._mountHandlers[ i ].apply( component );
 		if ( typeof mountedReturn === "function" )
 			component._unmountHandlers.push( mountedReturn )
 	}
@@ -69,10 +67,10 @@ export function _mountComponent ( component:ComponentInstance ) {
 }
 
 export function _unmountComponent ( component:ComponentInstance ) {
-	dispatch(component._unmountHandlers, component, [])
+	_dispatch(component._unmountHandlers, component)
 	component.isMounted = false;
 	// Cut component branch from virtual node to allow GC to destroy component
-	delete component.vnode._component
+	delete component.vnode.component
 	delete component.vnode
 	// FIXME : Do we need to do this ? Is it efficient or is it just noise ?
 	// delete component.vnode
@@ -81,7 +79,6 @@ export function _unmountComponent ( component:ComponentInstance ) {
 	// delete component._unmountHandlers;
 	// delete component._afterRenderHandlers;
 	// delete component.methods
-	// delete component._componentAPI
 	// delete component._observables
 	// TODO : Remove all listeners ?
 }
@@ -102,7 +99,7 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 			// 	})
 			// }
 		}
-		if ( node._component )
-			doMount ? _mountComponent( node._component ) : _unmountComponent( node._component )
+		if ( node.component )
+			doMount ? _mountComponent( node.component ) : _unmountComponent( node.component )
 	}
 }
