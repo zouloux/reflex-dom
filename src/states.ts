@@ -1,6 +1,6 @@
 import { diffNode, getCurrentComponent } from "./diff";
 import { invalidateComponent } from "./render";
-import { _VNodeTypes_STATE, VNode, VNodeTypes } from "./common";
+import { _VNodeTypes_STATE, VNodeTypes } from "./common";
 
 // ----------------------------------------------------------------------------- INITIAL VALUE
 
@@ -16,7 +16,7 @@ export type IState<GType> = {
 	value:GType
 	set ( newValue:TInitialValue<GType> ):Promise<void>
 	readonly type:VNodeTypes
-	pushInvalidatedNode ( node:VNode ):void
+	// pushInvalidatedNode ( node:VNode ):void
 	toString():string
 }
 
@@ -37,13 +37,13 @@ export function state <GType> (
 	// Get current extended component
 	const component = getCurrentComponent()
 
-	let invalidatedNodes:VNode[] = []
-
+	// let invalidatedNodes:VNode[] = []
 	// const affectedNodesIndex = component._affectedNodesByStates.push([]) - 1
 
 	// Set value and invalidate or render component
-	function _setAndInvalidate ( newValue:GType, resolve?:Function ) {
-		initialValue = stateOptions.filter ? stateOptions.filter( newValue, initialValue as GType ) : newValue
+	function _setAndInvalidate ( newValue:GType, resolve:Function ) {
+		// Filter value
+		const betweenValue = stateOptions.filter ? stateOptions.filter( newValue, initialValue as GType ) : newValue
 
 /*		if ( stateOptions.atomic ) {
 			console.log('Invalidated nodes:')
@@ -55,13 +55,22 @@ export function state <GType> (
 			resolve?.();
 		}*/
 
-		if ( stateOptions.directInvalidation ) {
-			diffNode( component.vnode, component.vnode )
-			resolve?.();
-		}
+		// If state didn't change after filter, do nothing a resolve
+		if ( betweenValue === initialValue )
+			resolve()
 		else {
-			resolve && component._afterRenderHandlers.push( resolve )
-			invalidateComponent( component )
+			// Store new state
+			initialValue = betweenValue
+			// Direct invalidation
+			if ( stateOptions.directInvalidation ) {
+				diffNode( component.vnode, component.vnode )
+				resolve();
+			}
+			// Invalidate asynchronously
+			else {
+				component._afterRenderHandlers.push( resolve )
+				invalidateComponent( component )
+			}
 		}
 	}
 
@@ -82,10 +91,10 @@ export function state <GType> (
 			// }
 			return initialValue as GType
 		},
-		pushInvalidatedNode ( node:VNode ) {
-			invalidatedNodes.push( node )
-		},
-		set value ( newValue:GType ) { _setAndInvalidate( newValue ) },
+		// pushInvalidatedNode ( node:VNode ) {
+		// 	invalidatedNodes.push( node )
+		// },
+		set value ( newValue:GType ) { _setAndInvalidate( newValue, () => {} ) },
 		set: ( newValue:TInitialValue<GType> ) => new Promise(
 			resolve => _setAndInvalidate( _prepareInitialValue<GType>( newValue, initialValue as GType ), resolve )
 		),

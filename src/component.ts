@@ -40,14 +40,14 @@ export function _createComponentInstance
 		vnode,
 		name: (vnode.value as RenderFunction).name,
 		isMounted: false,
+
+		_props: {},
 		_isDirty: false,
 		_render: vnode.value as RenderFunction,
 		_mountHandlers: [],
 		_renderHandlers: [],
 		_unmountHandlers: [],
-		_props: {},
 		_afterRenderHandlers: [],
-		//_affectedNodesByStates: [],
 		_isRendering: false,
 	}
 }
