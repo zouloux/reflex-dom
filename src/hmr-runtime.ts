@@ -27,7 +27,9 @@ const _allReflexComponents = {};
  */
 export function enableReflexRefresh(meta, cloneVNode, diffNode, recursivelyUpdateMountState) {
 
-	const getComponentKey = name => `${meta.url}/${name}`
+	// Compute component key with module url
+	// Do not take cache busters with ?t= into account otherwise this will be useless
+	const getComponentKey = name => `${meta.url.split("?"[0])}/${name}`
 
 	// Will hook render on every functions into this module
 	// If a Reflex component is detected, this component will be registered for fast refresh
@@ -41,7 +43,12 @@ export function enableReflexRefresh(meta, cloneVNode, diffNode, recursivelyUpdat
 	}
 
 	// Register Reflex components into this module
-	import( meta.url ).then( registerReflexComponents );
+	// Once by module here, because we will re-register on hot replacement later
+	const moduleKey = getComponentKey('$module$')
+	if (!(moduleKey in _allReflexComponents)) {
+		_allReflexComponents[ moduleKey ] = true;
+		import(meta.url).then( registerReflexComponents );
+	}
 
 	// Accept hot module reloading for this module
 	return (module) => {
