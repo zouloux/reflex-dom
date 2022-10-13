@@ -14,7 +14,7 @@
 	},
 	"scripts": {
 		"reset": "rm -rf node_modules && npm i",
-		"clean": "rm -rf .parcel-cache dist docs",
+		"clean": "rm -rf .parcel-cache dist",
 		"build": "npm run clean && tsbundle build",
 		"dev": "parcel serve dev --no-source-maps",
 		"docs": "static-http ./docs/",
