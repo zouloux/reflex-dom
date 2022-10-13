@@ -83,6 +83,12 @@ export function _unmountComponent ( component:ComponentInstance ) {
 	// TODO : Remove all listeners ?
 }
 
+/**
+ * TODO : There is a bug on mounted( () => { this.vnode.dom })
+ * Dom is not ready, sometimes parent is not there (orphan child) ?
+ * Need to check and test this !
+ */
+
 export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 	if ( node.type > _VNodeTypes_CONTAINERS ) {
 		const total = node.props.children.length

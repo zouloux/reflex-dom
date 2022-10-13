@@ -110,7 +110,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 		return dom
 	else if ( newNode.type === _VNodeTypes_LIST ) {
 		// FIXME : Check ?
-		diffChildren( newNode, oldNode )
+		diffChildren( newNode, oldNode, nodeEnv )
 		return dom
 	}
 	// For typescript only, (FIXME : Check if removed from build)
