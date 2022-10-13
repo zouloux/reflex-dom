@@ -29,7 +29,7 @@ export function enableReflexRefresh(meta, cloneVNode, diffNode, recursivelyUpdat
 
 	// Compute component key with module url
 	// Do not take cache busters with ?t= into account otherwise this will be useless
-	const getComponentKey = name => `${meta.url.split("?"[0])}/${name}`
+	const getComponentKey = name => `${meta.url.split("?")[0]}/${name}`
 
 	// Will hook render on every functions into this module
 	// If a Reflex component is detected, this component will be registered for fast refresh
