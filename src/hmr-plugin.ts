@@ -1,37 +1,48 @@
 
 // Import reflex lib from module and not helper, easier
-const injectedCodeBefore = (reflexLibImport, reflexHMRLibImport) => `
-// Injected code - Reflehx HMR plugin
-import { cloneVNode, diffNode, recursivelyUpdateMountState } from "${reflexLibImport}"
-import { enableReflexRefresh } from "${reflexHMRLibImport}"
+const injectedCodeBefore = (reflexLibImport, reflexRefreshLibImport) => `
+// Injected code - Reflex Refresh plugin
+import { cloneVNode as __refreshDep1, diffNode as __refreshDep2, recursivelyUpdateMountState as __refreshDep3 } from "${reflexLibImport}"
+import { enableReflexRefresh } from "${reflexRefreshLibImport}"
 `;
 
+// For some reason, hot.accept() needs to be into module and cannot be called from runtime file
 const injectedCodeAfter = `
-// Injected Code - Reflex HMR plugin
+// Injected Code - Reflex Refresh plugin
 if ( import.meta.hot ) {
-	const __acceptViteHMR = enableReflexRefresh( import.meta, cloneVNode, diffNode, recursivelyUpdateMountState )
-	// hot.accept needs to be inside this module and cannot be inside runtime file
-	import.meta.hot.accept( __acceptViteHMR )
+	const __acceptViteRefresh = enableReflexRefresh( import.meta, __refreshDep1, __refreshDep2, __refreshDep3 )
+	import.meta.hot.accept( __acceptViteRefresh )
 }
 `
 
 export function reflexRefresh ( options ) {
+	let isProduction = false;
 	return {
 		name: 'reflexRefresh',
+		configResolved(config) {
+			isProduction = config.command === 'build' || config.isProduction;
+		},
 		async transform (code, id, options) {
 			if (
-				!/\.(t|j)sx?$/.test(id) ||
-				id.includes('node_modules') ||
-				id.includes('?worker')
+				// Do not use HMR in production
+				isProduction
+				// Only check jsx and tsx files
+				|| !/\.(t|j)sx?$/.test(id)
+				// Do not check files into node_modules
+				|| id.includes('node_modules')
+				// Do not check works
+				|| id.includes('?worker')
 			)
 				return;
 
+			// Target reflex libs for the runtime
 			const reflexLibImport = await this.resolve('@zouloux/reflex')
-			const reflexHMRLibImport = await this.resolve('@zouloux/reflex/hmr-runtime')
+			const reflexRefreshLibImport = await this.resolve('@zouloux/reflex/hmr-runtime')
 
+			// Inject imports and hot.accept
 			return {
 				code: (
-					injectedCodeBefore(reflexLibImport.id, reflexHMRLibImport.id)
+					injectedCodeBefore(reflexLibImport.id, reflexRefreshLibImport.id)
 					+ code
 					+ injectedCodeAfter
 				)
