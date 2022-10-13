@@ -1,12 +1,17 @@
 {
 	"name": "@zouloux/reflex",
 	"type": "module",
-	"version": "0.10.9",
+	"version": "0.10.10",
 	"description": "Reflex is a tiny 3kb virtual-dom library with factory based functional components.",
 	"main": "./dist/index.es2017.cjs",
 	"module": "./dist/index.es2020.mjs",
 	"unpkg": "./dist/reflex.es2017.min.js",
 	"types": "./dist/index.d.ts",
+	"exports": {
+		".": "./dist/index.es2020.mjs",
+		"./hmr-plugin": "./dist/hmr-plugin.es2020.mjs",
+		"./hmr-runtime": "./dist/hmr-runtime.es2020.mjs"
+	},
 	"scripts": {
 		"reset": "rm -rf node_modules && npm i",
 		"clean": "rm -rf .parcel-cache dist docs",
@@ -57,6 +62,16 @@
 				],
 				"input": "./src/renderToString.ts",
 				"filterGlob": "renderToString.*"
+			},
+			{
+				"input": "./src/hmr-plugin.ts",
+				"outName": "hmr-plugin",
+				"filterGlob": "hmr-plugin.*"
+			},
+			{
+				"input": "./src/hmr-runtime.ts",
+				"outName": "hmr-runtime",
+				"filterGlob": "hmr-runtime.*"
 			}
 		]
 	}
