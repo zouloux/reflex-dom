@@ -1,17 +1,17 @@
-import {
-	_dispatch, _VNodeTypes_CONTAINERS, ComponentFunction, LifecycleHandler,
-	MountHandler, RenderFunction, VNode
-} from "./common";
+import { _dispatch, ComponentFunction, LifecycleHandler, MountHandler, RenderFunction, VNode } from "./common";
+import { getCurrentComponent } from "./diff";
 
 // ----------------------------------------------------------------------------- TYPES
 
+type TShouldUpdate <GProps extends object = object> = (newProps:GProps, oldProps:GProps) => boolean
+
 export interface ComponentInstance <GProps extends object = object> { // FIXME : Generics ?
+	// FIXME : How to type component method's ?
 	vnode				:VNode<GProps, ComponentFunction>
 	name				:string
 	isMounted			:boolean;
 	children			?:VNode
-	shouldUpdate		?: (newProps:GProps, oldProps:GProps) => boolean
-
+	shouldUpdate		?:TShouldUpdate<GProps>
 	// Private members, will be mangled
 	_isDirty			?:boolean
 	_props				?:GProps
@@ -22,10 +22,6 @@ export interface ComponentInstance <GProps extends object = object> { // FIXME :
 	_isRendering			:boolean
 	_afterRenderHandlers	:any[]
 	_defaultProps		?:Partial<GProps>
-}
-
-export interface IComponentAPI <GProps extends object = object> {
-	// defaultProps		?:Partial<GProps>
 }
 
 // ----------------------------------------------------------------------------- CREATE COMPONENT INSTANCE
@@ -40,7 +36,7 @@ export function _createComponentInstance
 		vnode,
 		name: (vnode.value as RenderFunction).name,
 		isMounted: false,
-
+		// Private members, will be mangled
 		_props: {},
 		_isDirty: false,
 		_render: vnode.value as RenderFunction,
@@ -51,6 +47,15 @@ export function _createComponentInstance
 		_isRendering: false,
 	}
 }
+
+/**
+ * Should update extension
+ * TODO : Add to doc
+ */
+export function shouldUpdate <GProps extends object = object> ( handler:TShouldUpdate<GProps> ) {
+	getCurrentComponent().shouldUpdate = handler
+}
+
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 
 export function _mountComponent ( component:ComponentInstance ) {
@@ -90,22 +95,13 @@ export function _unmountComponent ( component:ComponentInstance ) {
  */
 
 export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
-	if ( node.type > _VNodeTypes_CONTAINERS ) {
+	if ( node.type === 7/*COMPONENTS*/ ) {
+		recursivelyUpdateMountState( node.component.children, doMount )
+		doMount ? _mountComponent( node.component ) : _unmountComponent( node.component )
+	}
+	else if ( node.type > 4/*CONTAINERS*/ ) {
 		const total = node.props.children.length
-		for ( let i = 0; i < total; ++i ) {
-			const child = node.props.children[ i ]
-			recursivelyUpdateMountState( child, doMount )
-			// FIXME : Is it necessary ?
-			// Remove all event listeners
-			// if ( child.type === VNodeTypes.ELEMENT ) {
-			// 	const listeners = child.dom[ _DOM_PRIVATE_LISTENERS_KEY ]
-			// 	Object.keys( listeners ).forEach( event => {
-			// 		console.log( event )
-			// 		child.dom.removeEventListener
-			// 	})
-			// }
-		}
-		if ( node.component )
-			doMount ? _mountComponent( node.component ) : _unmountComponent( node.component )
+		for ( let i = 0; i < total; ++i )
+			recursivelyUpdateMountState( node.props.children[ i ], doMount )
 	}
 }

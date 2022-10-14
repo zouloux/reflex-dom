@@ -1,11 +1,5 @@
 import {
 	_dispatch,
-	_VNodeTypes_COMPONENT,
-	_VNodeTypes_CONTAINERS,
-	_VNodeTypes_ELEMENT,
-	_VNodeTypes_LIST,
-	_VNodeTypes_NULL,
-	_VNodeTypes_TEXT,
 	ComponentFunction,
 	ComponentReturn,
 	INodeEnv,
@@ -39,10 +33,17 @@ const _svgNS = "http://www.w3.org/2000/svg"
 
 // We store current component in factory phase for hooks
 let _currentComponent:ComponentInstance = null
-export function getCurrentComponent ():ComponentInstance {
+
+/**
+ * Get current component instance.
+ * TODO : Add to doc
+ */
+export function getCurrentComponent
+	<GComponent extends ComponentInstance = ComponentInstance>
+	():GComponent {
 	if ( !_currentComponent && process.env.NODE_ENV !== "production" )
 		throw new Error(`Reflex - getHookedComponent // Cannot use a factory hook outside of a factory component.`)
-	return _currentComponent
+	return _currentComponent as GComponent
 }
 
 // ----------------------------------------------------------------------------- COMMON
@@ -87,16 +88,16 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 	let dom:RenderDom
 	if ( oldNode ) {
 		dom = oldNode.dom
-		if ( newNode.type === _VNodeTypes_TEXT && oldNode.value !== newNode.value )
+		if ( newNode.type === 1/*TEXT*/ && oldNode.value !== newNode.value )
 			dom.nodeValue = newNode.value as string
 	}
 	else {
 		const document = nodeEnv.document as Document
-		if ( newNode.type === _VNodeTypes_NULL )
+		if ( newNode.type === 0/*NULL*/ )
 			dom = document.createComment('')
-		else if ( newNode.type === _VNodeTypes_TEXT )
+		else if ( newNode.type === 1/*TEXT*/ )
 			dom = document.createTextNode( newNode.value as string )
-		else if ( newNode.type === _VNodeTypes_ELEMENT ) {
+		else if ( newNode.type === 6/*ELEMENTS*/ ) {
 			if ( newNode.value as string === "svg" )
 				nodeEnv.isSVG = true
 			dom = (
@@ -106,11 +107,11 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 			)
 		}
 	}
-	if ( newNode.type === _VNodeTypes_TEXT || newNode.type === _VNodeTypes_NULL )
+	if ( newNode.type === 1/*TEXT*/ || newNode.type === 0/*NULL*/ )
 		return dom
-	else if ( newNode.type === _VNodeTypes_LIST ) {
+	else if ( newNode.type === 8/*LIST*/ ) {
 		// FIXME : Check ?
-		diffChildren( newNode, oldNode, nodeEnv )
+		_diffChildren( newNode, oldNode, nodeEnv )
 		return dom
 	}
 	// For typescript only, (FIXME : Check if removed from build)
@@ -227,7 +228,7 @@ let previousParentContainerDom:Element
  * @param oldParentNode
  * @param nodeEnv
  */
-export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEnv?:INodeEnv ) {
+export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEnv?:INodeEnv ) {
 	// console.log( "_diffChildren", newParentNode, oldParentNode );
 	// TODO : DOC
 	let parentDom = (newParentNode.dom ?? previousParentContainerDom) as Element
@@ -248,7 +249,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEn
 	// And this list is the only child of its parent node
 	// We can take a shortcut and clear dom with innerHTML
 	if (
-		newParentNode.type === _VNodeTypes_LIST
+		newParentNode.type === 8/*LIST*/
 		&& oldParentNode
 		&& previousParentContainer.props.children.length === 0
 		&& newChildren.length === 0
@@ -273,7 +274,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEn
 		// To be able to detect moves or if just collapsing because a top sibling
 		// has been removed
 		const newChildNode = newChildren[ i ]
-		if (!newChildNode)
+		if ( !newChildNode )
 			continue;
 		let oldChildNode:VNode = oldChildren[ i ]
 		if (
@@ -292,7 +293,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEn
 			&& ( oldChildNode = oldParentKeys?.get( newChildNode.key ) )
 			&& oldChildNode.type === newChildNode.type
 			&& (
-				newChildNode.type !== _VNodeTypes_ELEMENT
+				newChildNode.type !== 6/*ELEMENTS*/
 				|| oldChildNode.value === newChildNode.value
 			)
 		) {
@@ -323,7 +324,7 @@ export function diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEn
 			&& ( oldChildNode = oldChildren[ i ] )
 			&& oldChildNode.type === newChildNode.type
 			&& (
-				newChildNode.type !== _VNodeTypes_ELEMENT
+				newChildNode.type !== 6/*ELEMENTS*/
 				|| oldChildNode.value === newChildNode.value
 			)
 		) {
@@ -412,10 +413,10 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 	// Create / update DOM element for those node types
 	if (
 		// FIXME : Create a set of number ? Or bitwise checking ? check perfs
-		newNode.type === _VNodeTypes_TEXT
-		|| newNode.type === _VNodeTypes_ELEMENT
-		// || newNode.type === _VNodeTypes_LIST
-		|| newNode.type === _VNodeTypes_NULL
+		newNode.type === 1/*TEXT*/
+		|| newNode.type === 6/*ELEMENTS*/
+		// || newNode.type === 8/*LIST*/
+		|| newNode.type === 0/*NULL*/
 		// || newNode.type === _VNodeTypes_STATE
 	) {
 		// Clone node env for children, to avoid env to propagate on siblings
@@ -424,7 +425,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 		newNode.dom = _diffElement( newNode, oldNode, nodeEnv )
 	}
 	// Diff component node
-	else if ( newNode.type === _VNodeTypes_COMPONENT ) {
+	else if ( newNode.type === 7/*COMPONENTS*/ ) {
 		// Transfer component instance from old node to new node
 		let component:ComponentInstance = oldNode?.component
 		// Check if we need to instantiate component
@@ -485,7 +486,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 	// Update ref on node
 	updateNodeRef( newNode )
 	// Now that component and its children are ready
-	if ( newNode.type === _VNodeTypes_COMPONENT ) {
+	if ( newNode.type === 7/*COMPONENTS*/ ) {
 		// If component is not mounted yet, mount it recursively
 		if ( !newNode.component.isMounted )
 			recursivelyUpdateMountState( newNode, true )
@@ -494,6 +495,6 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 			_dispatch( newNode.component._renderHandlers, newNode.component )
 	}
 	// Diff children for node that are containers and not components
-	else if ( newNode.type > _VNodeTypes_CONTAINERS )
-		diffChildren( newNode, oldNode, nodeEnv )
+	else if ( newNode.type > 4/*CONTAINERS*/ )
+		_diffChildren( newNode, oldNode, nodeEnv )
 }

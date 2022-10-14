@@ -1,4 +1,3 @@
-import { _VNodeTypes_ELEMENT } from "./common";
 import { getCurrentComponent } from "./diff";
 
 export function injectDefaults <GProps> ( props:GProps, defaults:Partial<GProps> ) {
@@ -53,7 +52,7 @@ export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) 
 					return !(
 						c.type === d.type
 						&& (
-							c.type !== _VNodeTypes_ELEMENT
+							c.type !== 6/*ELEMENT*/
 							|| c.value === d.value
 						)
 					)

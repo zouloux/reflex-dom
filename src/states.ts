@@ -1,6 +1,6 @@
 import { diffNode, getCurrentComponent } from "./diff";
 import { invalidateComponent } from "./render";
-import { _VNodeTypes_STATE, VNodeTypes } from "./common";
+import { VNodeTypes } from "./common";
 
 // ----------------------------------------------------------------------------- INITIAL VALUE
 
@@ -41,11 +41,12 @@ export function state <GType> (
 	// const affectedNodesIndex = component._affectedNodesByStates.push([]) - 1
 
 	// Set value and invalidate or render component
-	function _setAndInvalidate ( newValue:GType, resolve:Function ) {
+	function _setAndInvalidate ( newValue:GType, resolve:Function, forceUpdate = false ) {
 		// Filter value
 		const betweenValue = stateOptions.filter ? stateOptions.filter( newValue, initialValue as GType ) : newValue
 
-/*		if ( stateOptions.atomic ) {
+		/*
+		if ( stateOptions.atomic ) {
 			console.log('Invalidated nodes:')
 			invalidatedNodes.forEach( n => console.log(n))
 			invalidatedNodes.map( node => {
@@ -56,7 +57,7 @@ export function state <GType> (
 		}*/
 
 		// If state didn't change after filter, do nothing a resolve
-		if ( betweenValue === initialValue )
+		if ( !forceUpdate && betweenValue === initialValue )
 			resolve()
 		else {
 			// Store new state
@@ -95,11 +96,14 @@ export function state <GType> (
 		// 	invalidatedNodes.push( node )
 		// },
 		set value ( newValue:GType ) { _setAndInvalidate( newValue, () => {} ) },
-		set: ( newValue:TInitialValue<GType> ) => new Promise(
-			resolve => _setAndInvalidate( _prepareInitialValue<GType>( newValue, initialValue as GType ), resolve )
+		set: ( newValue:TInitialValue<GType>, forceUpdate = false ) => new Promise(
+			resolve => _setAndInvalidate(
+				_prepareInitialValue<GType>( newValue, initialValue as GType ),
+				resolve, forceUpdate
+			)
 		),
 		// changed() knows if it's a state
-		get type () { return _VNodeTypes_STATE as VNodeTypes },
+		get type () { return 3/*STATE*/ as VNodeTypes },
 		// Use state as a getter without .value
 		toString () { return stateObject.value + '' }
 	}

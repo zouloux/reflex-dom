@@ -1,5 +1,5 @@
 import { IRefOrRefs } from "./ref";
-import { ComponentInstance, IComponentAPI } from "./component";
+import { ComponentInstance } from "./component";
 import { ClassNameItem } from "./jsx-types";
 
 // ----------------------------------------------------------------------------- DOCUMENT INTERFACE
@@ -60,7 +60,7 @@ export type RenderDom = Element | Text | Comment
 
 // FIXME : Cannot be VNode[] in current implementation.
 // FIXME : Cannot be string in current implementation.
-export type RenderFunction <GProps extends object = object> = ( props?:GProps, componentAPI?:IComponentAPI ) => VNode
+export type RenderFunction <GProps extends object = object> = ( props?:GProps ) => VNode
 export type ComponentReturn <GProps extends object = object> = RenderFunction<GProps> | VNode
 export type FactoryComponent <GProps extends object = object> = ( props?:GProps ) => RenderFunction
 export type ComponentFunction <GProps extends object = object> = ( RenderFunction<GProps> | FactoryComponent<GProps> ) & TComponentFunctionProperties
@@ -76,27 +76,27 @@ export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler>
 // export const enum VNodeTypes {
 // 	TEXT		= 1,
 // 	NULL		= 0,
-// 	_CONTAINERS = 4, // next are containers
+// 	_CONTAINERS	= 4 // next are containers
 // 	ROOT		= 5,
 // 	ELEMENT		= 6,
 // 	COMPONENT	= 7,
 // 	LIST		= 8,
 // }
 
-export const _VNodeTypes_NULL = 0
-export const _VNodeTypes_TEXT = 1
-// export const _VNodeTypes_BOOLEAN = 2
-export const _VNodeTypes_STATE = 3
-export const _VNodeTypes_CONTAINERS = 4
-export const _VNodeTypes_ROOT = 5
-export const _VNodeTypes_ELEMENT = 6
-export const _VNodeTypes_COMPONENT = 7
-export const _VNodeTypes_LIST = 8
+// All VNode types are inlined manually with a comment.
+// No way to inline automatically with TS for now.
+const _VNodeTypes_NULL = 0
+const _VNodeTypes_TEXT = 1
+const _VNodeTypes_STATE = 3
+const _VNodeTypes_CONTAINERS = 4
+const _VNodeTypes_ROOT = 5
+const _VNodeTypes_ELEMENT = 6
+const _VNodeTypes_COMPONENT = 7
+const _VNodeTypes_LIST = 8
 
 export type VNodeTypes = (
 	typeof _VNodeTypes_NULL |
 	typeof _VNodeTypes_TEXT |
-	// typeof _VNodeTypes_BOOLEAN |
 	typeof _VNodeTypes_STATE |
 	typeof _VNodeTypes_CONTAINERS |
 	typeof _VNodeTypes_ROOT |
@@ -143,7 +143,7 @@ export interface DefaultReflexBaseProps<GDom extends Element = Element> {
 	key			?:string;
 	ref			?:IRefOrRefs<GDom>
 	innerHTML	?:string
-	children	?:any[]
+	children	?:any|any[]
 }
 
 export interface DefaultReflexProps<

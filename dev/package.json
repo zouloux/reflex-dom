@@ -1,6 +1,7 @@
 {
 	"name" : "reflex-dev",
 	"source" : [
-		"./index.html"
+		"./index.html",
+		"./3-stateful-list-demo/index.html"
 	]
 }

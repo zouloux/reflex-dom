@@ -38,39 +38,41 @@ export interface DefaultReflexAttributes
 	<GDom extends Element = Element> extends DefaultReflexBaseProps<GDom>
 {
 	// Children here can be string or number
-	children	?:(ComponentChild|number|string)[]
+	children	?:ComponentChild|ComponentChild[]
 }
 
 // ----------------------------------------------------------------------------- EVENT TARGETS
 
-type TargetedEvent<Target extends EventTarget = EventTarget,
-	TypedEvent extends Event = Event> = Omit<TypedEvent, 'currentTarget'> & {
-	readonly currentTarget:Target;
-};
+type TargetedEvent
+	<
+		Target extends EventTarget = EventTarget,
+		TypedEvent extends Event = Event
+	>
+	= TypedEvent
+
+// type TargetedEvent
+// 	<
+// 		Target extends EventTarget = EventTarget,
+// 		TypedEvent extends Event = Event
+// 	>
+// 	= Omit<TypedEvent, 'currentTarget'> & {
+// 		readonly currentTarget:Target;
+// 	};
 
 type TargetedAnimationEvent<Target extends Element> = TargetedEvent<Target, AnimationEvent>;
 type TargetedClipboardEvent<Target extends Element> = TargetedEvent<Target, ClipboardEvent>;
 type TargetedCompositionEvent<Target extends Element> = TargetedEvent<Target, CompositionEvent>;
-type TargetedDragEvent<Target extends Element>
-	= TargetedEvent<Target, DragEvent>;
-type TargetedFocusEvent<Target extends Element>
-	= TargetedEvent<Target, FocusEvent>;
-type TargetedKeyboardEvent<Target extends Element>
-	= TargetedEvent<Target, KeyboardEvent>;
-type TargetedMouseEvent<Target extends Element>
-	= TargetedEvent<Target, MouseEvent>;
-type TargetedPointerEvent<Target extends Element>
-	= TargetedEvent<Target, PointerEvent>;
-type TargetedTouchEvent<Target extends Element>
-	= TargetedEvent<Target, TouchEvent>;
+type TargetedDragEvent<Target extends Element> = TargetedEvent<Target, DragEvent>;
+type TargetedFocusEvent<Target extends Element> = TargetedEvent<Target, FocusEvent>;
+type TargetedKeyboardEvent<Target extends Element> = TargetedEvent<Target, KeyboardEvent>;
+type TargetedMouseEvent<Target extends Element> = TargetedEvent<Target, MouseEvent>;
+type TargetedPointerEvent<Target extends Element> = TargetedEvent<Target, PointerEvent>;
+type TargetedTouchEvent<Target extends Element> = TargetedEvent<Target, TouchEvent>;
 type TargetedTransitionEvent<Target extends Element> = TargetedEvent<Target, TransitionEvent>;
-type TargetedUIEvent<Target extends Element>
-	= TargetedEvent<Target, UIEvent>;
-type TargetedWheelEvent<Target extends Element>
-	= TargetedEvent<Target, WheelEvent>;
+type TargetedUIEvent<Target extends Element> = TargetedEvent<Target, UIEvent>;
+type TargetedWheelEvent<Target extends Element> = TargetedEvent<Target, WheelEvent>;
 
-interface EventHandler<E extends TargetedEvent>
-{
+interface EventHandler<E extends TargetedEvent> {
 	/**
 	 * The `this` keyword always points to the DOM element the event handler
 	 * was invoked on. See: https://developer.mozilla.org/en-US/docs/Web/Guide/Events/Event_handlers#Event_handlers_parameters_this_binding_and_the_return_value
