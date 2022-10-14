@@ -96,7 +96,8 @@ export function _unmountComponent ( component:ComponentInstance ) {
 
 export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 	if ( node.type === 7/*COMPONENTS*/ ) {
-		recursivelyUpdateMountState( node.component.children, doMount )
+		if ( node.component )
+			recursivelyUpdateMountState( node.component.children, doMount )
 		doMount ? _mountComponent( node.component ) : _unmountComponent( node.component )
 	}
 	else if ( node.type > 4/*CONTAINERS*/ ) {
