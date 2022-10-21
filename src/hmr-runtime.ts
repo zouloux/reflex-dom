@@ -97,6 +97,11 @@ export function enableReflexRefresh(meta, cloneVNode, diffNode, recursivelyUpdat
 				// Target and clone old node
 				// We replace the component's function with the new module
 				const oldNode = oldFunction.vnode;
+				// FIXME : Check old node, sometime not valid
+				if (!oldNode) {
+					console.error(`Invalid old node`, name, newFunction, oldFunction)
+					return;
+				}
 				const newNode = cloneVNode( oldNode );
 				newNode.value = newFunction;
 				// Mount new node and replace old node dom

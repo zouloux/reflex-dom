@@ -65,6 +65,8 @@ export function _mountComponent ( component:ComponentInstance ) {
 		const mountedReturn = component._mountHandlers[ i ].apply( component );
 		if ( typeof mountedReturn === "function" )
 			component._unmountHandlers.push( mountedReturn )
+		else if ( Array.isArray( mountedReturn ) )
+			mountedReturn.filter( v => v ).map( h => component._unmountHandlers.push( h ) )
 	}
 	// Reset mount handlers, no need to keep them
 	component._mountHandlers = []

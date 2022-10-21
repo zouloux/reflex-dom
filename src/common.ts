@@ -66,7 +66,7 @@ export type FactoryComponent <GProps extends object = object> = ( props?:GProps 
 export type ComponentFunction <GProps extends object = object> = ( RenderFunction<GProps> | FactoryComponent<GProps> ) & TComponentFunctionProperties
 
 export type LifecycleHandler <GReturn = void> = (...rest) => GReturn
-export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler>
+export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler|((LifecycleHandler|boolean)[])>
 
 // ----------------------------------------------------------------------------- JSX H / CREATE ELEMENT
 
