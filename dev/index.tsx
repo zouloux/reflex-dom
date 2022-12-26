@@ -1,5 +1,5 @@
 import { h, ref, render, state, compute } from "../src";
-import { trackPerformances, setReflexDebug } from "../src/debug";
+import { trackPerformances } from "../src/debug";
 
 // -----------------------------------------------------------------------------
 
@@ -78,8 +78,6 @@ function PropsTest ( props ) {
 }
 
 // -----------------------------------------------------------------------------
-
-setReflexDebug( true )
 
 export function init () {
 	const p = trackPerformances("Root rendering")

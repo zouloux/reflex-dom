@@ -1,5 +1,6 @@
 import { h, state } from "../../src";
 import { colorList, createUID, foodList, pickRandom, rand } from "../common/demoHelpers";
+import { MemoryUsage, trackPerformances } from "../../src/debug";
 
 // ----------------------------------------------------------------------------- HELPERS
 
@@ -41,6 +42,7 @@ export function StatefulDemoApp () {
 	 * List state and reducers
 	 */
 
+
 	const list = state<IListItem[]>([])
 
 	const clearList = () => {
@@ -64,12 +66,14 @@ export function StatefulDemoApp () {
 
 	function addRandomItems ( total:number = 0 ) {
 		total ||= rand( 5 + list.value.length ) + 1
+		const t = trackPerformances(`Add ${total} items`)
 		for ( let i = 0; i < total; i++ ) {
 			addItem("bottom", {
 				id: createUID(),
 				name: pickRandom(colorList) + " " + pickRandom(foodList)
 			})
 		}
+		t()
 	}
 
 	function removeRandomItems () {
@@ -133,6 +137,7 @@ export function StatefulDemoApp () {
 	 */
 
 	return () => <div class="StatefulDemoApp">
+		<MemoryUsage /><br/>
 		{/* Optimized node, should render once */}
 		<Controls />
 		<h3>{ list.value.length } element{ list.value.length > 1 ? 's' : '' }</h3>

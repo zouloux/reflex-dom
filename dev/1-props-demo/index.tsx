@@ -1,11 +1,8 @@
 import { h, render } from "../../src";
-import { trackPerformances, setReflexDebug } from "../../src/debug";
+import { trackPerformances } from "../../src/debug";
 import { PropsDemoApp } from "./PropsDemoApp";
-import { injectCodeViewer } from "../common/codeViewerHelpers";
 
 // -----------------------------------------------------------------------------
-
-setReflexDebug( true )
 
 export function init () {
 	const p = trackPerformances("Root rendering")

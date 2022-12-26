@@ -1,5 +1,5 @@
 import { changed, h, mounted, render, state } from "../src";
-import { trackPerformances, setReflexDebug } from "../src/debug";
+import { trackPerformances } from "../src/debug";
 
 /**
  * TODO ...
@@ -56,8 +56,6 @@ function DevApp () {
 }
 
 // -----------------------------------------------------------------------------
-
-setReflexDebug( true )
 
 export function init () {
 	const p = trackPerformances("Root rendering")

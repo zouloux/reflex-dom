@@ -51,6 +51,10 @@ export type IState<GType> = {
 	dispose ():void
 }
 
+interface IComputeState<GType> extends IState<GType> {
+	update ():void
+}
+
 type TDisposeHandler = () => void
 
 export type TEffect = () => (void|TDisposeHandler) // FIXME : Promise<void>
@@ -114,6 +118,11 @@ export function state <GType> (
 	if ( _currentEffect )
 		_effects.add( _currentEffect )
 
+	function _addEffectDispose ( h ) {
+		if ( typeof h === "function" )
+			_effectDisposes.add( h )
+	}
+
 	// Update the state value and dispatch changes
 	async function updateValue ( newValue:GType, forceUpdate = false ) {
 		// FIXME : Throw error in dev mode
@@ -133,10 +142,8 @@ export function state <GType> (
 		// 		But for now it bugs and changed handlers cannot be batched
 		//		We need a custom handler for the batch clear handler
 		// TODO : DOC
-		for ( const effect of _effects ) {
-			const effectDispose = effect()
-			effectDispose && _effectDisposes.add( effectDispose )
-		}
+		for ( const effect of _effects )
+			_addEffectDispose( effect() )
 
 		// Then dispatch direct dom updates
 		for ( const node of _nodes )
@@ -232,7 +239,7 @@ export function state <GType> (
 
 		// @ts-ignore --- Private method for effect
 		// Add an effect dispose handler
-		_addEffectDispose ( h ) { _effectDisposes.add( h ) },
+		_addEffectDispose,
 		// @ts-ignore Private method for effect
 		// Remove an effect handler
 		_removeEffect ( h ) { _effects.delete(h) },
@@ -288,13 +295,13 @@ export function changed ( handler:TEffect ):TDisposeHandler {
 	})
 }
 
-export function compute <GType> ( handler:TComputed<GType> ) {
+
+export function compute <GType> ( handler:TComputed<GType> ):IComputeState<GType> {
 	// FIXME : Can't we optimize state initialisation here ?
-	const s = state<GType>()
+	const s:IComputeState<GType> = state<GType>() as IComputeState<GType>
 	// FIXME : Async effect should work here
-	const effectDispose = effect( () => {
-		s.set( handler() )
-	})
+	s.update = () => s.set( handler() )
+	const effectDispose = effect( s.update )
 	const { dispose } = s
 	s.dispose = unmounted(() => {
 		effectDispose()
