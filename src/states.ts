@@ -2,6 +2,12 @@ import { diffNode, getCurrentComponent, _getCurrentDiffingNode, _setDomAttribute
 import { _dispatch, VNode, VNodeTypes } from "./common";
 import { afterNextRender, ComponentInstance, unmounted } from "./component";
 
+/**
+ * TODO / A TESTER
+ * 	- Si on accède a un state dans un effect après un if, il faut vérifier que ça fonctionne bien
+ * 	- Vérifier que les disposes fonctionnent bien
+ */
+
 // ----------------------------------------------------------------------------- BATCHED TASK
 
 // Micro task polyfill
@@ -71,13 +77,17 @@ export interface IStateOptions<GType> {
 
 const _invalidateEffect = _createBatchedTask<TEffect>( effects => {
 	// FIXME : Which one is better ?
-	_dispatch( Array.from( effects ) )
-	// for ( const effect of effects )
-	// 	effect()
+	// _dispatch( Array.from( effects ) )
+	for ( const effect of effects )
+		effect()
 });
 
 // ----------------------------------------------------------------------------- INVALIDATE COMPONENT
 
+/**
+ * Invalidate a component instance.
+ * Will batch components to validated in a microtask to avoid unnecessary renders.
+ */
 export const invalidateComponent = _createBatchedTask<ComponentInstance>( components => {
 	for ( const component of components )
 		diffNode( component.vnode, component.vnode, undefined, true )
@@ -246,6 +256,27 @@ export function state <GType> (
 	}
 }
 
+// ----------------------------------------------------------------------------- EFFECTS / CHANGED
+
+function _disposeEffect ( associatedStates:IState<any>[] ) {
+	// TODO : Dispose + register in component for later disposal
+	// TODO : TEST + OPTIM
+	for ( const state of associatedStates )
+		// @ts-ignore
+		associatedStates._removeEffect( handler )
+}
+
+function _captureAssociatedStates () {
+	const associatedStates = Array.from( _currentStates )
+	// Clear current states list
+	_currentStates.clear()
+	return associatedStates
+}
+
+/**
+ * TODO : DOC + TEST
+ * @param handler
+ */
 export function effect ( handler:TEffect ):TDisposeHandler {
 	// Register this effect as running so all states can catch the handler
 	_currentEffect = handler
@@ -256,46 +287,42 @@ export function effect ( handler:TEffect ):TDisposeHandler {
 	// Clone associated states list to be able to
 	// FIXME 	How about a state listened in a condition ?
 	//  		It will not be into associatedStates ...
-	const associatedStates = Array.from( _currentStates )
-	// Clear current states list
-	_currentStates.clear()
+	const associatedStates = _captureAssociatedStates()
 	// If we had a handler returned by the effect
 	// Attach it to all associated states
-	if ( effectDispose ) for ( const state of associatedStates )
-		// @ts-ignore
-		state._addEffectDispose( effectDispose )
+	if ( effectDispose )
+		for ( const state of associatedStates )
+			// @ts-ignore
+			state._addEffectDispose( effectDispose )
 	_currentEffect = null
 	// Return a dispose function
 	// This function will remove the handler from all associated states
 	// If this effect is ran into a factory component, it will be automatically
 	// dispose when the component is unmounted.
-	return unmounted(() => {
-		// TODO : Dispose + register in component for later disposal
-		// TODO : TEST + OPTIM
-		for ( const state of associatedStates )
-			// @ts-ignore
-			associatedStates._removeEffect( handler )
-	})
+	return unmounted( () => _disposeEffect(associatedStates) )
 }
 
+/**
+ * TODO : DOC + TEST
+ * @param handler
+ */
 export function changed ( handler:TEffect ):TDisposeHandler {
 	let associatedStates
 	afterNextRender(() => {
-		associatedStates = Array.from( _currentStates )
 		_currentChanged = handler
 		handler()
+		associatedStates = _captureAssociatedStates()
 		_currentChanged = null
 	})
-	return unmounted(() => {
-		// TODO : Dispose + register in component for later disposal
-		// TODO : TEST + OPTIM
-		for ( const state of associatedStates )
-			// @ts-ignore
-			associatedStates._removeEffect( handler )
-	})
+	return unmounted( () => _disposeEffect(associatedStates) )
 }
 
+// ----------------------------------------------------------------------------- COMPUTE
 
+/**
+TODO : DOC + TEST
+ * @param handler
+ */
 export function compute <GType> ( handler:TComputed<GType> ):IComputeState<GType> {
 	// FIXME : Can't we optimize state initialisation here ?
 	const s:IComputeState<GType> = state<GType>() as IComputeState<GType>
