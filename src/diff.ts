@@ -1,16 +1,12 @@
 import {
-	_dispatch,
-	ComponentFunction,
-	ComponentReturn,
-	INodeEnv,
-	RenderDom,
-	RenderFunction,
-	VNode
+	_dispatch, ComponentFunction, ComponentReturn, INodeEnv,
+	RenderDom, RenderFunction, VNode
 } from "./common";
-import { cloneVNode } from "./jsx";
+import { cloneVNode, createVNode } from "./jsx";
 import { IInternalRef } from "./ref";
 import { _createComponentInstance, recursivelyUpdateMountState, ComponentInstance } from "./component";
-import { injectDefaults, shallowPropsCompare } from "./props";
+// import { injectDefaults, shallowPropsCompare } from "./props";
+import { state } from "./states";
 
 // ----------------------------------------------------------------------------- CONSTANTS
 
@@ -41,8 +37,8 @@ let _currentComponent:ComponentInstance = null
 export function getCurrentComponent
 	<GComponent extends ComponentInstance = ComponentInstance>
 	():GComponent {
-	if ( !_currentComponent && process.env.NODE_ENV !== "production" )
-		throw new Error(`Reflex - getHookedComponent // Cannot use a factory hook outside of a factory component.`)
+	// if ( !_currentComponent && process.env.NODE_ENV !== "production" )
+	// 	throw new Error(`Reflex - getHookedComponent // Cannot use a factory hook outside of a factory component.`)
 	return _currentComponent as GComponent
 }
 
@@ -77,6 +73,29 @@ function updateNodeRef ( node:VNode ) {
 
 // ----------------------------------------------------------------------------- DIFF ELEMENT
 
+// FIXME : Doc
+let _currentDiffingNode:VNode
+export const _getCurrentDiffingNode = () => _currentDiffingNode
+
+export function _setDomAttribute ( dom:Element, name:string, value:any ) {
+	// className as class for non jsx components
+	if ( name == "className" )
+		name = "class"
+	// Manage class as arrays
+	if ( name == "class" && Array.isArray( value ) )
+		value = value.flat( 1 ).filter( v => v !== true && !!v ).join(" ").trim()
+	// Manage style as object only
+	else if ( name == "style" && typeof value == "object" ) {
+		// https://esbench.com/bench/62ecb9866c89f600a5701b47
+		Object.keys( value ).forEach(
+			k => setStyle( (dom as HTMLElement).style, k, value[k] )
+		);
+		return;
+	}
+	// FIXME : What about checked / disabled / autoplay ...
+	dom.setAttribute( name, value === true ? "" : value )
+}
+
 /**
  * TODO DOC
  * @param newNode
@@ -84,19 +103,26 @@ function updateNodeRef ( node:VNode ) {
  * @param nodeEnv
  */
 export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) {
+	// if (newNode?.type === 3)
+	// 	console.log("DIFF ELEMENT", newNode, oldNode)
 	// TODO : DOC
 	let dom:RenderDom
 	if ( oldNode ) {
 		dom = oldNode.dom
 		if ( newNode.type === 1/*TEXT*/ && oldNode.value !== newNode.value )
 			dom.nodeValue = newNode.value as string
+		// States are diffed directly from state
 	}
 	else {
 		const document = nodeEnv.document as Document
 		if ( newNode.type === 0/*NULL*/ )
 			dom = document.createComment('')
-		else if ( newNode.type === 1/*TEXT*/ )
+		else if ( newNode.type === 1/*TEXT*/ || newNode.type === 3/*STATE*/ ) {
+			_currentDiffingNode = newNode
+			// If newNode is a state, createTextNode will call .toString() on the state
+			// which will track the dependency
 			dom = document.createTextNode( newNode.value as string )
+		}
 		else if ( newNode.type === 6/*ELEMENTS*/ ) {
 			if ( newNode.value as string === "svg" )
 				nodeEnv.isSVG = true
@@ -107,7 +133,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 			)
 		}
 	}
-	if ( newNode.type === 1/*TEXT*/ || newNode.type === 0/*NULL*/ )
+	if ( newNode.type === 0/*NULL*/ || newNode.type === 1/*TEXT*/ || newNode.type === 3/*STATE*/ )
 		return dom
 	else if ( newNode.type === 8/*LIST*/ ) {
 		// FIXME : Check ?
@@ -163,24 +189,16 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 			// And attach listener
 			dom.addEventListener( eventName, value, useCapture )
 		}
-		// Other attributes, just set right on the dom element
+		// Other attributes
 		else {
-			// className as class for non jsx components
-			if ( name == "className" )
-				name = "class"
-			// Manage class as arrays
-			if ( name == "class" && Array.isArray( value ) )
-				value = value.flat( 1 ).filter( v => v !== true && !!v ).join(" ").trim()
-			// Manage style as object only
-			else if ( name == "style" && typeof value == "object" ) {
-				// https://esbench.com/bench/62ecb9866c89f600a5701b47
-				Object.keys( value ).forEach(
-					k => setStyle( (dom as HTMLElement).style, k, value[k] )
-				);
-				continue;
+			// If value is a state, track its changes by creating an "argument state" type of node
+			if ( typeof value === "object" && value.type === 3 ) {
+				_currentDiffingNode = createVNode( 2/*ARGUMENT*/, value, null, name )
+				_currentDiffingNode.dom = dom;
+				value = value.value
 			}
-			// FIXME : What about checked / disabled / autoplay ...
-			dom.setAttribute( name, value === true ? "" : value )
+			// Set dom attribute on element
+			_setDomAttribute( dom, name, value )
 		}
 	}
 	return dom;
@@ -359,49 +377,41 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 
 // ----------------------------------------------------------------------------- DIFF NODE
 
-// let _componentRenderHook
-// export function setComponentRenderHook ( handler ) {
-// 	_componentRenderHook = handler
-// }
-
 export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any, ComponentFunction> ) :GReturn {
 	// Select current component before rendering
 	_currentComponent = node.component;
-	// FIXME: Before render handlers ?
-	// Execute rendering
-	_currentComponent._isRendering = true
-	// Use instance of props created with the component
-	// We can use v-node props directly if we know this component is stateless
-	const { isFactory } = node.value
-	const props = ( isFactory === false ? node.props : _currentComponent._props )
-	// Inject new props into props instance
-	if ( isFactory !== false ) {
-		// BENCH : https://esbench.com/bench/630b6f6c6c89f600a5701bc4
-		Object.assign( props, node.props )
-		// On updates, for factory components, prune props
-		if ( isFactory ) for ( let i in props )
-			if ( !(i in node.props) )
-				delete props[i]
+	// Only on factory components
+	// we create a proxy for props which will update a state for dependency tracking
+	if ( node.value.isFactory !== false ) {
+		// Create the props proxy with its state
+		if ( !_currentComponent._proxy ) {
+			// Create prop states to track dependencies
+			_currentComponent._propState = state( node.props )
+			// Create proxy and map getter to the state to track effects
+			const proxy = Proxy.revocable( _currentComponent._propState, {
+				get : ( target, prop, receiver ) => Reflect.get( target.value, prop, receiver )
+			})
+			// Associate proxy to component and dispose proxy on component unmount
+			_currentComponent._proxy = proxy.proxy
+			_currentComponent._unmountHandlers.push( proxy.revoke )
+		}
+		// FIXME : Can't we ovoid that check ?
+		else //if ( props !== _currentComponent._propStates.peek() )
+			_currentComponent._propState.set( node.props )
 	}
-	// Inject default props after prune
-	// FIXME : Optim : Since default props is set once, can't we juste not prune default props ?
-	if ( _currentComponent._defaultProps )
-		injectDefaults( props, _currentComponent._defaultProps )
+
 	// Render component with props instance and component API instance
-	// FIXME : Add ref as second argument ? Is it useful ?
 	let result = _currentComponent._render.apply(
-		_currentComponent, [ props ]
+		_currentComponent, [ _currentComponent._proxy ?? node.props ] // FIXME : Add component or ref as second argument
 	)
 	// Filter rendering on function for tools
 	if ( _currentComponent.vnode.value.renderFilter )
 		result = _currentComponent.vnode.value.renderFilter( _currentComponent, result )
-	_currentComponent._isRendering = false
-	// Unselect current component
-	_currentComponent = null
+	// Keep _currentComponent, we'll unselect it later on purpose.
 	return result as GReturn
 }
 
-export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = newNode._nodeEnv ) {
+export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = newNode._nodeEnv, forceUpdate = false ) {
 	// IMPORTANT : Here we clone node if we got the same instance
 	// 			   Otherwise, altering props.children after render will fuck everything up
 	// Clone identical nodes to be able to diff them
@@ -412,17 +422,16 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 		newNode._id = oldNode._id
 	// Create / update DOM element for those node types
 	if (
-		// FIXME : Create a set of number ? Or bitwise checking ? check perfs
-		newNode.type === 1/*TEXT*/
+		newNode.type === 0/*NULL*/
+		|| newNode.type === 1/*TEXT*/
+		|| newNode.type === 3/*STATE*/
 		|| newNode.type === 6/*ELEMENTS*/
-		// || newNode.type === 8/*LIST*/
-		|| newNode.type === 0/*NULL*/
-		// || newNode.type === _VNodeTypes_STATE
 	) {
 		// Clone node env for children, to avoid env to propagate on siblings
 		nodeEnv = Object.assign({}, nodeEnv)
 		// Compute dom element for this node
 		newNode.dom = _diffElement( newNode, oldNode, nodeEnv )
+		_currentDiffingNode = null
 	}
 	// Diff component node
 	else if ( newNode.type === 7/*COMPONENTS*/ ) {
@@ -457,18 +466,26 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 		// Here we check if this component should update
 		// By default, we always update component on refreshes
 		let shouldUpdate = true
-		// If this component hasn't rendered yet ( functional components only )
-		if ( !renderResult && oldNode && !component.vnode.value.isFactory ) {
-			shouldUpdate = (
-				// Use shouldUpdate function on component API
-				component.shouldUpdate
-				? component.shouldUpdate( newNode.props, oldNode.props )
-				// Otherwise shallow props compare with children check
-				: !shallowPropsCompare( newNode.props, oldNode.props, true )
-			)
-			// Keep dom reference from old node
-			if ( !shouldUpdate )
-				newNode.dom = oldNode.dom
+		if ( !forceUpdate && !renderResult && oldNode ) {
+			// This is a functional component
+			if ( component._propState ) {
+				// Do not update here, update props on state
+				// and let the state update its dependencies
+				shouldUpdate = false
+				component._propState.set( newNode.props )
+			}
+			/*else {
+				shouldUpdate = (
+					// Use shouldUpdate function on component API
+					component._shouldUpdate
+					? component._shouldUpdate( newNode.props, oldNode.props )
+					// Otherwise shallow props compare with children check
+					: !shallowPropsCompare( newNode.props, oldNode.props, true )
+				)
+				// Keep dom reference from old node
+				if ( !shouldUpdate )
+					newNode.dom = oldNode.dom
+			}*/
 		}
 		// If this component needs a render (factory function), render it
 		if ( !renderResult && shouldUpdate )
@@ -479,6 +496,8 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 			component.children = renderResult
 			newNode.dom = renderResult.dom
 		}
+		// We can clear component now
+		_currentComponent = null
 	}
 	// Inject node env into node, now that it has been diffed and rendered
 	if ( !newNode._nodeEnv )
@@ -491,8 +510,13 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 		if ( !newNode.component.isMounted )
 			recursivelyUpdateMountState( newNode, true )
 		// Execute after render handlers
-		if ( newNode.value.isFactory !== false )
+		if ( newNode.value.isFactory !== false ) {
 			_dispatch( newNode.component._renderHandlers, newNode.component )
+			if ( newNode.component._nextRenderHandlers.length ) {
+				_dispatch( newNode.component._nextRenderHandlers, newNode.component )
+				newNode.component._nextRenderHandlers = []
+			}
+		}
 	}
 	// Diff children for node that are containers and not components
 	else if ( newNode.type > 4/*CONTAINERS*/ )

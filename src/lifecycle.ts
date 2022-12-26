@@ -6,15 +6,28 @@ import { IState } from "./states";
 
 export function mounted ( handler:MountHandler ) {
 	// FIXME : In dev mode, maybe check if component is mounted ?
-	getCurrentComponent()._mountHandlers.push( handler )
+	getCurrentComponent()?._mountHandlers.push( handler )
 }
 
 export function unmounted ( handler:LifecycleHandler ) {
 	// FIXME : In dev mode, maybe check if component is mounted ?
-	getCurrentComponent()._unmountHandlers.push( handler )
+	getCurrentComponent()?._unmountHandlers.push( handler )
+	return handler
+}
+
+export function rendered ( handler:LifecycleHandler ) {
+	// FIXME : In dev mode, maybe check if component is mounted ?
+	// FIXME : transform to async MountHandler ?
+	getCurrentComponent()?._renderHandlers.push( handler )
+}
+
+export function afterNextRender ( handler:LifecycleHandler ) {
+	// FIXME : In dev mode, maybe check if component is mounted ?
+	getCurrentComponent()?._nextRenderHandlers.push( handler )
 }
 
 // ----------------------------------------------------------------------------- TRACK CHANGE AFTER RENDER
+/*
 
 type TChangeDetector = any[]
 
@@ -45,8 +58,9 @@ export function changed <GState extends TChangeDetector> ( detectChanges:DetectC
 			if ( typeof dependency === "function" )
 				return dependency()
 			// State
-			else if ( typeof dependency === "object" && (dependency as IState<any>).type === 3/*STATE*/ )
-				return ( dependency as IState<any> ).value
+			else if ( typeof dependency === "object" && (dependency as IState<any>).type === 3/!*STATE*!/ ) {
+				return ( dependency as IState<any> ).peek()
+			}
 			if ( process.env.NODE_ENV !== "production" )
 				throw new Error("Reflex - Changed can track states or functions only. changed([state, () => prop.value], ...)")
 		}) as never as DetectChanges<GState>
@@ -86,3 +100,4 @@ export function changed <GState extends TChangeDetector> ( detectChanges:DetectC
 		}
 	})
 }
+*/

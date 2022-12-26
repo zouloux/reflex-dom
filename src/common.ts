@@ -1,6 +1,7 @@
 import { IRefOrRefs } from "./ref";
 import { ComponentInstance } from "./component";
 import { ClassNameItem } from "./jsx-types";
+import { IState } from "./states";
 
 // ----------------------------------------------------------------------------- DOCUMENT INTERFACE
 
@@ -85,29 +86,30 @@ export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler|((
 
 // All VNode types are inlined manually with a comment.
 // No way to inline automatically with TS for now.
-const _VNodeTypes_NULL = 0
-const _VNodeTypes_TEXT = 1
-const _VNodeTypes_STATE = 3
-const _VNodeTypes_CONTAINERS = 4
-const _VNodeTypes_ROOT = 5
-const _VNodeTypes_ELEMENT = 6
-const _VNodeTypes_COMPONENT = 7
-const _VNodeTypes_LIST = 8
+const _VNodeTypes_NULL 			= 0
+const _VNodeTypes_TEXT 			= 1
+const _VNodeTypes_ARGUMENT 		= 2
+const _VNodeTypes_STATE 		= 3
+const _VNodeTypes_CONTAINERS 	= 4
+const _VNodeTypes_ROOT 			= 5
+const _VNodeTypes_ELEMENT 		= 6
+const _VNodeTypes_COMPONENT 	= 7
+const _VNodeTypes_LIST 			= 8
 
-export type VNodeTypes = (
-	typeof _VNodeTypes_NULL |
-	typeof _VNodeTypes_TEXT |
-	typeof _VNodeTypes_STATE |
-	typeof _VNodeTypes_CONTAINERS |
-	typeof _VNodeTypes_ROOT |
-	typeof _VNodeTypes_ELEMENT |
-	typeof _VNodeTypes_COMPONENT |
-	typeof _VNodeTypes_LIST
-)
+export type VNodeTypes =
+	| typeof _VNodeTypes_NULL
+	| typeof _VNodeTypes_TEXT
+	| typeof _VNodeTypes_ARGUMENT
+	| typeof _VNodeTypes_STATE
+	| typeof _VNodeTypes_CONTAINERS
+	| typeof _VNodeTypes_ROOT
+	| typeof _VNodeTypes_ELEMENT
+	| typeof _VNodeTypes_COMPONENT
+	| typeof _VNodeTypes_LIST
 
 export type VNodeElementValue = keyof (HTMLElementTagNameMap|SVGElementTagNameMap)
 export type VNodeTextValue = string
-export type VNodeValue = ( VNodeElementValue | VNodeTextValue | ComponentFunction ) & TComponentFunctionProperties
+export type VNodeValue = ( VNodeElementValue | VNodeTextValue | ComponentFunction | IState<any> ) & TComponentFunctionProperties
 
 export interface VNode <
 	GProps extends DefaultReflexProps	= DefaultReflexProps,
@@ -159,6 +161,6 @@ export interface HasClassProp {
 	class ?: ClassNameItem | ClassNameItem[]
 }
 
-export function _dispatch ( handlers:Function[], scope:any ) {
+export function _dispatch ( handlers:Function[], scope?:any ) {
 	handlers.forEach( h => h.apply(scope) )
 }

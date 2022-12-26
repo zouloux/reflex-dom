@@ -1,27 +1,27 @@
 import { _dispatch, ComponentFunction, LifecycleHandler, MountHandler, RenderFunction, VNode } from "./common";
 import { getCurrentComponent } from "./diff";
+import { IState } from "./states";
 
 // ----------------------------------------------------------------------------- TYPES
 
-type TShouldUpdate <GProps extends object = object> = (newProps:GProps, oldProps:GProps) => boolean
+// type TShouldUpdate <GProps extends object = object> = (newProps:GProps, oldProps:GProps) => boolean
 
-export interface ComponentInstance <GProps extends object = object> { // FIXME : Generics ?
-	// FIXME : How to type component method's ?
-	vnode				:VNode<GProps, ComponentFunction>
-	name				:string
-	isMounted			:boolean;
-	children			?:VNode
-	shouldUpdate		?:TShouldUpdate<GProps>
-	// Private members, will be mangled
-	_isDirty			?:boolean
-	_props				?:GProps
-	_render				:RenderFunction
-	_mountHandlers		:MountHandler[]
-	_renderHandlers		:LifecycleHandler[]
-	_unmountHandlers	:LifecycleHandler[]
-	_isRendering			:boolean
-	_afterRenderHandlers	:any[]
-	_defaultProps		?:Partial<GProps>
+export interface ComponentInstance <GProps extends object = object> { // FIXME : Other generics ?
+	// --- Public members, not mangled
+	vnode					:VNode<GProps, ComponentFunction>
+	name					:string
+	isMounted				:boolean;
+	children				?:VNode
+	// --- Private members, will be mangled
+	// _shouldUpdate			?:TShouldUpdate<GProps>
+	_proxy					?:object
+	_propState				?:IState<GProps>
+	_render					:RenderFunction
+	_mountHandlers			:MountHandler[]
+	_renderHandlers			:LifecycleHandler[]	// Called after each render
+	_nextRenderHandlers		:(() => any)[] 		// Called after next render only, then removed
+	_unmountHandlers		:LifecycleHandler[]
+	_defaultProps			?:Partial<GProps>
 }
 
 // ----------------------------------------------------------------------------- CREATE COMPONENT INSTANCE
@@ -37,14 +37,11 @@ export function _createComponentInstance
 		name: (vnode.value as RenderFunction).name,
 		isMounted: false,
 		// Private members, will be mangled
-		_props: {},
-		_isDirty: false,
 		_render: vnode.value as RenderFunction,
 		_mountHandlers: [],
 		_renderHandlers: [],
+		_nextRenderHandlers: [],
 		_unmountHandlers: [],
-		_afterRenderHandlers: [],
-		_isRendering: false,
 	}
 }
 
@@ -52,9 +49,9 @@ export function _createComponentInstance
  * Should update extension
  * TODO : Add to doc
  */
-export function shouldUpdate <GProps extends object = object> ( handler:TShouldUpdate<GProps> ) {
-	getCurrentComponent().shouldUpdate = handler
-}
+// export function shouldUpdate <GProps extends object = object> ( handler:TShouldUpdate<GProps> ) {
+// 	getCurrentComponent()._shouldUpdate = handler
+// }
 
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 
@@ -92,8 +89,8 @@ export function _unmountComponent ( component:ComponentInstance ) {
 
 /**
  * TODO : There is a bug on mounted( () => { this.vnode.dom })
- * Dom is not ready, sometimes parent is not there (orphan child) ?
- * Need to check and test this !
+ * 	Dom is not ready, sometimes parent is not there (orphan child) ?
+ * 	Need to check and test this !
  */
 
 export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {

@@ -23,6 +23,7 @@ interface IListItemProps {
 }
 
 function ListItem ( props:IListItemProps ) {
+	// shouldUpdate( p => true )
 	// console.log( "ListItem" );
 	return <tr class="ListItem" data-id={ props.item.id } style={ listItemStyle }>
 		<td>{ props.item.name }</td>

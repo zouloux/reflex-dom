@@ -1,48 +1,79 @@
-import { changed, h, mounted, render, state } from "../src";
+import { h, ref, render, state, compute } from "../src";
 import { trackPerformances, setReflexDebug } from "../src/debug";
 
 // -----------------------------------------------------------------------------
 
-function Child ( props ) {
-	let children = state([])
-	function addChild () {
-		children.set([ ...children.value, {} ])
-	}
-	async function removeChild () {
-		await children.set(
-			children.value.filter( (c, i) =>
-				i !== children.value.length - 1
-			)
-		)
-	}
-	mounted(() => {
-		console.log("mounted", props, this.vnode.dom, this.vnode.dom.parentElement)
-		return () => { console.log("unmounted", props) }
-	})
-	return () => {
-		// console.log("RENDER", children.value)
-		return <div style={{paddingLeft: '20px'}}>
-			<div>Level: { props.level }</div>
-			<div>Index : { props.index }</div>
-			<button onClick={ addChild }>Add child</button>
-			<button onClick={ removeChild }>Remove child</button>
-			<div>
-				{ children.value.map( (item, i) =>
-					<Child
-						level={ props.level + 1 }
-						index={ i }
-						key={ i }
-					/>
-				) }
-			</div>
-		</div>
-	}
-}
-
 function DevApp () {
 
+	const testStateA1 = state( 1 )
+	const testStateA2 = compute( () => testStateA1.value * 2 )
+	const increment = e => testStateA1.value ++
+
+	const testStateB = state( false )
+	const toggle = e => testStateB.value = !testStateB.value
+
+	const $a1 = ref<HTMLDivElement>()
+	const $a2 = ref<HTMLDivElement>()
+
+	// effect( async () => {
+	// 	await delay( .5 )
+	// 	console.log('A1, Before dom update', testStateA1.value, $a1.dom?.innerHTML)
+	// })
+	// effect( async () => {
+	// 	await delay( .5 )
+	// 	console.log('A2, Before dom update', testStateA2.value, $a2.dom?.innerHTML)
+	// })
+	// FIXME -> We need to revert props as a proxy ...
+	// 		Changed can use effect with props and states
+	//		No more custom function in changed
+	//		effect need to work on props also
+	// changed([testStateA1, testStateA2], () => {
+	// 	console.log("A1, After dom update", testStateA1.value, $a1.dom.innerHTML );
+	// 	console.log("A2, After dom update", testStateA2.value, $a2.dom.innerHTML );
+	// })
+
+	// effect(() => {
+	// 	console.log(`Any effect ? ${testStateA1}`)
+	// })
+
+	// changed(() => {
+	// 	console.log("1: A1, After dom update", testStateA1.value, $a1.dom?.innerHTML );
+	// 	console.log("1: A2, After dom update", testStateA2.value, $a2.dom?.innerHTML );
+	// })
+	// changed(() => {
+	// 	console.log("2: A1, After dom update", testStateA1.value, $a1.dom?.innerHTML );
+	// })
+	// changed(() => {
+	// 	console.log("3: A2, After dom update", testStateA2.value, $a2.dom?.innerHTML );
+	// })
+	//
+	// changed(() => {
+	// 	console.log(`B -> ${testStateB}`)
+	// })
+
 	return () => <div>
-		<Child level={ 0 } index={ 0 } />
+		<h1>Atomic rendering test</h1>
+		<button onClick={ increment }>Increment state A</button>
+		<button onClick={ toggle }>Toggle state B</button>
+		<div>Seed : { Math.random() }</div>
+		<hr/>
+		<div ref={ $a1 }>State A-1: { testStateA1 }</div>
+		<div ref={ $a2 }>State A-2: { testStateA2 }</div>
+		<div>
+			<div>State B : { testStateB.value && <span>Enabled</span> }</div>
+		</div>
+		<PropsTest valueA={ testStateA2 } valueB={ testStateB } />
+	</div>
+}
+
+function PropsTest ( props ) {
+	// shouldUpdate(() => false)
+	const testBooleanState = compute( () => props.valueB.value ? "enabled" : "disabled" )
+	return () => <div>
+		<h2>PropsTest</h2>
+		<div>Seed : { Math.random() }</div>
+		{/*<h3>{ props.valueA } / { props.valueB.value && "enabled" }</h3>*/}
+		<h3>{ props.valueA } / { testBooleanState }</h3>
 	</div>
 }
 

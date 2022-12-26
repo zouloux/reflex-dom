@@ -57,9 +57,13 @@ export function enableReflexRefresh(meta, cloneVNode, diffNode, recursivelyUpdat
 				window.setTimeout(() => {
 					// Get current function + module path
 					const functionPath = getFunctionKey( name )
-					// Create registery of instances
+					// Create registry of instances
 					if ( !(functionPath in _allReflexComponents) )
 						_allReflexComponents[functionPath] = {}
+					if ( !componentInstance || !componentInstance.vnode ) {
+						console.error(`Reflex.hmrRuntime // Invalid component instance`, name, componentInstance);
+						return;
+					}
 					// Get instance dom path for this instance
 					const componentDomPath = getComponentDOMPath( componentInstance )
 					// Register this module instance
@@ -99,7 +103,7 @@ export function enableReflexRefresh(meta, cloneVNode, diffNode, recursivelyUpdat
 				const oldNode = oldFunction.vnode;
 				// FIXME : Check old node, sometime not valid
 				if (!oldNode) {
-					console.error(`Invalid old node`, name, newFunction, oldFunction)
+					console.error(`Reflex.hmrRuntime // Invalid old node`, name, newFunction, oldFunction)
 					return;
 				}
 				const newNode = cloneVNode( oldNode );

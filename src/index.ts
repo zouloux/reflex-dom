@@ -3,29 +3,28 @@
 // NOTE : Avoid glob exports from which insert a helper
 // Unzipped is smaller with glob but bigger when zipped;
 
-
 // ----------------------------------------------------------------------------- IMPORT / EXPORT
 
 // Export public API
-export { state } from "./states"
+export { state, effect, compute, changed } from "./states"
 export { getCurrentComponent, diffNode } from "./diff"
 export { ref, refs } from "./ref"
-export { defaultProps } from "./props"
-export { mounted, unmounted, changed } from "./lifecycle"
+export { defaultProps, /*shallowPropsCompare,*/ injectDefaults } from "./props"
+export { mounted, unmounted, rendered, afterNextRender } from "./lifecycle"
 export { render, invalidateComponent } from "./render"
-export { recursivelyUpdateMountState } from "./component"
+export { recursivelyUpdateMountState, /*shouldUpdate*/ } from "./component"
 
 // Also export createElement for JSX pragma React
 export { h, h as createElement, createVNode, cloneVNode } from "./jsx"
 
 // Export types ( do not export too much to keep it simple )
-export type { IState, TInitialValue } from "./states"
+export type { IState, TInitialValue, TEffect, IStateOptions, TComputed } from "./states"
 export type { IRef, IRefs } from "./ref"
 export type { ComponentInstance } from "./component"
 export type {
 	VNode, IAbstractNode, IAbstractText, IAbstractElement, IAbstractDocument,
 	IAbstractComment, INodeEnv, AbstractNodeTypes, DefaultReflexBaseProps,
-	DefaultReflexProps, HasClassProp
+	DefaultReflexProps, HasClassProp, LifecycleHandler
 } from "./common"
 
 // ----------------------------------------------------------------------------- JSX TYPES

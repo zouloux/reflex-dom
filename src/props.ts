@@ -25,6 +25,7 @@ export function defaultProps <
 /**
  * TODO : DOC
  */
+/*
 export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) => (
 	// Same amount of properties ?
 	Object.keys( a ).length === Object.keys( b ).length
@@ -52,7 +53,7 @@ export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) 
 					return !(
 						c.type === d.type
 						&& (
-							c.type !== 6/*ELEMENT*/
+							c.type !== 6/!*ELEMENT*!/
 							|| c.value === d.value
 						)
 					)
@@ -62,4 +63,4 @@ export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) 
 		// Prop check between a and b objects
 		: b.hasOwnProperty(key) && a[key] === b[key]
 	)
-)
+)*/

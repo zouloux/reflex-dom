@@ -2,6 +2,7 @@
 	"name" : "reflex-dev",
 	"source" : [
 		"./index.html",
-		"./3-stateful-list-demo/index.html"
+		"./3-stateful-list-demo/index.html",
+		"./1-props-demo/index.html"
 	]
 }

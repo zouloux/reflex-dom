@@ -2,7 +2,6 @@ import { h, render } from "../../src";
 import { trackPerformances, setReflexDebug } from "../../src/debug";
 import { StatefulDemoApp } from "./StatefulListDemoApp";
 
-
 // -----------------------------------------------------------------------------
 
 setReflexDebug( true )

@@ -1,13 +1,18 @@
-import { diffNode, getCurrentComponent } from "./diff";
+import { diffNode, getCurrentComponent, _getCurrentDiffingNode, _setDomAttribute } from "./diff";
+import { _dispatch, VNode, VNodeTypes } from "./common";
+import { ComponentInstance } from "./component";
+import { afterNextRender, unmounted } from "./lifecycle";
 import { invalidateComponent } from "./render";
-import { VNodeTypes } from "./common";
+import { createBatchedTask } from "./batch";
 
 // ----------------------------------------------------------------------------- INITIAL VALUE
 
-export type TInitialValue<GType> = GType | ((oldValue?:GType) => GType)
+export type TInitialValue <GType> = GType | ((oldValue?:GType) => GType)
 
 export const _prepareInitialValue = <GType> ( initialValue:TInitialValue<GType>, oldValue?:GType ) => (
-	typeof initialValue == "function" ? ( initialValue as (oldValue?:GType) => GType )(oldValue) : initialValue as GType
+	typeof initialValue == "function"
+	? ( initialValue as (oldValue?:GType) => GType )(oldValue)
+	: initialValue as GType
 )
 
 // ----------------------------------------------------------------------------- STATE TYPES
@@ -15,18 +20,46 @@ export const _prepareInitialValue = <GType> ( initialValue:TInitialValue<GType>,
 export type IState<GType> = {
 	value:GType
 	set ( newValue:TInitialValue<GType> ):Promise<void>
+
+	peek ():GType
+	sneak (value:GType):void
+
 	readonly type:VNodeTypes
-	// pushInvalidatedNode ( node:VNode ):void
-	toString():string
+
+	toString ():string
+	valueOf ():GType
+
+	dispose ():void
 }
+
+type TDisposeHandler = () => void
+
+export type TEffect = () => (void|TDisposeHandler) // FIXME : Promise<void>
+
+export type TComputed <GType> = () => GType
+
 
 export interface IStateOptions<GType> {
-	filter				?:(newValue:GType, oldValue:GType) => GType,
+	// filter				?:(newValue:GType, oldValue:GType) => GType,
 	directInvalidation	?:boolean
-	// atomic				?:boolean
 }
 
+
 // ----------------------------------------------------------------------------- STATE
+
+const invalidateEffects = createBatchedTask<TEffect>( effects => {
+	// FIXME : Which one is better ?
+	_dispatch( Array.from( effects ) )
+	// for ( const effect of effects )
+	// 	effect()
+});
+
+// ----------------------------------------------------------------------------- STATE
+
+let _currentEffect:TEffect
+let _currentChanged:TEffect
+
+let _currentStates = new Set<IState<any>>()
 
 export function state <GType> (
 	initialValue	?:TInitialValue<GType>,
@@ -34,78 +67,210 @@ export function state <GType> (
 ):IState<GType> {
 	// Prepare initial value if it's a function
 	initialValue = _prepareInitialValue( initialValue )
-	// Get current extended component
-	const component = getCurrentComponent()
 
-	// let invalidatedNodes:VNode[] = []
-	// const affectedNodesIndex = component._affectedNodesByStates.push([]) - 1
+	// Disposed kill switch
+	let _isDisposed = false
 
-	// Set value and invalidate or render component
-	function _setAndInvalidate ( newValue:GType, resolve:Function, forceUpdate = false ) {
-		// Filter value
-		const betweenValue = stateOptions.filter ? stateOptions.filter( newValue, initialValue as GType ) : newValue
+	// List of side effects / node / components to update
+	const _effects = new Set<TEffect>()
+	const _effectDisposes = new Set<TDisposeHandler>()
+	const _changedHandlers = new Set<TEffect>()
+	const _nodes = new Set<VNode>()
+	const _components = new Set<ComponentInstance>()
 
-		/*
-		if ( stateOptions.atomic ) {
-			console.log('Invalidated nodes:')
-			invalidatedNodes.forEach( n => console.log(n))
-			invalidatedNodes.map( node => {
-				//diffNode( node,  )
-			})
-			invalidatedNodes = []
-			resolve?.();
-		}*/
+	// Listen effects that create states
+	if ( _currentEffect )
+		_effects.add( _currentEffect )
 
-		// If state didn't change after filter, do nothing a resolve
-		if ( !forceUpdate && betweenValue === initialValue )
-			resolve()
-		else {
-			// Store new state
-			initialValue = betweenValue
-			// Direct invalidation
-			if ( stateOptions.directInvalidation ) {
-				diffNode( component.vnode, component.vnode )
-				resolve();
-			}
-			// Invalidate asynchronously
-			else {
-				component._afterRenderHandlers.push( resolve )
-				invalidateComponent( component )
-			}
+	// Update the state value and dispatch changes
+	async function updateValue ( newValue:GType, forceUpdate = false ) {
+		// FIXME : Throw error in dev mode
+		if ( _isDisposed ) return
+		// Halt update if not forced and if new value is same as previous
+		if ( newValue === initialValue && !forceUpdate ) return
+
+		for ( const unmountEffect of _effectDisposes )
+			unmountEffect()
+		_effectDisposes.clear();
+
+		// Store new value into the argument variable
+		initialValue = newValue
+
+		// TODO : Effects should be promisable
+		// 		But for now it bugs and changed handlers cannot be batched
+		//		We need a custom handler for the batch clear handler
+		// console.log('>', newValue)
+		for ( const effect of _effects ) {
+			// console.log( effect )
+			const effectDispose = effect()
+			effectDispose && _effectDisposes.add( effectDispose )
 		}
+
+		// Then dispatch direct dom updates
+		for ( const node of _nodes )
+			// Skip this node if the whole component needs to be refreshed
+			if ( !_components.has( node.component ) ) {
+				// Do direct dom update
+				if ( node.type === 3 )
+					node.dom.nodeValue = initialValue as string
+				else {
+					// Reset attribute for "src", allow empty images
+					if ( node.key === "src" )
+						_setDomAttribute( node.dom as Element, node.key, "" )
+					_setDomAttribute( node.dom as Element, node.key, initialValue )
+				}
+			}
+
+		// Dispatch all component refresh at the same time and wait for all to be updated
+		const promises = []
+		for ( const component of _components ) {
+			// Refresh component synchronously
+			stateOptions.directInvalidation
+			? diffNode( component.vnode, component.vnode )
+			// Invalidate component asynchronously
+			// FIXME : Resolve counter way to avoid Promise constructor here ? #perfs
+			: promises.push( new Promise<void>(
+				r => invalidateComponent( component, r )
+			))
+		}
+		_components.clear();
+		await Promise.all( promises )
+
+		// Call changed handler after dom mutations
+		_changedHandlers.forEach( e => invalidateEffects( e ) )
 	}
 
-	// Return public API with value get/set and set function
-	const stateObject:IState<GType> = {
+	function dispose () {
+		_isDisposed = true
+		initialValue = null
+		_effects.clear()
+		_changedHandlers.clear()
+		_nodes.clear()
+		_components.clear()
+	}
+
+	// if this state is created into a factory phase of a component,
+	// auto-dispose it on component unmount
+	unmounted( dispose )
+
+	return {
+		// Get current value and register effects
 		get value () {
-			// if ( component._isRendering && stateOptions.atomic ) {
-			// 	_trackNextNode( stateObject )
-				// const nodes = _getTrackedNode()
-				// console.log( nodes )
-				// invalidatedNodes.push( _getCurrentNode() )
-				// _trackNode( node => {
-				// 	invalidatedNodes.push( node )
-				// console.log("Affected node", node)
-				// console.log('>', component._affectedNodesByStates[affectedNodesIndex].length, node)
-				// component._affectedNodesByStates[affectedNodesIndex].push( node )
-				// })
-			// }
+			// FIXME : Throw error in dev mode
+			if ( _isDisposed ) return
+			// Get current node and component
+			const currentNode = _getCurrentDiffingNode()
+			const currentComponent = getCurrentComponent()
+			// Register current before effect handler
+			if ( _currentEffect ) {
+				_effects.add( _currentEffect )
+				_currentStates.add( this )
+			}
+			// Register current after changed handler
+			else if ( _currentChanged )
+				_changedHandlers.add( _currentChanged )
+			// Register current text node
+			else if ( currentNode && (currentNode.type === 3 || currentNode.type === 2) && currentNode.value === this ) {
+				// Save component to current text node to optimize later
+				currentNode.component = currentComponent
+				_nodes.add( currentNode )
+			}
+			// Register current component
+			else if ( currentComponent )
+				_components.add( currentComponent )
 			return initialValue as GType
 		},
-		// pushInvalidatedNode ( node:VNode ) {
-		// 	invalidatedNodes.push( node )
-		// },
-		set value ( newValue:GType ) { _setAndInvalidate( newValue, () => {} ) },
-		set: ( newValue:TInitialValue<GType>, forceUpdate = false ) => new Promise(
-			resolve => _setAndInvalidate(
-				_prepareInitialValue<GType>( newValue, initialValue as GType ),
-				resolve, forceUpdate
-			)
-		),
-		// changed() knows if it's a state
+		// Set value with .value and update dependencies
+		set value ( newValue:GType ) { updateValue( newValue ) },
+		// Set value with a set() method and update dependencies
+		// Asynchronous function
+		set: ( newValue:TInitialValue<GType>, forceUpdate = false ) =>
+			updateValue( _prepareInitialValue( newValue ), forceUpdate ),
+		// Get value without registering effects
+		peek () { return initialValue as GType },
+		// Set value without calling effects
+		sneak ( value:GType ) { initialValue = value },
+		// Get type of this object
 		get type () { return 3/*STATE*/ as VNodeTypes },
 		// Use state as a getter without .value
-		toString () { return stateObject.value + '' }
+		toString () { return this.value + '' },
+		valueOf () { return this.value },
+		// Remove and clean this state
+		dispose,
+
+		// @ts-ignore --- Private method for effect
+		// Add an effect dispose handler
+		_addEffectDispose ( h ) { _effectDisposes.add( h ) },
+		// @ts-ignore Private method for effect
+		// Remove an effect handler
+		_removeEffect ( h ) { _effects.delete(h) },
 	}
-	return stateObject
 }
+
+export function effect ( handler:TEffect ):TDisposeHandler {
+	// Register this effect as running so all states can catch the handler
+	_currentEffect = handler
+	// Run the handler once,
+	// all states acceded from this effect will caught the effect handler
+	// FIXME : How about async effect ? Can it stop rendering of component ?
+	const effectDispose = handler()
+	// Clone associated states list to be able to
+	// FIXME 	How about a state listened in a condition ?
+	//  		It will not be into associatedStates ...
+	const associatedStates = Array.from( _currentStates )
+	// Clear current states list
+	_currentStates.clear()
+	// If we had a handler returned by the effect
+	// Attach it to all associated states
+	if ( effectDispose ) for ( const state of associatedStates )
+		// @ts-ignore
+		state._addEffectDispose( effectDispose )
+	_currentEffect = null
+	// Return a dispose function
+	// This function will remove the handler from all associated states
+	// If this effect is ran into a factory component, it will be automatically
+	// dispose when the component is unmounted.
+	return unmounted(() => {
+		// TODO : Dispose + register in component for later disposal
+		// TODO : TEST + OPTIM
+		for ( const state of associatedStates )
+			// @ts-ignore
+			associatedStates._removeEffect( handler )
+	})
+}
+
+export function changed ( handler:TEffect ):TDisposeHandler {
+	let associatedStates
+	afterNextRender(() => {
+		associatedStates = Array.from( _currentStates )
+		_currentChanged = handler
+		handler()
+		_currentChanged = null
+	})
+	return unmounted(() => {
+		// TODO : Dispose + register in component for later disposal
+		// TODO : TEST + OPTIM
+		for ( const state of associatedStates )
+			// @ts-ignore
+			associatedStates._removeEffect( handler )
+	})
+}
+
+export function compute <GType> ( handler:TComputed<GType> ) {
+	// FIXME : Can't we optimize state initialisation here ?
+	const s = state<GType>()
+	// FIXME : Async effect should work here
+	const effectDispose = effect( () => {
+		s.set( handler() )
+	})
+	const { dispose } = s
+	s.dispose = unmounted(() => {
+		effectDispose()
+		dispose()
+	})
+	return s
+}
+
+// TODO : No need for batch if renders are batched ? Effect will not be batched.
+// TODO : @see Preact signals API
+//export function batch () {}

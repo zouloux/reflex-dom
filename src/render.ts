@@ -1,7 +1,8 @@
-import { _dispatch, IAbstractDocument, IAbstractElement, VNode } from "./common";
+import { IAbstractDocument, IAbstractElement, VNode } from "./common";
 import { diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
 import { createVNode } from "./jsx";
 import { ComponentInstance } from "./component";
+import { createBatchedTask } from "./batch";
 
 // ----------------------------------------------------------------------------- RENDER
 
@@ -19,48 +20,10 @@ export function render ( rootNode:VNode, parentElement:HTMLElement|IAbstractElem
 
 // ----------------------------------------------------------------------------- INVALIDATION
 
-let componentsToUpdate:ComponentInstance[] = []
-function updateDirtyComponents () {
-	let p
-	if ( process.env.NODE_ENV !== "production" )
-		p = require("./debug").trackPerformances("Update dirty components")
-	// TODO : Update with depth ! Deepest first ? Or last ?
-	const total = componentsToUpdate.length
-	for ( let i = 0; i < total; ++i ) {
-		const component = componentsToUpdate[ i ]
-		diffNode( component.vnode, component.vnode )
-		_dispatch( component._afterRenderHandlers, component )
-		component._afterRenderHandlers = []
-		component._isDirty = false
-		// if ( component._affectedNodesByStates.length == 0 )
-		// 	_diffNode( component.vnode, component.vnode )
-		// else for ( let i = 0; i < component._affectedNodesByStates.length; ++i ) {
-		// 	const oldNodes = component._affectedNodesByStates[ i ]
-		// 	component._affectedNodesByStates[i] = []
-		// 	renderComponentNode( component.vnode, component )
-		// 	const newNodes = component._affectedNodesByStates[ i ]
-		// 	for ( let j = 0; j < newNodes.length; ++j )
-		// 		_diffNode( newNodes[j], oldNodes[j] )
-		// }
-	}
-	componentsToUpdate = []
-	p?.();
-}
-
-// Internal fast microtask polyfill
-const _microtask = self.queueMicrotask ? self.queueMicrotask : h => self.setTimeout( h, 0 )
-
-export function invalidateComponent ( component:ComponentInstance ) {
-	// Queue rendering before end of frame
-	if ( !componentsToUpdate.length )
-		_microtask( updateDirtyComponents );
-	// Invalidate this component once
-	if ( !component._isDirty ) {
-		component._isDirty = true
-		// Store it into the list of dirty components
-		componentsToUpdate.push( component )
-	}
-}
+export const invalidateComponent = createBatchedTask<ComponentInstance>( components => {
+	for ( const component of components )
+		diffNode( component.vnode, component.vnode, undefined, true )
+});
 
 // ----------------------------------------------------------------------------- REGISTER WEB-COMPONENTS
 
