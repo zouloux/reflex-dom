@@ -5,7 +5,6 @@ import {
 import { cloneVNode, createVNode } from "./jsx";
 import { IInternalRef } from "./ref";
 import { _createComponentInstance, recursivelyUpdateMountState, ComponentInstance } from "./component";
-// import { injectDefaults, shallowPropsCompare } from "./props";
 import { state } from "./states";
 
 // ----------------------------------------------------------------------------- CONSTANTS
@@ -44,7 +43,7 @@ export function getCurrentComponent
 
 // ----------------------------------------------------------------------------- COMMON
 
-function getEventNameAndKey ( name:string, dom:Element ) {
+function _getEventNameAndKey ( name:string, dom:Element ) {
 	// Note : Capture management stolen from Preact, thanks
 	const useCapture = name !== ( name = name.replace(_CAPTURE_REGEX, '') );
 	// Infer correct casing for DOM built-in events:
@@ -55,7 +54,7 @@ function getEventNameAndKey ( name:string, dom:Element ) {
 }
 
 // Stolen from Preact, attach some style à key / value to a dom element
-function setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) {
+function _setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) {
 	if ( key[0] === '-' )
 		style.setProperty(key, value);
 	else if ( value == null )
@@ -67,7 +66,7 @@ function setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) {
 		style[key] = value + 'px';
 }
 
-function updateNodeRef ( node:VNode ) {
+function _updateNodeRef ( node:VNode ) {
 	node._ref && ( node._ref as IInternalRef )._setFromVNode( node as any )
 }
 
@@ -77,6 +76,7 @@ function updateNodeRef ( node:VNode ) {
 let _currentDiffingNode:VNode
 export const _getCurrentDiffingNode = () => _currentDiffingNode
 
+// FIXME : Doc
 export function _setDomAttribute ( dom:Element, name:string, value:any ) {
 	// className as class for non jsx components
 	if ( name == "className" )
@@ -88,7 +88,7 @@ export function _setDomAttribute ( dom:Element, name:string, value:any ) {
 	else if ( name == "style" && typeof value == "object" ) {
 		// https://esbench.com/bench/62ecb9866c89f600a5701b47
 		Object.keys( value ).forEach(
-			k => setStyle( (dom as HTMLElement).style, k, value[k] )
+			k => _setStyle( (dom as HTMLElement).style, k, value[k] )
 		);
 		return;
 	}
@@ -103,8 +103,6 @@ export function _setDomAttribute ( dom:Element, name:string, value:any ) {
  * @param nodeEnv
  */
 export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) {
-	// if (newNode?.type === 3)
-	// 	console.log("DIFF ELEMENT", newNode, oldNode)
 	// TODO : DOC
 	let dom:RenderDom
 	if ( oldNode ) {
@@ -156,7 +154,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 		// Events starts with "on". On preact this is optimized with [0] == "o"
 		// But recent benchmarks are pointing to startsWith usage as faster
 		else if ( name.startsWith("on") ) {
-			const { eventName, eventKey, useCapture } = getEventNameAndKey( name, dom );
+			const { eventName, eventKey, useCapture } = _getEventNameAndKey( name, dom );
 			dom.removeEventListener( eventName, dom[ _DOM_PRIVATE_LISTENERS_KEY ][ eventKey ], useCapture )
 		}
 		// Other attributes
@@ -180,7 +178,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 		// Events starts with "on". On preact this is optimized with [0] == "o"
 		// But recent benchmarks are pointing to startsWith usage as faster
 		else if ( name.startsWith("on") ) {
-			const { eventName, eventKey, useCapture } = getEventNameAndKey( name, dom );
+			const { eventName, eventKey, useCapture } = _getEventNameAndKey( name, dom );
 			// Init a collection of handlers on the dom object as private property
 			if ( !dom[ _DOM_PRIVATE_LISTENERS_KEY ] )
 				dom[ _DOM_PRIVATE_LISTENERS_KEY ] = new Map();
@@ -211,7 +209,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
  * @param parentNode
  * @param childNode
  */
-function registerKey ( parentNode:VNode, childNode:VNode ) {
+function _registerKey ( parentNode:VNode, childNode:VNode ) {
 	if ( childNode.key ) {
 		if ( !parentNode._keys )
 			parentNode._keys = new Map<string, VNode>()
@@ -225,12 +223,12 @@ function registerKey ( parentNode:VNode, childNode:VNode ) {
  * @param node
  * @param nodeEnv
  */
-function injectChildren ( parentDom:Element, node:VNode, nodeEnv:INodeEnv ) {
+function _injectChildren ( parentDom:Element, node:VNode, nodeEnv:INodeEnv ) {
 	const totalChildren = node.props.children.length
 	for ( let i = 0; i< totalChildren; ++i ) {
 		const child = node.props.children[ i ]
 		diffNode( child, null, nodeEnv )
-		registerKey( node, child )
+		_registerKey( node, child )
 		if ( child.dom )
 			parentDom.appendChild( child.dom )
 	}
@@ -259,7 +257,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 	// FIXME : This optim may not work if list not only child
 	// if ( !oldParentNode )
 	if ( !oldParentNode || oldParentNode.props.children.length === 0 )
-		return injectChildren( parentDom, newParentNode, nodeEnv )
+		return _injectChildren( parentDom, newParentNode, nodeEnv )
 	// Target children lists
 	const newChildren = newParentNode.props.children
 	const oldChildren = oldParentNode.props.children
@@ -283,7 +281,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 	if ( !total ) return;
 	let i:number
 	for ( i = 0; i < total; ++i )
-		registerKey( newParentNode, newChildren[ i ] )
+		_registerKey( newParentNode, newChildren[ i ] )
 	// Browse all new nodes
 	const oldParentKeys = oldParentNode._keys
 	let collapseCount = 0
@@ -369,7 +367,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			// Remove ref
 			const { dom } = oldChildNode
 			oldChildNode.dom = null;
-			updateNodeRef( oldChildNode )
+			_updateNodeRef( oldChildNode )
 			parentDom.removeChild( dom )
 		}
 	}
@@ -386,18 +384,20 @@ export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<an
 		// Create the props proxy with its state
 		if ( !_currentComponent._proxy ) {
 			// Create prop states to track dependencies
-			_currentComponent._propState = state( node.props )
+			const s = state( node.props )
+			_currentComponent._propState = s
 			// Create proxy and map getter to the state to track effects
-			const proxy = Proxy.revocable( _currentComponent._propState, {
-				get : ( target, prop, receiver ) => Reflect.get( target.value, prop, receiver )
+			// FIXME : Proxy is not browsable :(
+			const proxy = Proxy.revocable( {}, {
+				get : ( target, prop ) => Reflect.get( s.value, prop )
 			})
 			// Associate proxy to component and dispose proxy on component unmount
 			_currentComponent._proxy = proxy.proxy
 			_currentComponent._unmountHandlers.push( proxy.revoke )
 		}
 		// FIXME : Can't we ovoid that check ?
-		else //if ( props !== _currentComponent._propStates.peek() )
-			_currentComponent._propState.set( node.props )
+		// else //if ( props !== _currentComponent._propStates.peek() )
+		// 	_currentComponent._propState.set( node.props )
 	}
 
 	// Render component with props instance and component API instance
@@ -472,7 +472,10 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 				// Do not update here, update props on state
 				// and let the state update its dependencies
 				shouldUpdate = false
-				component._propState.set( newNode.props )
+				component._propState.set({
+					...component._defaultProps,
+					...newNode.props
+				})
 			}
 			/*else {
 				shouldUpdate = (
@@ -503,7 +506,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 	if ( !newNode._nodeEnv )
 		newNode._nodeEnv = nodeEnv
 	// Update ref on node
-	updateNodeRef( newNode )
+	_updateNodeRef( newNode )
 	// Now that component and its children are ready
 	if ( newNode.type === 7/*COMPONENTS*/ ) {
 		// If component is not mounted yet, mount it recursively

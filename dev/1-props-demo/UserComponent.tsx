@@ -1,4 +1,4 @@
-import { changed, compute, defaultProps, effect, h, ref, rendered } from "../../src";
+import { changed, compute, defaultProps, effect, h, IState, ref, rendered } from "../../src";
 
 export interface IUser {
 	firstname	:string
@@ -23,9 +23,10 @@ export function UserComponent ( props:IUserComponentProps ) {
 
 	// This is how we set default props
 	// optionalProp is given one on two props updates (undefined or 42) from parent
-	// defaultProps(props, {
-	// 	optionalProp: 42
-	// })
+	defaultProps(props, {
+		optionalProp: 42
+	})
+	// console.log(props)
 
 	// Log new props
 	// changed(() => { console.log('Props changed', props) })
@@ -113,6 +114,7 @@ export function UserComponent ( props:IUserComponentProps ) {
 		/>
 		<br />
 		{/*<StatelessWithDefaultProps name={ props.user.firstname } />*/}
+		<StatelessWithDefaultProps name={ firstname } />
 	</div>
 }
 
@@ -120,16 +122,16 @@ export function UserComponent ( props:IUserComponentProps ) {
 
 interface IStatelessWithDefaultProps {
 	defaultTitle	?:string
-	name			:string
+	name			:string|IState<string>
 }
 
 // This component will only be rendered when props changes.
-// StatelessWithDefaultProps.isFactory = false
+StatelessWithDefaultProps.isFactory = false
 function StatelessWithDefaultProps ( props:IStatelessWithDefaultProps ) {
 	// Default props works also on stateless components
-	// defaultProps( props, {
-	// 	defaultTitle: "Name is "
-	// })
+	defaultProps( props, {
+		defaultTitle: "Name is "
+	})
 	// Stateless components functions are executed at each render like in React
 	console.log("Stateless render", props)
 	// No factory pattern here because we do not have internal state for this component

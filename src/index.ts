@@ -6,13 +6,14 @@
 // ----------------------------------------------------------------------------- IMPORT / EXPORT
 
 // Export public API
-export { state, effect, compute, changed } from "./states"
-export { getCurrentComponent, diffNode } from "./diff"
+export { state, effect, compute, changed, invalidateComponent } from "./states"
+export { getCurrentComponent, diffNode, } from "./diff"
 export { ref, refs } from "./ref"
-export { defaultProps, /*shallowPropsCompare,*/ injectDefaults } from "./props"
-export { mounted, unmounted, rendered, afterNextRender } from "./lifecycle"
-export { render, invalidateComponent } from "./render"
-export { recursivelyUpdateMountState, /*shouldUpdate*/ } from "./component"
+export { render } from "./render"
+export {
+	recursivelyUpdateMountState, mounted, unmounted, rendered,
+	afterNextRender, injectDefaults, defaultProps
+} from "./component"
 
 // Also export createElement for JSX pragma React
 export { h, h as createElement, createVNode, cloneVNode } from "./jsx"

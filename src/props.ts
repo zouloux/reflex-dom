@@ -1,21 +1,21 @@
-import { getCurrentComponent } from "./diff";
-
-export function injectDefaults <GProps> ( props:GProps, defaults:Partial<GProps> ) {
-	for ( let i in defaults )
-		if ( !(i in props) )
-			props[ i ] = defaults[ i ]
-}
-
-export function defaultProps <
-	GProps extends object,
-	GDefaults extends Partial<GProps>,
-	// FIXME : Narrow type here
-	GReturn = GProps & GDefaults
-> ( props:GProps, defaults:GDefaults ):GReturn {
-	getCurrentComponent()._defaultProps = defaults
-	injectDefaults( props, defaults )
-	return props as never as GReturn
-}
+// import { getCurrentComponent } from "./diff";
+//
+// export function injectDefaults <GProps> ( props:GProps, defaults:Partial<GProps> ) {
+// 	for ( let i in defaults )
+// 		if ( !(i in props) )
+// 			props[ i ] = defaults[ i ]
+// }
+//
+// export function defaultProps <
+// 	GProps extends object,
+// 	GDefaults extends Partial<GProps>,
+// 	// FIXME : Narrow type here
+// 	GReturn = GProps & GDefaults
+// > ( props:GProps, defaults:GDefaults ):GReturn {
+// 	getCurrentComponent()._defaultProps = defaults
+// 	injectDefaults( props, defaults )
+// 	return props as never as GReturn
+// }
 
 // Shallow compare two objects, applied only for props between new and old virtual nodes.
 // Will not compare "children" which is always different

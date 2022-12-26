@@ -1,8 +1,6 @@
 import { IAbstractDocument, IAbstractElement, VNode } from "./common";
 import { diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
 import { createVNode } from "./jsx";
-import { ComponentInstance } from "./component";
-import { createBatchedTask } from "./batch";
 
 // ----------------------------------------------------------------------------- RENDER
 
@@ -17,13 +15,6 @@ export function render ( rootNode:VNode, parentElement:HTMLElement|IAbstractElem
 	})
 	parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ] = root
 }
-
-// ----------------------------------------------------------------------------- INVALIDATION
-
-export const invalidateComponent = createBatchedTask<ComponentInstance>( components => {
-	for ( const component of components )
-		diffNode( component.vnode, component.vnode, undefined, true )
-});
 
 // ----------------------------------------------------------------------------- REGISTER WEB-COMPONENTS
 

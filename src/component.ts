@@ -1,6 +1,6 @@
 import { _dispatch, ComponentFunction, LifecycleHandler, MountHandler, RenderFunction, VNode } from "./common";
-import { getCurrentComponent } from "./diff";
 import { IState } from "./states";
+import { getCurrentComponent } from "./diff";
 
 // ----------------------------------------------------------------------------- TYPES
 
@@ -44,14 +44,6 @@ export function _createComponentInstance
 		_unmountHandlers: [],
 	}
 }
-
-/**
- * Should update extension
- * TODO : Add to doc
- */
-// export function shouldUpdate <GProps extends object = object> ( handler:TShouldUpdate<GProps> ) {
-// 	getCurrentComponent()._shouldUpdate = handler
-// }
 
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 
@@ -104,4 +96,44 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 		for ( let i = 0; i < total; ++i )
 			recursivelyUpdateMountState( node.props.children[ i ], doMount )
 	}
+}
+
+// ----------------------------------------------------------------------------- EXTENSIONS
+
+export function mounted ( handler:MountHandler ) {
+	// FIXME : In dev mode, maybe check if component is mounted ?
+	getCurrentComponent()?._mountHandlers.push( handler )
+}
+
+export function unmounted ( handler:LifecycleHandler ) {
+	// FIXME : In dev mode, maybe check if component is mounted ?
+	getCurrentComponent()?._unmountHandlers.push( handler )
+	return handler
+}
+
+export function rendered ( handler:LifecycleHandler ) {
+	// FIXME : In dev mode, maybe check if component is mounted ?
+	// FIXME : transform to async MountHandler ?
+	getCurrentComponent()?._renderHandlers.push( handler )
+}
+
+export function afterNextRender ( handler:LifecycleHandler ) {
+	// FIXME : In dev mode, maybe check if component is mounted ?
+	getCurrentComponent()?._nextRenderHandlers.push( handler )
+}
+
+// ----------------------------------------------------------------------------- DEFAULT PROPS
+
+export function defaultProps <
+	GProps extends object,
+	GDefaults extends Partial<GProps>,
+> ( props:GProps, defaults:GDefaults ) {
+	const c = getCurrentComponent()
+	c._defaultProps = defaults
+	if ( c._propState )
+		props = c._propState.peek() as GProps
+	for ( let i in defaults )
+		if ( !(i in props) )
+			// @ts-ignore
+			props[ i ] = defaults[ i ]
 }

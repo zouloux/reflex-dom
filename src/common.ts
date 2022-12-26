@@ -4,22 +4,27 @@ import { ClassNameItem } from "./jsx-types";
 import { IState } from "./states";
 
 // ----------------------------------------------------------------------------- DOCUMENT INTERFACE
+// ----------------------------------------------------------------------------- TYPES
 
 export type AbstractNodeTypes = "comment"|"text"|"element"
 
-export interface IAbstractNode {
+export interface IAbstractNode
+{
 	abstractType:AbstractNodeTypes
 }
 
-export interface IAbstractComment extends IAbstractNode {
+export interface IAbstractComment extends IAbstractNode
+{
 	abstractType:"comment"
 	data:string
 }
-export interface IAbstractText extends IAbstractNode {
+export interface IAbstractText extends IAbstractNode
+{
 	abstractType:"text"
 	nodeValue:string
 }
-export interface IAbstractElement extends IAbstractNode {
+export interface IAbstractElement extends IAbstractNode
+{
 	abstractType:"element"
 	namespace:string
 	type:string
@@ -51,6 +56,7 @@ export interface INodeEnv {
 }
 
 // ----------------------------------------------------------------------------- INTERNAL - CREATE COMPONENT
+// ----------------------------------------------------------------------------- TYPES
 
 export type TComponentFunctionProperties = {
 	isFactory		?: boolean
@@ -70,6 +76,7 @@ export type LifecycleHandler <GReturn = void> = (...rest) => GReturn
 export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler|((LifecycleHandler|boolean)[])>
 
 // ----------------------------------------------------------------------------- JSX H / CREATE ELEMENT
+// ----------------------------------------------------------------------------- TYPES
 
 // FIXME : const enum not working ! TS create the enum as object because
 // FIXME : Its not possible to export or use as const in other modules
@@ -160,6 +167,8 @@ export interface DefaultReflexProps<
 export interface HasClassProp {
 	class ?: ClassNameItem | ClassNameItem[]
 }
+
+// ----------------------------------------------------------------------------- DISPATCH
 
 export function _dispatch ( handlers:Function[], scope?:any ) {
 	handlers.forEach( h => h.apply(scope) )

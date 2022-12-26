@@ -1,11 +1,30 @@
 import { diffNode, getCurrentComponent, _getCurrentDiffingNode, _setDomAttribute } from "./diff";
 import { _dispatch, VNode, VNodeTypes } from "./common";
-import { ComponentInstance } from "./component";
-import { afterNextRender, unmounted } from "./lifecycle";
-import { invalidateComponent } from "./render";
-import { createBatchedTask } from "./batch";
+import { afterNextRender, ComponentInstance, unmounted } from "./component";
 
-// ----------------------------------------------------------------------------- INITIAL VALUE
+// ----------------------------------------------------------------------------- BATCHED TASK
+
+// Micro task polyfill
+const _microtask = self.queueMicrotask ?? ( h => self.setTimeout( h, 0 ) )
+
+type TTaskHandler <GType> = ( bucket:Set<GType> ) => void
+
+// TODO : Doc
+export function _createBatchedTask <GType> ( task:TTaskHandler<GType> ) {
+	const bucket = new Set<GType>()
+	const resolves = []
+	return ( element:GType, resolve?:() => any ) => {
+		!bucket.size && _microtask( () => {
+			task( bucket )
+			bucket.clear()
+			_dispatch( resolves )
+		});
+		bucket.add( element )
+		resolve && resolves.push( resolve )
+	}
+}
+
+// ----------------------------------------------------------------------------- PREPARE INITIAL VALUE
 
 export type TInitialValue <GType> = GType | ((oldValue?:GType) => GType)
 
@@ -38,29 +57,42 @@ export type TEffect = () => (void|TDisposeHandler) // FIXME : Promise<void>
 
 export type TComputed <GType> = () => GType
 
-
 export interface IStateOptions<GType> {
 	// filter				?:(newValue:GType, oldValue:GType) => GType,
 	directInvalidation	?:boolean
 }
 
 
-// ----------------------------------------------------------------------------- STATE
+// ----------------------------------------------------------------------------- INVALIDATE EFFECT
 
-const invalidateEffects = createBatchedTask<TEffect>( effects => {
+const _invalidateEffect = _createBatchedTask<TEffect>( effects => {
 	// FIXME : Which one is better ?
 	_dispatch( Array.from( effects ) )
 	// for ( const effect of effects )
 	// 	effect()
 });
 
+// ----------------------------------------------------------------------------- INVALIDATE COMPONENT
+
+export const invalidateComponent = _createBatchedTask<ComponentInstance>( components => {
+	for ( const component of components )
+		diffNode( component.vnode, component.vnode, undefined, true )
+});
+
 // ----------------------------------------------------------------------------- STATE
 
+// TODO : DOC
 let _currentEffect:TEffect
 let _currentChanged:TEffect
 
+// TODO : DOC
 let _currentStates = new Set<IState<any>>()
 
+/**
+ * TODO : DOC
+ * @param initialValue
+ * @param stateOptions
+ */
 export function state <GType> (
 	initialValue	?:TInitialValue<GType>,
 	stateOptions	:Partial<IStateOptions<GType>> = {}
@@ -89,6 +121,7 @@ export function state <GType> (
 		// Halt update if not forced and if new value is same as previous
 		if ( newValue === initialValue && !forceUpdate ) return
 
+		// TODO : DOC
 		for ( const unmountEffect of _effectDisposes )
 			unmountEffect()
 		_effectDisposes.clear();
@@ -99,9 +132,8 @@ export function state <GType> (
 		// TODO : Effects should be promisable
 		// 		But for now it bugs and changed handlers cannot be batched
 		//		We need a custom handler for the batch clear handler
-		// console.log('>', newValue)
+		// TODO : DOC
 		for ( const effect of _effects ) {
-			// console.log( effect )
 			const effectDispose = effect()
 			effectDispose && _effectDisposes.add( effectDispose )
 		}
@@ -114,8 +146,8 @@ export function state <GType> (
 				if ( node.type === 3 )
 					node.dom.nodeValue = initialValue as string
 				else {
-					// Reset attribute for "src", allow empty images
-					if ( node.key === "src" )
+					// Reset attribute for "src", allow empty images when changing src
+					if ( node.dom instanceof HTMLImageElement && node.key === "src" )
 						_setDomAttribute( node.dom as Element, node.key, "" )
 					_setDomAttribute( node.dom as Element, node.key, initialValue )
 				}
@@ -137,7 +169,7 @@ export function state <GType> (
 		await Promise.all( promises )
 
 		// Call changed handler after dom mutations
-		_changedHandlers.forEach( e => invalidateEffects( e ) )
+		_changedHandlers.forEach( e => _invalidateEffect( e ) )
 	}
 
 	function dispose () {
