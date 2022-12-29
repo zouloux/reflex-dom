@@ -1,6 +1,5 @@
-import { h, ref, render, state, compute, track } from "../src";
-import { drawReflexChanges, MemoryUsage, trackPerformances } from "../src/debug";
-import { clearInterval } from "timers";
+import { h, ref, render, state, compute } from "../src";
+import { drawReflexChanges, MemoryUsage } from "../src/debug";
 
 // -----------------------------------------------------------------------------
 
