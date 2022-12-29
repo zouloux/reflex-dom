@@ -173,3 +173,14 @@ export interface HasClassProp {
 export function _dispatch ( handlers:Function[], scope?:any ) {
 	handlers.forEach( h => h.apply(scope) )
 }
+
+// ----------------------------------------------------------------------------- TRACK
+
+export interface IReflexTrackOptions
+{
+	diff ( node:VNode ):(() => void)
+	mutation ( node:VNode, argumentName?:string ) : void
+}
+
+
+export const track:Partial<IReflexTrackOptions> = {}

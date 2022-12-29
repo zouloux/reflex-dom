@@ -1,5 +1,6 @@
-import { h, ref, render, state, compute } from "../src";
-import { trackPerformances } from "../src/debug";
+import { h, ref, render, state, compute, track } from "../src";
+import { drawReflexChanges, MemoryUsage, trackPerformances } from "../src/debug";
+import { clearInterval } from "timers";
 
 // -----------------------------------------------------------------------------
 
@@ -80,12 +81,11 @@ function PropsTest ( props ) {
 // -----------------------------------------------------------------------------
 
 export function init () {
-	const p = trackPerformances("Root rendering")
-	const a = <DevApp />
-	render( a, document.getElementById('App') )
+	drawReflexChanges();
+	render( <MemoryUsage />, document.getElementById('MemoryUsage') )
+	render( <DevApp />, document.getElementById('App') )
 	// const string = renderToString( a )
 	// console.log( string );
 	// render( a, document.getElementById('App') )
-	p();
 }
 init();

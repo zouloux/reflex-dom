@@ -1,4 +1,4 @@
-import { IAbstractDocument, IAbstractElement, VNode } from "./common";
+import { IAbstractDocument, IAbstractElement, VNode, track } from "./common";
 import { diffNode, _DOM_PRIVATE_VIRTUAL_NODE_KEY } from "./diff";
 import { createVNode } from "./jsx";
 
@@ -9,10 +9,12 @@ export function render ( rootNode:VNode, parentElement:HTMLElement|IAbstractElem
 	// This node is never rendered, we just attach it to the parentElement and render its children
 	const root = createVNode( 5/*ROOT*/, null, { children: [rootNode] } )
 	root.dom = parentElement as HTMLElement
+	const r = track.diff?.( root )
 	diffNode( root, parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ], {
 		isSVG: false,
 		document: documentInterface
 	})
+	r?.()
 	parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ] = root
 }
 

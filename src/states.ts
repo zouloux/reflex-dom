@@ -1,5 +1,5 @@
 import { diffNode, getCurrentComponent, _getCurrentDiffingNode, _setDomAttribute } from "./diff";
-import { _dispatch, VNode, VNodeTypes } from "./common";
+import { _dispatch, track, VNode, VNodeTypes } from "./common";
 import { afterNextRender, ComponentInstance, unmounted } from "./component";
 
 /**
@@ -89,8 +89,11 @@ const _invalidateEffect = _createBatchedTask<TEffect>( effects => {
  * Will batch components to validated in a microtask to avoid unnecessary renders.
  */
 export const invalidateComponent = _createBatchedTask<ComponentInstance>( components => {
-	for ( const component of components )
+	for ( const component of components ) {
+		const r = track.diff?.( component.vnode )
 		diffNode( component.vnode, component.vnode, undefined, true )
+		r?.()
+	}
 });
 
 // ----------------------------------------------------------------------------- STATE
@@ -114,9 +117,6 @@ export function state <GType> (
 	// Prepare initial value if it's a function
 	initialValue = _prepareInitialValue( initialValue )
 
-	// Disposed kill switch
-	let _isDisposed = false
-
 	// List of side effects / node / components to update
 	const _effects = new Set<TEffect>()
 	const _effectDisposes = new Set<TDisposeHandler>()
@@ -128,15 +128,14 @@ export function state <GType> (
 	if ( _currentEffect )
 		_effects.add( _currentEffect )
 
-	function _addEffectDispose ( h ) {
-		if ( typeof h === "function" )
-			_effectDisposes.add( h )
+	function _addEffectDispose ( handler:TEffect|void ) {
+		typeof handler === "function" && _effectDisposes?.add( handler )
 	}
 
 	// Update the state value and dispatch changes
 	async function updateValue ( newValue:GType, forceUpdate = false ) {
 		// FIXME : Throw error in dev mode
-		if ( _isDisposed ) return
+		if ( !_effects ) return
 		// Halt update if not forced and if new value is same as previous
 		if ( newValue === initialValue && !forceUpdate ) return
 
@@ -168,6 +167,7 @@ export function state <GType> (
 						_setDomAttribute( node.dom as Element, node.key, "" )
 					_setDomAttribute( node.dom as Element, node.key, initialValue )
 				}
+				track.mutation?.( node, node.key )
 			}
 
 		// Dispatch all component refresh at the same time and wait for all to be updated
@@ -190,9 +190,9 @@ export function state <GType> (
 	}
 
 	function dispose () {
-		_isDisposed = true
 		initialValue = null
 		_effects.clear()
+		_effectDisposes.clear()
 		_changedHandlers.clear()
 		_nodes.clear()
 		_components.clear()
@@ -203,10 +203,11 @@ export function state <GType> (
 	unmounted( dispose )
 
 	return {
+		// --- PUBLIC API ---
 		// Get current value and register effects
 		get value () {
 			// FIXME : Throw error in dev mode
-			if ( _isDisposed ) return
+			if ( !_effects ) return
 			// Get current node and component
 			const currentNode = _getCurrentDiffingNode()
 			const currentComponent = getCurrentComponent()
@@ -246,13 +247,15 @@ export function state <GType> (
 		valueOf () { return this.value },
 		// Remove and clean this state
 		dispose,
-
+		// --- PRIVATE API ---
 		// @ts-ignore --- Private method for effect
 		// Add an effect dispose handler
 		_addEffectDispose,
 		// @ts-ignore Private method for effect
 		// Remove an effect handler
-		_removeEffect ( h ) { _effects.delete(h) },
+		_removeEffect ( handler:TEffect ) {
+			_effects?.delete( handler )
+		},
 	}
 }
 
@@ -320,7 +323,7 @@ export function changed ( handler:TEffect ):TDisposeHandler {
 // ----------------------------------------------------------------------------- COMPUTE
 
 /**
-TODO : DOC + TEST
+ * TODO : DOC + TEST
  * @param handler
  */
 export function compute <GType> ( handler:TComputed<GType> ):IComputeState<GType> {

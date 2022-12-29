@@ -8,9 +8,18 @@
           color: white;
           background-color: black;
         }
+        @keyframes _FadeOut {
+          50% { outline-color: pink }
+          100% { outline-color: rgba(0, 0, 0, 0) }
+        }
+        ._rendering {
+          outline: 2px dotted pink;
+          animation: _FadeOut .6s;
+        }
     </style>
 </head>
 <body>
+    <div id="MemoryUsage"></div>
     <div id="App"></div>
 </body>
 </html>
