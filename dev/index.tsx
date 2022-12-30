@@ -1,5 +1,5 @@
 import { h, ref, render, state, compute } from "../src";
-import { drawReflexChanges, MemoryUsage } from "../src/debug";
+import { drawReflexDebug, MemoryUsage } from "../src/debug";
 
 // -----------------------------------------------------------------------------
 
@@ -79,12 +79,6 @@ function PropsTest ( props ) {
 
 // -----------------------------------------------------------------------------
 
-export function init () {
-	drawReflexChanges();
-	render( <MemoryUsage />, document.getElementById('MemoryUsage') )
-	render( <DevApp />, document.getElementById('App') )
-	// const string = renderToString( a )
-	// console.log( string );
-	// render( a, document.getElementById('App') )
-}
-init();
+drawReflexDebug();
+render( <MemoryUsage />, document.getElementById('MemoryUsage') )
+render( <DevApp />, document.getElementById('App') )

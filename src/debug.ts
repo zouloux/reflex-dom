@@ -47,22 +47,53 @@ export function MemoryUsage ( props ) {
 
 // ----------------------------------------------------------------------------- TRACK CHANGES
 
-export function drawReflexChanges () {
+export function drawReflexDebug () {
+
+	const style = document.createElement("style")
+	style.innerHTML = `
+        @keyframes _ReflexDebugFadeOut {
+          50% { outline-color: var(--color) }
+          100% { outline-color: rgba(0, 0, 0, 0) }
+        }
+        ._reflexDebugRendering {
+          --color: pink;
+          outline: 2px dotted var(--color);
+          animation: _ReflexDebugFadeOut .6s;
+        }
+		._reflexDebugMutation {
+		  --color: green;
+		  position: fixed;
+		  outline: 2px dotted var(--color);
+          animation: _ReflexDebugFadeOut .3s;
+		}
+	`
+	document.head.append( style )
 
 	/**
 	 * Track and draw components rendering.
 	 */
 	track.diff = ( node => {
+		// Target component name
 		// @ts-ignore
-		const p = trackPerformances(`Rendering ${node.value?.name ?? node.type}`);
-		// FIXME : ??? Why sometimes no dom here ?
-		if ( node.dom ) {
-			const { classList } = (node.dom as HTMLElement)
+		let name = node.value?.name
+		if ( !name && node.type === 5 ) {
 			// @ts-ignore
-			clearTimeout( node.dom._renderingTimeout )
-			classList.add("_rendering")
+			name = node.props.children[0].value.name
+		}
+		const p = trackPerformances(`Rendering ${name}`);
+
+		// Target dom from vnode or childre,
+		let { dom } = node
+		if ( !dom && node.component?.children?.dom )
+			dom = node.component?.children?.dom
+
+		if ( dom ) {
+			const { classList } = (dom as HTMLElement)
 			// @ts-ignore
-			node.dom._renderingTimeout = setTimeout(() => classList.remove("_rendering"), 600)
+			clearTimeout( dom._renderingTimeout )
+			classList.add("_reflexDebugRendering")
+			// @ts-ignore
+			dom._renderingTimeout = setTimeout(() => classList.remove("_reflexDebugRendering"), 600)
 		}
 		return p
 	})
@@ -82,13 +113,18 @@ export function drawReflexChanges () {
 
 		// Draw a div at this position and size for some ms
 		const div = document.createElement("div")
-		div.style.border = "2px dotted green"
+		div.classList.add("_reflexDebugMutation")
 		div.style.width = rect.width + 'px'
 		div.style.height = rect.height + 'px'
-		div.style.position = "fixed"
 		div.style.top = rect.top + 'px'
 		div.style.left = rect.left + 'px'
 		document.body.append( div )
 		setTimeout(() => div.parentElement.removeChild( div ), 300)
+	}
+
+	return () => {
+		document.head.removeChild( style )
+		delete track.diff
+		delete track.mutation
 	}
 }

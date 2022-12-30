@@ -1,13 +1,6 @@
-import { h, state } from "../../src";
-import { colorList, createUID, foodList, pickRandom, rand } from "../common/demoHelpers";
-import { MemoryUsage, trackPerformances } from "../../src/debug";
-
-// ----------------------------------------------------------------------------- HELPERS
-
-interface IListItem {
-	name	:string
-	id		:string
-}
+import { h } from "../../src";
+import { createUID } from "../common/demoHelpers";
+import { createListStore, IListItem, IListStore } from "./ListStore";
 
 // ----------------------------------------------------------------------------- LIST ITEM
 
@@ -17,20 +10,20 @@ const listItemStyle = {
 
 interface IListItemProps {
 	item			: IListItem
-	key				?
-	removeClicked	?:	(e) => void
-	moveUpClicked	?:	(e) => void
-	moveDownClicked	?:	(e) => void
+	key				?:string
+	store			: IListStore
 }
 
+ListItem.isFactory = false
 function ListItem ( props:IListItemProps ) {
-	// shouldUpdate( p => true )
-	// console.log( "ListItem" );
+	const removeClicked = e => props.store.removeItem( props.item )
+	const moveUpClicked = e => props.store.moveItem( props.item, -1 )
+	const moveDownClicked = e => props.store.moveItem( props.item, +1 )
 	return <tr class="ListItem" data-id={ props.item.id } style={ listItemStyle }>
 		<td>{ props.item.name }</td>
-		<td><button onClick={ props.moveUpClicked }>⬆</button></td>
-		<td><button onClick={ props.moveDownClicked }>⬇</button></td>
-		<td><button onClick={ props.removeClicked }>Remove</button></td>
+		<td><button onClick={ moveUpClicked }>⬆</button></td>
+		<td><button onClick={ moveDownClicked }>⬇</button></td>
+		<td><button onClick={ removeClicked }>Remove</button></td>
 	</tr>
 }
 
@@ -38,67 +31,17 @@ function ListItem ( props:IListItemProps ) {
 
 export function StatefulDemoApp () {
 
-	/**
-	 * List state and reducers
-	 */
-
-
-	const list = state<IListItem[]>([])
-
-	const clearList = () => {
-		list.value = []
-	}
-	const addItem = ( position:"top"|"bottom", item:IListItem ) => {
-		if ( position === "bottom" )
-			list.value = [...list.value, item]
-		else
-			list.value = [item, ...list.value]
-	}
-	const removeItem = ( item:IListItem ) => {
-		list.value = list.value.filter( currentItem => currentItem != item )
-	}
-	const moveItem = ( item:IListItem, offset:number ) => {
-		const index = list.value.indexOf( item ) + offset
-		if ( index < 0 || index >= list.value.length ) return;
-		removeItem( item )
-		list.value.splice( index, 0, item )
-	}
-
-	function addRandomItems ( total:number = 0 ) {
-		total ||= rand( 5 + list.value.length ) + 1
-		const t = trackPerformances(`Add ${total} items`)
-		for ( let i = 0; i < total; i++ ) {
-			addItem("bottom", {
-				id: createUID(),
-				name: pickRandom(colorList) + " " + pickRandom(foodList)
-			})
-		}
-		t()
-	}
-
-	function removeRandomItems () {
-		const total = rand( list.value.length ) + 1
-		for ( let i = 0; i < total; i++ ) {
-			const item = pickRandom( list.value )
-			removeItem( item as any )
-		}
-	}
-
-	function removeLastItem () {
-		if (list.value.length === 0) return
-		removeItem( list.value[ list.value.length - 1] )
-	}
+	const store = createListStore()
 
 	/**
 	 * Handlers
 	 */
-
 	function controlSubmitted ( event:Event ) {
 		event.preventDefault()
 		// TODO : Implement refs
 		const nameInput = document.getElementById("StatefulDemoApp_nameInput") as HTMLInputElement
 		if ( !nameInput.value ) return;
-		addItem("top", {
+		store.addItem("top", {
 			name: nameInput.value,
 			id: createUID()
 		})
@@ -106,19 +49,18 @@ export function StatefulDemoApp () {
 	}
 
 	/**
-	 * Sub-components
+	 * Controls buttons as a pure functional component.
 	 */
-
 	function Controls () {
-		console.log("Controls rendered")
+		console.log("Controls rendered. ( should run once )")
 		return <div className="StatefulDemoApp_controls">
 			<table>
-				<button onClick={ e => addRandomItems() }>Add random items to bottom</button>
-				<button onClick={ e => addRandomItems( 1_000 ) }>Add 1_000 items to bottom</button>
-				<button onClick={ e => addRandomItems( 10_000 ) }>Add 10_000 items to bottom</button>
-				<button onClick={ e => removeRandomItems() }>Remove random items</button>
-				<button onClick={ e => removeLastItem() }>Remove last items</button>
-				<button onClick={ e => clearList() }>Clear list</button>
+				<button onClick={ e => store.addRandomItems() }>Add random items to bottom</button>
+				<button onClick={ e => store.addRandomItems( 1_000 ) }>Add 1_000 items to bottom</button>
+				<button onClick={ e => store.addRandomItems( 10_000 ) }>Add 10_000 items to bottom</button>
+				<button onClick={ e => store.removeRandomItems() }>Remove random items</button>
+				<button onClick={ e => store.removeLastItem() }>Remove last items</button>
+				<button onClick={ e => store.clearList() }>Clear list</button>
 			</table>
 			<form onSubmit={ controlSubmitted }>
 				<table>
@@ -135,22 +77,12 @@ export function StatefulDemoApp () {
 	/**
 	 * Render
 	 */
-
 	return () => <div class="StatefulDemoApp">
-		<MemoryUsage /><br/>
-		{/* Optimized node, should render once */}
 		<Controls />
-		<h3>{ list.value.length } element{ list.value.length > 1 ? 's' : '' }</h3>
+		<h3>{ store.list.value.length } element{ store.list.value.length > 1 ? 's' : '' }</h3>
 		<table>
-			{ list.value.map( item =>
-				/* Each item will be re-rendered, even with the same key */
-				/* Because handlers are recreated each time list.value is mapped */
-				<ListItem
-					item={ item } key={ item.id }
-					removeClicked={ e => removeItem( item ) }
-					moveUpClicked={ e => moveItem( item, -1 ) }
-					moveDownClicked={ e => moveItem( item, +1 ) }
-				/>
+			{ store.list.value.map( item =>
+				<ListItem item={ item } key={ item.id } store={ store } />
 			)}
 		</table>
 	</div>
