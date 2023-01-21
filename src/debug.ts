@@ -82,7 +82,7 @@ export function drawReflexDebug () {
 		}
 		const p = trackPerformances(`Rendering ${name}`);
 
-		// Target dom from vnode or childre,
+		// Target dom from vnode or children,
 		let { dom } = node
 		if ( !dom && node.component?.children?.dom )
 			dom = node.component?.children?.dom
@@ -113,11 +113,14 @@ export function drawReflexDebug () {
 
 		// Draw a div at this position and size for some ms
 		const div = document.createElement("div")
-		div.classList.add("_reflexDebugMutation")
-		div.style.width = rect.width + 'px'
-		div.style.height = rect.height + 'px'
-		div.style.top = rect.top + 'px'
-		div.style.left = rect.left + 'px'
+		div.classList.add("_reflexDebugMutation");
+		['top', 'left', 'width', 'height'].forEach(
+			p => div.style[p] = rect[p] + 'px'
+		)
+		// div.style.width = rect.width + 'px'
+		// div.style.height = rect.height + 'px'
+		// div.style.top = rect.top + 'px'
+		// div.style.left = rect.left + 'px'
 		document.body.append( div )
 		setTimeout(() => div.parentElement.removeChild( div ), 300)
 	}

@@ -3,8 +3,9 @@
 __Reflex__ is a tiny and fast virtual-dom UI lib with __factory based functional components__.
 
 - 🦋 Super lightweight and __0 dependency__, about ![~3kb](./bits/reflex.es2017.min.js.svg) min-zipped
-- 🏎 Highly performant ( [Proof](#performances) )
+- 🏎 Highly performant diffing algorithm ( [Proof](#performances) )
 - 🔋 Batteries included with [factory extensions](#factory-extensions)
+- States are Signal by design
 - 🤓 Typed JSX
 - 🍰 Easy to learn
 - 🤘️ HMR Support for Vite
