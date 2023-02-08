@@ -10,7 +10,9 @@
 	"exports": {
 		".": "./dist/index.es2020.mjs",
 		"./hmr-plugin": "./dist/hmr-plugin.es2020.mjs",
-		"./hmr-runtime": "./dist/hmr-runtime.es2020.mjs"
+		"./hmr-runtime": "./dist/hmr-runtime.es2020.mjs",
+		"./debug": "./dist/debug.es2020.mjs",
+		"./render-to-string": "./dist/renderToString.es2020.mjs"
 	},
 	"scripts": {
 		"reset": "rm -rf node_modules && npm i",
