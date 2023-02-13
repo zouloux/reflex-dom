@@ -1,7 +1,6 @@
 import { h } from "./jsx";
 import { mounted } from "./component";
 import { compute } from "./states";
-import { clearInterval } from "timers";
 import { track } from "./common";
 
 // ----------------------------------------------------------------------------- TRACK PERFORMANCES

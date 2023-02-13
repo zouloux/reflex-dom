@@ -4,7 +4,7 @@ import { getCurrentComponent } from "./diff";
 
 // ----------------------------------------------------------------------------- TYPES
 
-// type TShouldUpdate <GProps extends object = object> = (newProps:GProps, oldProps:GProps) => boolean
+export type TShouldUpdate <GProps extends object = object> = (newProps:GProps, oldProps:GProps) => boolean
 
 export interface ComponentInstance <GProps extends object = object> { // FIXME : Other generics ?
 	// --- Public members, not mangled
@@ -12,6 +12,7 @@ export interface ComponentInstance <GProps extends object = object> { // FIXME :
 	name					:string
 	isMounted				:boolean;
 	children				?:VNode
+	shouldUpdate			?:TShouldUpdate<GProps>
 	// --- Private members, will be mangled
 	// _shouldUpdate			?:TShouldUpdate<GProps>
 	_proxy					?:object
@@ -22,6 +23,10 @@ export interface ComponentInstance <GProps extends object = object> { // FIXME :
 	_nextRenderHandlers		:(() => any)[] 		// Called after next render only, then removed
 	_unmountHandlers		:LifecycleHandler[]
 	_defaultProps			?:Partial<GProps>
+
+	// FIXME :
+	// _hmrStates				?:any[]
+	// _hmrStateIndex			?:number
 }
 
 // ----------------------------------------------------------------------------- CREATE COMPONENT INSTANCE
@@ -137,3 +142,58 @@ export function defaultProps <
 			// @ts-ignore
 			props[ i ] = defaults[ i ]
 }
+
+
+const _noUpdate:TShouldUpdate = (a, b) => false
+
+export const shouldUpdate = ( handler:TShouldUpdate|boolean ) =>
+	getCurrentComponent().shouldUpdate = handler === false ? _noUpdate : handler as TShouldUpdate
+
+
+// Shallow compare two objects, applied only for props between new and old virtual nodes.
+// Will not compare "children" which is always different
+// https://esbench.com/bench/62a138846c89f600a5701904
+// TODO : re-bench against with for i in loop (test small and huge props)
+
+/**
+ * TODO : DOC
+ */
+
+export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) => (
+	// Same amount of properties ?
+	Object.keys( a ).length === Object.keys( b ).length
+	// Every property exists in other object ?
+	&& Object.keys( a ).every( key =>
+		( childrenCheck && key === "children" ) ? (
+			// Same array instances -> we validate directly without browsing children
+			a[ key ] === b[ key ]
+			// Two empty arrays -> we validate directly without browsing children
+			|| ( (a as any[]).length === 0 && (b as any[]).length === 0 )
+			// We need to check deeper
+			|| (
+				// check if children props exists on props b
+				b[ key ]
+				// Both children array must have the same length
+				&& a[ key ].length === b[ key ].length
+				// Browse children and check types on every child
+				// If any child does not have the same type
+				// We halt the search
+				&& !a[ key ].find( (c, i) => {
+					const d = b[ key ][ i ]
+					// Here we inverted condition to match diff.ts checks
+					// Condition is -> check if same nodes types
+					// Find is -> halt when any node type differs (so, the inverse)
+					return !(
+						c.type === d.type
+						&& (
+							c.type !== 6/*ELEMENT*/
+							|| c.value === d.value
+						)
+					)
+				})
+			)
+		)
+		// Prop check between a and b objects
+		: b.hasOwnProperty(key) && a[key] === b[key]
+	)
+)

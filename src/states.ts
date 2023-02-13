@@ -114,8 +114,27 @@ export function state <GType> (
 	initialValue	?:TInitialValue<GType>,
 	stateOptions	:Partial<IStateOptions<GType>> = {}
 ):IState<GType> {
+
+	// FIXME : HMR, this code need to be enabled only when HMR plugin is enabled
+	// const c = getCurrentComponent()
+	// if ( c ) {
+	// 	// Retrieve HMR state
+	// 	if ( c._hmrStates && c._hmrStateIndex in c._hmrStates )
+	// 		initialValue = c._hmrStates[ c._hmrStateIndex ++ ]
+	// 	// Prepare HMR State
+	// 	if ( !c._hmrStates ) {
+	// 		c._hmrStates = []
+	// 		c._hmrStateIndex = 0;
+	// 	}
+	// 	// Save HMR State
+	// 	c._hmrStates.push( () => initialValue )
+	// 	console.log('S', c.name, initialValue, c._hmrStateIndex)
+	// }
+	// FIXME -----
+
 	// Prepare initial value if it's a function
 	initialValue = _prepareInitialValue( initialValue )
+
 
 	// List of side effects / node / components to update
 	const _effects = new Set<TEffect>()

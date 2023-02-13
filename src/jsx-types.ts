@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 
 import { DefaultReflexBaseProps, VNode } from "./common";
-import { ComponentInstance } from "./component";
+import { IState } from "./states";
 
 /**
  * JSX types are straight stolen from Preact. Thanks Preact core team ✌️
@@ -347,208 +347,183 @@ export type ClassName = (
 	| (ClassNameItem | (ClassNameItem[]))[]
 )
 
+type AttributeState <G> = G |IState<G>
+
 export interface HTMLAttributes
 	<GDom extends Element = Element>
 	extends DefaultReflexAttributes<GDom>, DOMAttributes<GDom>
 {
 	// Standard HTML Attributes
-	accept?: string;
-	acceptCharset?: string;
-	accessKey?: string;
-	action?: string;
-	allow?: string;
-	allowFullScreen?: boolean;
-	allowTransparency?: boolean;
-	alt?: string;
-	as?: string;
-	async?: boolean;
-	autocomplete?: string;
-	autoComplete?: string;
-	autocorrect?: string;
-	autoCorrect?: string;
-	autofocus?: boolean;
-	autoFocus?: boolean;
-	autoPlay?: boolean;
-	capture?: boolean | string;
-	cellPadding?: number | string;
-	cellSpacing?: number | string;
-	charSet?: string;
-	challenge?: string;
-	checked?: boolean;
-	cite?: string;
-	class?: ClassName
-	className?: ClassName
-	cols?: number;
-	colSpan?: number;
-	content?: string;
-	contentEditable?: boolean;
-	contextMenu?: string;
-	controls?: boolean;
-	controlsList?: string;
-	coords?: string;
-	crossOrigin?: string;
-	data?: string;
-	dateTime?: string;
-	default?: boolean;
-	defaultChecked?: boolean;
-	defaultValue?: string;
-	defer?: boolean;
-	dir?: 'auto' | 'rtl' | 'ltr';
-	disabled?: boolean;
-	disableRemotePlayback?: boolean;
-	download?: any;
-	decoding?: 'sync' | 'async' | 'auto';
-	draggable?: boolean;
-	encType?: string;
-	enterkeyhint?:
-		| 'enter'
-		| 'done'
-		| 'go'
-		| 'next'
-		| 'previous'
-		| 'search'
-		| 'send';
-	form?: string;
-	formAction?: string;
-	formEncType?: string;
-	formMethod?: string;
-	formNoValidate?: boolean;
-	formTarget?: string;
-	frameBorder?: number | string;
-	headers?: string;
-	height?: number | string;
-	hidden?: boolean;
-	high?: number;
-	href?: string;
-	hrefLang?: string;
-	for?: string;
-	htmlFor?: string;
-	httpEquiv?: string;
-	icon?: string;
-	id?: string;
-	inputMode?: string;
-	integrity?: string;
-	is?: string;
-	keyParams?: string;
-	keyType?: string;
-	kind?: string;
-	label?: string;
-	lang?: string;
-	list?: string;
-	loading?: 'eager' | 'lazy';
-	loop?: boolean;
-	low?: number;
-	manifest?: string;
-	marginHeight?: number;
-	marginWidth?: number;
-	max?: number | string;
-	maxLength?: number;
-	media?: string;
-	mediaGroup?: string;
-	method?: string;
-	min?: number | string;
-	minLength?: number;
-	multiple?: boolean;
-	muted?: boolean;
-	name?: string;
-	nomodule?: boolean;
-	nonce?: string;
-	noValidate?: boolean;
-	open?: boolean;
-	optimum?: number;
-	part?: string;
-	pattern?: string;
-	ping?: string;
-	placeholder?: string;
-	playsInline?: boolean;
-	poster?: string;
-	preload?: string;
-	radioGroup?: string;
-	readonly?: boolean;
-	readOnly?: boolean;
-	referrerpolicy?:
-		| 'no-referrer'
-		| 'no-referrer-when-downgrade'
-		| 'origin'
-		| 'origin-when-cross-origin'
-		| 'same-origin'
-		| 'strict-origin'
-		| 'strict-origin-when-cross-origin'
-		| 'unsafe-url';
-	rel?: string;
-	required?: boolean;
-	reversed?: boolean;
-	role?: string;
-	rows?: number;
-	rowSpan?: number;
-	sandbox?: string;
-	scope?: string;
-	scoped?: boolean;
-	scrolling?: string;
-	seamless?: boolean;
-	selected?: boolean;
-	shape?: string;
-	size?: number;
-	sizes?: string;
-	slot?: string;
-	span?: number;
-	spellcheck?: boolean;
-	spellCheck?: boolean;
-	src?: string;
-	srcset?: string;
-	srcDoc?: string;
-	srcLang?: string;
-	srcSet?: string;
-	start?: number;
-	step?: number | string;
-	style?: string | CSSProperties;
-	summary?: string;
-	tabIndex?: number;
-	target?: string;
-	title?: string;
-	type?: string;
-	useMap?: string;
-	value?: string | string[] | number;
-	volume?: string | number;
-	width?: number | string;
-	wmode?: string;
-	wrap?: string;
+	accept?: 				AttributeState<string>
+	acceptCharset?: 		AttributeState<string>
+	accessKey?: 			AttributeState<string>
+	action?: 				AttributeState<string>
+	allow?: 				AttributeState<string>
+	allowFullScreen?: 		AttributeState<boolean>
+	allowTransparency?: 	AttributeState<boolean>
+	alt?: 					AttributeState<string>
+	as?: 					AttributeState<string>
+	async?: 				AttributeState<boolean>
+	autocomplete?: 			AttributeState<string>
+	autoComplete?: 			AttributeState<string>
+	autocorrect?: 			AttributeState<string>
+	autoCorrect?: 			AttributeState<string>
+	autofocus?: 			AttributeState<boolean>
+	autoFocus?: 			AttributeState<boolean>
+	autoPlay?: 				AttributeState<boolean>
+	capture?: 				AttributeState<boolean | string>
+	cellPadding?: 			AttributeState<number | string>
+	cellSpacing?: 			AttributeState<number | string>
+	charSet?: 				AttributeState<string>
+	challenge?: 			AttributeState<string>
+	checked?: 				AttributeState<boolean>
+	cite?: 					AttributeState<string>
+	class?: 				AttributeState<ClassName>
+	className?: 			AttributeState<ClassName>
+	cols?: 					AttributeState<number>
+	colSpan?: 				AttributeState<number>
+	content?: 				AttributeState<string>
+	contentEditable?: 		AttributeState<boolean>
+	contextMenu?: 			AttributeState<string>
+	controls?: 				AttributeState<boolean>
+	controlsList?: 			AttributeState<string>
+	coords?: 				AttributeState<string>
+	crossOrigin?: 			AttributeState<string>
+	data?: 					AttributeState<string>
+	dateTime?: 				AttributeState<string>
+	default?: 				AttributeState<boolean>
+	defaultChecked?: 		AttributeState<boolean>
+	defaultValue?: 			AttributeState<string>
+	defer?: 				AttributeState<boolean>
+	dir?: 					AttributeState<'auto' | 'rtl' | 'ltr'>
+	disabled?: 				AttributeState<boolean>
+	disableRemotePlayback?: AttributeState<boolean>
+	download?: 				AttributeState<any>
+	decoding?: 				AttributeState<'sync' | 'async' | 'auto'>
+	draggable?: 			AttributeState<boolean>
+	encType?: 				AttributeState<string>
+	enterkeyhint?:			AttributeState<'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send'>;
+	form?: 					AttributeState<string>
+	formAction?: 			AttributeState<string>
+	formEncType?: 			AttributeState<string>
+	formMethod?: 			AttributeState<string>
+	formNoValidate?: 		AttributeState<boolean>
+	formTarget?: 			AttributeState<string>
+	frameBorder?: 			AttributeState<number | string>
+	headers?: 				AttributeState<string>
+	height?: 				AttributeState<number | string>
+	hidden?: 				AttributeState<boolean>
+	high?: 					AttributeState<number>
+	href?: 					AttributeState<string>
+	hrefLang?: 				AttributeState<string>
+	for?: 					AttributeState<string>
+	htmlFor?: 				AttributeState<string>
+	httpEquiv?: 			AttributeState<string>
+	icon?: 					AttributeState<string>
+	id?: 					AttributeState<string>
+	inputMode?: 			AttributeState<string>
+	integrity?: 			AttributeState<string>
+	is?: 					AttributeState<string>
+	keyParams?: 			AttributeState<string>
+	keyType?: 				AttributeState<string>
+	kind?: 					AttributeState<string>
+	label?: 				AttributeState<string>
+	lang?: 					AttributeState<string>
+	list?: 					AttributeState<string>
+	loading?: 				AttributeState<'eager' | 'lazy'>
+	loop?: 					AttributeState<boolean>
+	low?: 					AttributeState<number>
+	manifest?: 				AttributeState<string>
+	marginHeight?: 			AttributeState<number>
+	marginWidth?: 			AttributeState<number>
+	max?: 					AttributeState<number | string>
+	maxLength?: 			AttributeState<number>
+	media?: 				AttributeState<string>
+	mediaGroup?: 			AttributeState<string>
+	method?: 				AttributeState<string>
+	min?: 					AttributeState<number | string>
+	minLength?: 			AttributeState<number>
+	multiple?: 				AttributeState<boolean>
+	muted?: 				AttributeState<boolean>
+	name?: 					AttributeState<string>
+	nomodule?: 				AttributeState<boolean>
+	nonce?: 				AttributeState<string>
+	noValidate?: 			AttributeState<boolean>
+	open?: 					AttributeState<boolean>
+	optimum?: 				AttributeState<number>
+	part?: 					AttributeState<string>
+	pattern?: 				AttributeState<string>
+	ping?: 					AttributeState<string>
+	placeholder?: 			AttributeState<string>
+	playsInline?: 			AttributeState<boolean>
+	poster?: 				AttributeState<string>
+	preload?: 				AttributeState<string>
+	radioGroup?: 			AttributeState<string>
+	readonly?: 				AttributeState<boolean>
+	readOnly?: 				AttributeState<boolean>
+	referrerpolicy	?:		AttributeState<'no-referrer' | 'no-referrer-when-downgrade' | 'origin' | 'origin-when-cross-origin' | 'same-origin' | 'strict-origin' | 'strict-origin-when-cross-origin' | 'unsafe-url'>
+	rel?: 					AttributeState<string>
+	required?: 				AttributeState<boolean>
+	reversed?: 				AttributeState<boolean>
+	role?: 					AttributeState<string>
+	rows?: 					AttributeState<number>
+	rowSpan?: 				AttributeState<number>
+	sandbox?: 				AttributeState<string>
+	scope?: 				AttributeState<string>
+	scoped?: 				AttributeState<boolean>
+	scrolling?: 			AttributeState<string>
+	seamless?: 				AttributeState<boolean>
+	selected?: 				AttributeState<boolean>
+	shape?: 				AttributeState<string>
+	size?: 					AttributeState<number>
+	sizes?: 				AttributeState<string>
+	slot?: 					AttributeState<string>
+	span?: 					AttributeState<number>
+	spellcheck?: 			AttributeState<boolean>
+	spellCheck?: 			AttributeState<boolean>
+	src?: 					AttributeState<string>
+	srcset?: 				AttributeState<string>
+	srcDoc?: 				AttributeState<string>
+	srcLang?: 				AttributeState<string>
+	srcSet?: 				AttributeState<string>
+	start?: 				AttributeState<number>
+	step?: 					AttributeState<number | string>
+	style?: 				AttributeState<string | CSSProperties>
+	summary?: 				AttributeState<string>
+	tabIndex?: 				AttributeState<number>
+	target?: 				AttributeState<string>
+	title?: 				AttributeState<string>
+	type?: 					AttributeState<string>
+	useMap?: 				AttributeState<string>
+	value?: 				AttributeState<string | string[] | number>
+	volume?: 				AttributeState<string | number>
+	width?: 				AttributeState<number | string>
+	wmode?: 				AttributeState<string>
+	wrap?: 					AttributeState<string>
 
 	// Non-standard Attributes
-	autocapitalize?:
-		| 'off'
-		| 'none'
-		| 'on'
-		| 'sentences'
-		| 'words'
-		| 'characters';
-	autoCapitalize?:
-		| 'off'
-		| 'none'
-		| 'on'
-		| 'sentences'
-		| 'words'
-		| 'characters';
-	disablePictureInPicture?: boolean;
-	results?: number;
-	translate?: 'yes' | 'no';
+	autocapitalize?:		AttributeState<'off' | 'none' | 'on' | 'sentences' | 'words' | 'characters'>
+	autoCapitalize?:		AttributeState<'off' | 'none' | 'on' | 'sentences' | 'words' | 'characters'>
+	disablePictureInPicture	?: AttributeState<boolean>
+	results?: 				AttributeState<number>
+	translate?: 			AttributeState<'yes' | 'no'>
 
 	// RDFa Attributes
-	about?: string;
-	datatype?: string;
-	inlist?: any;
-	prefix?: string;
-	property?: string;
-	resource?: string;
-	typeof?: string;
-	vocab?: string;
+	about?: 				AttributeState<string>
+	datatype?: 				AttributeState<string>
+	inlist?: 				AttributeState<any>
+	prefix?: 				AttributeState<string>
+	property?: 				AttributeState<string>
+	resource?: 				AttributeState<string>
+	typeof?: 				AttributeState<string>
+	vocab?: 				AttributeState<string>
 
 	// Microdata Attributes
-	itemProp?: string;
-	itemScope?: boolean;
-	itemType?: string;
-	itemID?: string;
-	itemRef?: string;
+	itemProp?: 				AttributeState<string>
+	itemScope?: 			AttributeState<boolean>
+	itemType?: 				AttributeState<string>
+	itemID?: 				AttributeState<string>
+	itemRef?: 				AttributeState<string>
 }
 
 // ----------------------------------------------------------------------------- SVG ATTRIBUTES
@@ -556,10 +531,10 @@ export interface HTMLAttributes
 export interface SVGAttributes
 	<GDom extends Element = SVGElement>
 	extends HTMLAttributes<GDom> {
-	accentHeight?: number | string;
-	accumulate?: 'none' | 'sum';
-	additive?: 'replace' | 'sum';
-	alignmentBaseline?:
+	accentHeight?: AttributeState<number | string>
+	accumulate?: AttributeState<'none' | 'sum'>
+	additive?: AttributeState<'replace' | 'sum'>
+	alignmentBaseline?:AttributeState<
 		| 'auto'
 		| 'baseline'
 		| 'before-edge'
@@ -572,242 +547,242 @@ export interface SVGAttributes
 		| 'alphabetic'
 		| 'hanging'
 		| 'mathematical'
-		| 'inherit';
-	allowReorder?: 'no' | 'yes';
-	alphabetic?: number | string;
-	amplitude?: number | string;
-	arabicForm?: 'initial' | 'medial' | 'terminal' | 'isolated';
-	ascent?: number | string;
-	attributeName?: string;
-	attributeType?: string;
-	autoReverse?: number | string;
-	azimuth?: number | string;
-	baseFrequency?: number | string;
-	baselineShift?: number | string;
-	baseProfile?: number | string;
-	bbox?: number | string;
-	begin?: number | string;
-	bias?: number | string;
-	by?: number | string;
-	calcMode?: number | string;
-	capHeight?: number | string;
-	clip?: number | string;
-	clipPath?: string;
-	clipPathUnits?: number | string;
-	clipRule?: number | string;
-	colorInterpolation?: number | string;
-	colorInterpolationFilters?: 'auto' | 'sRGB' | 'linearRGB' | 'inherit';
-	colorProfile?: number | string;
-	colorRendering?: number | string;
-	contentScriptType?: number | string;
-	contentStyleType?: number | string;
-	cursor?: number | string;
-	cx?: number | string;
-	cy?: number | string;
-	d?: string;
-	decelerate?: number | string;
-	descent?: number | string;
-	diffuseConstant?: number | string;
-	direction?: number | string;
-	display?: number | string;
-	divisor?: number | string;
-	dominantBaseline?: number | string;
-	dur?: number | string;
-	dx?: number | string;
-	dy?: number | string;
-	edgeMode?: number | string;
-	elevation?: number | string;
-	enableBackground?: number | string;
-	end?: number | string;
-	exponent?: number | string;
-	externalResourcesRequired?: number | string;
-	fill?: string;
-	fillOpacity?: number | string;
-	fillRule?: 'nonzero' | 'evenodd' | 'inherit';
-	filter?: string;
-	filterRes?: number | string;
-	filterUnits?: number | string;
-	floodColor?: number | string;
-	floodOpacity?: number | string;
-	focusable?: number | string;
-	fontFamily?: string;
-	fontSize?: number | string;
-	fontSizeAdjust?: number | string;
-	fontStretch?: number | string;
-	fontStyle?: number | string;
-	fontVariant?: number | string;
-	fontWeight?: number | string;
-	format?: number | string;
-	from?: number | string;
-	fx?: number | string;
-	fy?: number | string;
-	g1?: number | string;
-	g2?: number | string;
-	glyphName?: number | string;
-	glyphOrientationHorizontal?: number | string;
-	glyphOrientationVertical?: number | string;
-	glyphRef?: number | string;
-	gradientTransform?: string;
-	gradientUnits?: string;
-	hanging?: number | string;
-	horizAdvX?: number | string;
-	horizOriginX?: number | string;
-	ideographic?: number | string;
-	imageRendering?: number | string;
-	in2?: number | string;
-	in?: string;
-	intercept?: number | string;
-	k1?: number | string;
-	k2?: number | string;
-	k3?: number | string;
-	k4?: number | string;
-	k?: number | string;
-	kernelMatrix?: number | string;
-	kernelUnitLength?: number | string;
-	kerning?: number | string;
-	keyPoints?: number | string;
-	keySplines?: number | string;
-	keyTimes?: number | string;
-	lengthAdjust?: number | string;
-	letterSpacing?: number | string;
-	lightingColor?: number | string;
-	limitingConeAngle?: number | string;
-	local?: number | string;
-	markerEnd?: string;
-	markerHeight?: number | string;
-	markerMid?: string;
-	markerStart?: string;
-	markerUnits?: number | string;
-	markerWidth?: number | string;
-	mask?: string;
-	maskContentUnits?: number | string;
-	maskUnits?: number | string;
-	mathematical?: number | string;
-	mode?: number | string;
-	numOctaves?: number | string;
-	offset?: number | string;
-	opacity?: number | string;
-	operator?: number | string;
-	order?: number | string;
-	orient?: number | string;
-	orientation?: number | string;
-	origin?: number | string;
-	overflow?: number | string;
-	overlinePosition?: number | string;
-	overlineThickness?: number | string;
-	paintOrder?: number | string;
-	panose1?: number | string;
-	pathLength?: number | string;
-	patternContentUnits?: string;
-	patternTransform?: number | string;
-	patternUnits?: string;
-	pointerEvents?: number | string;
-	points?: string;
-	pointsAtX?: number | string;
-	pointsAtY?: number | string;
-	pointsAtZ?: number | string;
-	preserveAlpha?: number | string;
-	preserveAspectRatio?: string;
-	primitiveUnits?: number | string;
-	r?: number | string;
-	radius?: number | string;
-	refX?: number | string;
-	refY?: number | string;
-	renderingIntent?: number | string;
-	repeatCount?: number | string;
-	repeatDur?: number | string;
-	requiredExtensions?: number | string;
-	requiredFeatures?: number | string;
-	restart?: number | string;
-	result?: string;
-	rotate?: number | string;
-	rx?: number | string;
-	ry?: number | string;
-	scale?: number | string;
-	seed?: number | string;
-	shapeRendering?: number | string;
-	slope?: number | string;
-	spacing?: number | string;
-	specularConstant?: number | string;
-	specularExponent?: number | string;
-	speed?: number | string;
-	spreadMethod?: string;
-	startOffset?: number | string;
-	stdDeviation?: number | string;
-	stemh?: number | string;
-	stemv?: number | string;
-	stitchTiles?: number | string;
-	stopColor?: string;
-	stopOpacity?: number | string;
-	strikethroughPosition?: number | string;
-	strikethroughThickness?: number | string;
-	string?: number | string;
-	stroke?: string;
-	strokeDasharray?: string | number;
-	strokeDashoffset?: string | number;
-	strokeLinecap?: 'butt' | 'round' | 'square' | 'inherit';
-	strokeLinejoin?: 'miter' | 'round' | 'bevel' | 'inherit';
-	strokeMiterlimit?: string | number;
-	strokeOpacity?: number | string;
-	strokeWidth?: number | string;
-	surfaceScale?: number | string;
-	systemLanguage?: number | string;
-	tableValues?: number | string;
-	targetX?: number | string;
-	targetY?: number | string;
-	textAnchor?: string;
-	textDecoration?: number | string;
-	textLength?: number | string;
-	textRendering?: number | string;
-	to?: number | string;
-	transform?: string;
-	u1?: number | string;
-	u2?: number | string;
-	underlinePosition?: number | string;
-	underlineThickness?: number | string;
-	unicode?: number | string;
-	unicodeBidi?: number | string;
-	unicodeRange?: number | string;
-	unitsPerEm?: number | string;
-	vAlphabetic?: number | string;
-	values?: string;
-	vectorEffect?: number | string;
-	version?: string;
-	vertAdvY?: number | string;
-	vertOriginX?: number | string;
-	vertOriginY?: number | string;
-	vHanging?: number | string;
-	vIdeographic?: number | string;
-	viewBox?: string;
-	viewTarget?: number | string;
-	visibility?: number | string;
-	vMathematical?: number | string;
-	widths?: number | string;
-	wordSpacing?: number | string;
-	writingMode?: number | string;
-	x1?: number | string;
-	x2?: number | string;
-	x?: number | string;
-	xChannelSelector?: string;
-	xHeight?: number | string;
-	xlinkActuate?: string;
-	xlinkArcrole?: string;
-	xlinkHref?: string;
-	xlinkRole?: string;
-	xlinkShow?: string;
-	xlinkTitle?: string;
-	xlinkType?: string;
-	xmlBase?: string;
-	xmlLang?: string;
-	xmlns?: string;
-	xmlnsXlink?: string;
-	xmlSpace?: string;
-	y1?: number | string;
-	y2?: number | string;
-	y?: number | string;
-	yChannelSelector?: string;
-	z?: number | string;
-	zoomAndPan?: string;
+		| 'inherit'>
+	allowReorder?: AttributeState<'no' | 'yes'>
+	alphabetic?: AttributeState<number | string>
+	amplitude?: AttributeState<number | string>
+	arabicForm?: AttributeState<'initial' | 'medial' | 'terminal' | 'isolated'>
+	ascent?: AttributeState<number | string>
+	attributeName?: AttributeState<string>
+	attributeType?: AttributeState<string>
+	autoReverse?: AttributeState<number | string>
+	azimuth?: AttributeState<number | string>
+	baseFrequency?: AttributeState<number | string>
+	baselineShift?: AttributeState<number | string>
+	baseProfile?: AttributeState<number | string>
+	bbox?: AttributeState<number | string>
+	begin?: AttributeState<number | string>
+	bias?: AttributeState<number | string>
+	by?: AttributeState<number | string>
+	calcMode?: AttributeState<number | string>
+	capHeight?: AttributeState<number | string>
+	clip?: AttributeState<number | string>
+	clipPath?: AttributeState<string>
+	clipPathUnits?: AttributeState<number | string>
+	clipRule?: AttributeState<number | string>
+	colorInterpolation?: AttributeState<number | string>
+	colorInterpolationFilters?: AttributeState<'auto' | 'sRGB' | 'linearRGB' | 'inherit'>
+	colorProfile?: AttributeState<number | string>
+	colorRendering?: AttributeState<number | string>
+	contentScriptType?: AttributeState<number | string>
+	contentStyleType?: AttributeState<number | string>
+	cursor?: AttributeState<number | string>
+	cx?: AttributeState<number | string>
+	cy?: AttributeState<number | string>
+	d?: AttributeState<string>
+	decelerate?: AttributeState<number | string>
+	descent?: AttributeState<number | string>
+	diffuseConstant?: AttributeState<number | string>
+	direction?: AttributeState<number | string>
+	display?: AttributeState<number | string>
+	divisor?: AttributeState<number | string>
+	dominantBaseline?: AttributeState<number | string>
+	dur?: AttributeState<number | string>
+	dx?: AttributeState<number | string>
+	dy?: AttributeState<number | string>
+	edgeMode?: AttributeState<number | string>
+	elevation?: AttributeState<number | string>
+	enableBackground?: AttributeState<number | string>
+	end?: AttributeState<number | string>
+	exponent?: AttributeState<number | string>
+	externalResourcesRequired?: AttributeState<number | string>
+	fill?: AttributeState<string>
+	fillOpacity?: AttributeState<number | string>
+	fillRule?: AttributeState<'nonzero' | 'evenodd' | 'inherit'>
+	filter?: AttributeState<string>
+	filterRes?: AttributeState<number | string>
+	filterUnits?: AttributeState<number | string>
+	floodColor?: AttributeState<number | string>
+	floodOpacity?: AttributeState<number | string>
+	focusable?: AttributeState<number | string>
+	fontFamily?: AttributeState<string>
+	fontSize?: AttributeState<number | string>
+	fontSizeAdjust?: AttributeState<number | string>
+	fontStretch?: AttributeState<number | string>
+	fontStyle?: AttributeState<number | string>
+	fontVariant?: AttributeState<number | string>
+	fontWeight?: AttributeState<number | string>
+	format?: AttributeState<number | string>
+	from?: AttributeState<number | string>
+	fx?: AttributeState<number | string>
+	fy?: AttributeState<number | string>
+	g1?: AttributeState<number | string>
+	g2?: AttributeState<number | string>
+	glyphName?: AttributeState<number | string>
+	glyphOrientationHorizontal?: AttributeState<number | string>
+	glyphOrientationVertical?: AttributeState<number | string>
+	glyphRef?: AttributeState<number | string>
+	gradientTransform?: AttributeState<string>
+	gradientUnits?: AttributeState<string>
+	hanging?: AttributeState<number | string>
+	horizAdvX?: AttributeState<number | string>
+	horizOriginX?: AttributeState<number | string>
+	ideographic?: AttributeState<number | string>
+	imageRendering?: AttributeState<number | string>
+	in2?: AttributeState<number | string>
+	in?: AttributeState<string>
+	intercept?: AttributeState<number | string>
+	k1?: AttributeState<number | string>
+	k2?: AttributeState<number | string>
+	k3?: AttributeState<number | string>
+	k4?: AttributeState<number | string>
+	k?: AttributeState<number | string>
+	kernelMatrix?: AttributeState<number | string>
+	kernelUnitLength?: AttributeState<number | string>
+	kerning?: AttributeState<number | string>
+	keyPoints?: AttributeState<number | string>
+	keySplines?: AttributeState<number | string>
+	keyTimes?: AttributeState<number | string>
+	lengthAdjust?: AttributeState<number | string>
+	letterSpacing?: AttributeState<number | string>
+	lightingColor?: AttributeState<number | string>
+	limitingConeAngle?: AttributeState<number | string>
+	local?: AttributeState<number | string>
+	markerEnd?: AttributeState<string>
+	markerHeight?: AttributeState<number | string>
+	markerMid?: AttributeState<string>
+	markerStart?: AttributeState<string>
+	markerUnits?: AttributeState<number | string>
+	markerWidth?: AttributeState<number | string>
+	mask?: AttributeState<string>
+	maskContentUnits?: AttributeState<number | string>
+	maskUnits?: AttributeState<number | string>
+	mathematical?: AttributeState<number | string>
+	mode?: AttributeState<number | string>
+	numOctaves?: AttributeState<number | string>
+	offset?: AttributeState<number | string>
+	opacity?: AttributeState<number | string>
+	operator?: AttributeState<number | string>
+	order?: AttributeState<number | string>
+	orient?: AttributeState<number | string>
+	orientation?: AttributeState<number | string>
+	origin?: AttributeState<number | string>
+	overflow?: AttributeState<number | string>
+	overlinePosition?: AttributeState<number | string>
+	overlineThickness?: AttributeState<number | string>
+	paintOrder?: AttributeState<number | string>
+	panose1?: AttributeState<number | string>
+	pathLength?: AttributeState<number | string>
+	patternContentUnits?: AttributeState<string>
+	patternTransform?: AttributeState<number | string>
+	patternUnits?: AttributeState<string>
+	pointerEvents?: AttributeState<number | string>
+	points?: AttributeState<string>
+	pointsAtX?: AttributeState<number | string>
+	pointsAtY?: AttributeState<number | string>
+	pointsAtZ?: AttributeState<number | string>
+	preserveAlpha?: AttributeState<number | string>
+	preserveAspectRatio?: AttributeState<string>
+	primitiveUnits?: AttributeState<number | string>
+	r?: AttributeState<number | string>
+	radius?: AttributeState<number | string>
+	refX?: AttributeState<number | string>
+	refY?: AttributeState<number | string>
+	renderingIntent?: AttributeState<number | string>
+	repeatCount?: AttributeState<number | string>
+	repeatDur?: AttributeState<number | string>
+	requiredExtensions?: AttributeState<number | string>
+	requiredFeatures?: AttributeState<number | string>
+	restart?: AttributeState<number | string>
+	result?: AttributeState<string>
+	rotate?: AttributeState<number | string>
+	rx?: AttributeState<number | string>
+	ry?: AttributeState<number | string>
+	scale?: AttributeState<number | string>
+	seed?: AttributeState<number | string>
+	shapeRendering?: AttributeState<number | string>
+	slope?: AttributeState<number | string>
+	spacing?: AttributeState<number | string>
+	specularConstant?: AttributeState<number | string>
+	specularExponent?: AttributeState<number | string>
+	speed?: AttributeState<number | string>
+	spreadMethod?: AttributeState<string>
+	startOffset?: AttributeState<number | string>
+	stdDeviation?: AttributeState<number | string>
+	stemh?: AttributeState<number | string>
+	stemv?: AttributeState<number | string>
+	stitchTiles?: AttributeState<number | string>
+	stopColor?: AttributeState<string>
+	stopOpacity?: AttributeState<number | string>
+	strikethroughPosition?: AttributeState<number | string>
+	strikethroughThickness?: AttributeState<number | string>
+	string?: AttributeState<number | string>
+	stroke?: AttributeState<string>
+	strokeDasharray?: AttributeState<string | number>
+	strokeDashoffset?: AttributeState<string | number>
+	strokeLinecap?: AttributeState<'butt' | 'round' | 'square' | 'inherit'>
+	strokeLinejoin?: AttributeState<'miter' | 'round' | 'bevel' | 'inherit'>
+	strokeMiterlimit?: AttributeState<string | number>
+	strokeOpacity?: AttributeState<number | string>
+	strokeWidth?: AttributeState<number | string>
+	surfaceScale?: AttributeState<number | string>
+	systemLanguage?: AttributeState<number | string>
+	tableValues?: AttributeState<number | string>
+	targetX?: AttributeState<number | string>
+	targetY?: AttributeState<number | string>
+	textAnchor?: AttributeState<string>
+	textDecoration?: AttributeState<number | string>
+	textLength?: AttributeState<number | string>
+	textRendering?: AttributeState<number | string>
+	to?: AttributeState<number | string>
+	transform?: AttributeState<string>
+	u1?: AttributeState<number | string>
+	u2?: AttributeState<number | string>
+	underlinePosition?: AttributeState<number | string>
+	underlineThickness?: AttributeState<number | string>
+	unicode?: AttributeState<number | string>
+	unicodeBidi?: AttributeState<number | string>
+	unicodeRange?: AttributeState<number | string>
+	unitsPerEm?: AttributeState<number | string>
+	vAlphabetic?: AttributeState<number | string>
+	values?: AttributeState<string>
+	vectorEffect?: AttributeState<number | string>
+	version?: AttributeState<string>
+	vertAdvY?: AttributeState<number | string>
+	vertOriginX?: AttributeState<number | string>
+	vertOriginY?: AttributeState<number | string>
+	vHanging?: AttributeState<number | string>
+	vIdeographic?: AttributeState<number | string>
+	viewBox?: AttributeState<string>
+	viewTarget?: AttributeState<number | string>
+	visibility?: AttributeState<number | string>
+	vMathematical?: AttributeState<number | string>
+	widths?: AttributeState<number | string>
+	wordSpacing?: AttributeState<number | string>
+	writingMode?: AttributeState<number | string>
+	x1?: AttributeState<number | string>
+	x2?: AttributeState<number | string>
+	x?: AttributeState<number | string>
+	xChannelSelector?: AttributeState<string>
+	xHeight?: AttributeState<number | string>
+	xlinkActuate?: AttributeState<string>
+	xlinkArcrole?: AttributeState<string>
+	xlinkHref?: AttributeState<string>
+	xlinkRole?: AttributeState<string>
+	xlinkShow?: AttributeState<string>
+	xlinkTitle?: AttributeState<string>
+	xlinkType?: AttributeState<string>
+	xmlBase?: AttributeState<string>
+	xmlLang?: AttributeState<string>
+	xmlns?: AttributeState<string>
+	xmlnsXlink?: AttributeState<string>
+	xmlSpace?: AttributeState<string>
+	y1?: AttributeState<number | string>
+	y2?: AttributeState<number | string>
+	y?: AttributeState<number | string>
+	yChannelSelector?: AttributeState<string>
+	z?: AttributeState<number | string>
+	zoomAndPan?: AttributeState<string>
 }
 
 // ----------------------------------------------------------------------------- REFLEX INTRINSIC ELEMENTS

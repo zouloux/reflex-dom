@@ -4,7 +4,12 @@ import {
 } from "./common";
 import { cloneVNode, createVNode } from "./jsx";
 import { IInternalRef } from "./ref";
-import { _createComponentInstance, recursivelyUpdateMountState, ComponentInstance } from "./component";
+import {
+	_createComponentInstance,
+	recursivelyUpdateMountState,
+	ComponentInstance,
+	shallowPropsCompare
+} from "./component";
 import { state } from "./states";
 
 // ----------------------------------------------------------------------------- CONSTANTS
@@ -340,7 +345,13 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			&& ( oldChildNode = oldChildren[ i ] )
 			&& oldChildNode.type === newChildNode.type
 			&& (
-				newChildNode.type !== 6/*ELEMENTS*/
+				// If element tag name changes,
+				// Or if component function changes,
+				// Do not try to update in place, but replace whole node
+				(
+					newChildNode.type !== 6/*ELEMENTS*/
+					&& newChildNode.type !== 7/*COMPONENTS*/
+				)
 				|| oldChildNode.value === newChildNode.value
 			)
 		) {
@@ -402,7 +413,7 @@ export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<an
 
 	// Render component with props instance and component API instance
 	let result = _currentComponent._render.apply(
-		_currentComponent, [ _currentComponent._proxy ?? node.props ] // FIXME : Add component or ref as second argument
+		_currentComponent, [ _currentComponent._proxy ?? node.props, _currentComponent ] // FIXME : Add component or ref as second argument
 	)
 	// Filter rendering on function for tools
 	if ( _currentComponent.vnode.value.renderFilter )
@@ -412,6 +423,7 @@ export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<an
 }
 
 export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = newNode._nodeEnv, forceUpdate = false ) {
+	// console.log('diffNode', newNode, oldNode)
 	// IMPORTANT : Here we clone node if we got the same instance
 	// 			   Otherwise, altering props.children after render will fuck everything up
 	// Clone identical nodes to be able to diff them
@@ -467,28 +479,32 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 		// By default, we always update component on refreshes
 		let shouldUpdate = true
 		if ( !forceUpdate && !renderResult && oldNode ) {
-			// This is a functional component
-			if ( component._propState ) {
-				// Do not update here, update props on state
-				// and let the state update its dependencies
-				shouldUpdate = false
-				component._propState.set({
-					...component._defaultProps,
-					...newNode.props
-				})
+			// FIXME : We check should update on functional and factory components
+			shouldUpdate = (
+				// Use shouldUpdate function on component API
+				component.shouldUpdate
+				? component.shouldUpdate( newNode.props, oldNode.props )
+				// Otherwise shallow props compare with children check
+				: !shallowPropsCompare( newNode.props, oldNode.props, true )
+			)
+
+			if ( shouldUpdate ) {
+				// This is a factory component
+				if ( component.vnode.value.isFactory === true ) {
+					// Do not update here, update props on state
+					// and let the state update its dependencies
+					//shouldUpdate = false
+					component._propState.set({
+						...component._defaultProps,
+						...newNode.props
+					})
+					// We rendered with a state, do not update with a render
+					shouldUpdate = false
+				}
 			}
-			/*else {
-				shouldUpdate = (
-					// Use shouldUpdate function on component API
-					component._shouldUpdate
-					? component._shouldUpdate( newNode.props, oldNode.props )
-					// Otherwise shallow props compare with children check
-					: !shallowPropsCompare( newNode.props, oldNode.props, true )
-				)
-				// Keep dom reference from old node
-				if ( !shouldUpdate )
-					newNode.dom = oldNode.dom
-			}*/
+			// Keep dom reference from old node if we should not update
+			else
+				newNode.dom = oldNode.dom
 		}
 		// If this component needs a render (factory function), render it
 		if ( !renderResult && shouldUpdate )

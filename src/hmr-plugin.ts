@@ -33,7 +33,7 @@ export function reflexRefresh ( options ) {
 				|| !/\.(t|j)sx?$/.test(id)
 				// Do not check files into node_modules
 				|| id.includes('node_modules')
-				// Do not check works
+				// Do not check workers
 				|| id.includes('?worker')
 			)
 				return;
