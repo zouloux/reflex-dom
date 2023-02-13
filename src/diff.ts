@@ -416,8 +416,8 @@ export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<an
 		_currentComponent, [ _currentComponent._proxy ?? node.props, _currentComponent ] // FIXME : Add component or ref as second argument
 	)
 	// Filter rendering on function for tools
-	if ( _currentComponent.vnode.value.renderFilter )
-		result = _currentComponent.vnode.value.renderFilter( _currentComponent, result )
+	if ( _currentComponent.vnode.value['renderFilter'] )
+		result = _currentComponent.vnode.value['renderFilter']( _currentComponent, result )
 	// Keep _currentComponent, we'll unselect it later on purpose.
 	return result as GReturn
 }

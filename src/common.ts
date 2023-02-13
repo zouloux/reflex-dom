@@ -60,7 +60,7 @@ export interface INodeEnv {
 
 export type TComponentFunctionProperties = {
 	isFactory		?: boolean
-	renderFilter	?:( component:ComponentInstance, renderResult:VNode ) => void
+	renderFilter	?:( component:ComponentInstance, renderResult:VNode ) => VNode
 }
 
 export type RenderDom = Element | Text | Comment
