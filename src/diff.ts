@@ -386,6 +386,9 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 
 // ----------------------------------------------------------------------------- DIFF NODE
 
+let _renderHandler
+export function setRenderHandler ( handler ) { _renderHandler = handler }
+
 export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any, ComponentFunction> ) :GReturn {
 	// Select current component before rendering
 	_currentComponent = node.component;
@@ -410,14 +413,12 @@ export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<an
 		// else //if ( props !== _currentComponent._propStates.peek() )
 		// 	_currentComponent._propState.set( node.props )
 	}
-
 	// Render component with props instance and component API instance
 	let result = _currentComponent._render.apply(
 		_currentComponent, [ _currentComponent._proxy ?? node.props, _currentComponent ] // FIXME : Add component or ref as second argument
 	)
-	// Filter rendering on function for tools
-	if ( _currentComponent.vnode.value['renderFilter'] )
-		result = _currentComponent.vnode.value['renderFilter']( _currentComponent, result )
+	// Call reflex render for external tools
+	_renderHandler?.( _currentComponent )
 	// Keep _currentComponent, we'll unselect it later on purpose.
 	return result as GReturn
 }
