@@ -52,6 +52,9 @@ export function _createComponentInstance
 
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 
+let _componentHookHandler
+export function hookComponentMount ( handler ) { _componentHookHandler = handler }
+
 export function _mountComponent ( component:ComponentInstance ) {
 	// Call every mount handler and store returned unmount handlers
 	const total = component._mountHandlers.length
@@ -65,9 +68,11 @@ export function _mountComponent ( component:ComponentInstance ) {
 	// Reset mount handlers, no need to keep them
 	component._mountHandlers = []
 	component.isMounted = true;
+	_componentHookHandler?.( component, true )
 }
 
 export function _unmountComponent ( component:ComponentInstance ) {
+	_componentHookHandler?.( component, false )
 	_dispatch(component._unmountHandlers, component)
 	component.isMounted = false;
 	// Cut component branch from virtual node to allow GC to destroy component
@@ -92,9 +97,10 @@ export function _unmountComponent ( component:ComponentInstance ) {
 
 export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 	if ( node.type === 7/*COMPONENTS*/ ) {
-		if ( node.component )
+		if ( node.component ) {
 			recursivelyUpdateMountState( node.component.children, doMount )
-		doMount ? _mountComponent( node.component ) : _unmountComponent( node.component )
+			doMount ? _mountComponent( node.component ) : _unmountComponent( node.component )
+		}
 	}
 	else if ( node.type > 4/*CONTAINERS*/ ) {
 		const total = node.props.children.length

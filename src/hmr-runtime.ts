@@ -1,3 +1,5 @@
+import { hookComponentMount } from "./component";
+
 /**
  * Filter all functions from a module and call a handler with name and function.
  */
@@ -66,19 +68,23 @@ function tryRegisterComponentFromRender ( component, tries = 0 ) {
 }
 
 let _renderHookEnabled = false
-function initRenderHook ( setRenderHandler ) {
+function initRenderHook ( hookComponentMount ) {
 	if ( _renderHookEnabled ) return
 	_renderHookEnabled = true
-	setRenderHandler( (component) => {
-		// Component just rendered, its not added to the dom yet.
-		// Because its all in sync, we can just wait end of tick
-		self.queueMicrotask(() => {
-			if ( !component || !component.vnode ) {
-				console.error( `Reflex.hmrRuntime // Invalid component instance`, component );
-				return;
-			}
-			tryRegisterComponentFromRender( component );
-		})
+	hookComponentMount( (component, mounted) => {
+		console.info('hookComponentMount', component, mounted)
+		if ( mounted ) {
+			// Component just rendered, its not added to the dom yet.
+			// Because its all in sync, we can just wait end of tick
+			self.queueMicrotask(() => {
+				tryRegisterComponentFromRender( component );
+			})
+		}
+		else {
+			const functionPath = component.vnode.value.__functionPath
+			const componentDomPath = getComponentDOMPath( component );
+			delete _allReflexComponents[ functionPath ][ componentDomPath ];
+		}
 	})
 }
 
@@ -88,12 +94,12 @@ function initRenderHook ( setRenderHandler ) {
  * @param cloneVNode imported from "@zouloux/reflex
  * @param diffNode imported from "@zouloux/reflex
  * @param recursivelyUpdateMountState imported from "@zouloux/reflex
- * @param setRenderHandler imported from "@zouloux/reflex
+ * @param hookComponentMount imported from "@zouloux/reflex
  */
-export function enableReflexRefresh( meta, cloneVNode, diffNode, recursivelyUpdateMountState, setRenderHandler ) {
+export function enableReflexRefresh( meta, cloneVNode, diffNode, recursivelyUpdateMountState, hookComponentMount ) {
 
 	// Every reflex render will register its component instance to be replacable by HMR
-	initRenderHook( setRenderHandler )
+	initRenderHook( hookComponentMount )
 
 	// Here we are getting module path.
 	// Because we can have 2 differents components with the same function name, we need to differenciate them.
@@ -130,11 +136,14 @@ export function enableReflexRefresh( meta, cloneVNode, diffNode, recursivelyUpda
 				// We replace the component's function with the new module
 				const oldNode = oldFunction.vnode;
 				// FIXME : Check old node, sometime not valid
-				if (!oldNode) {
+				if ( !oldNode ) {
 					console.error(`Reflex.hmrRuntime // Invalid old node`, name, newFunction, oldFunction);
 					return;
 				}
 				const newNode = cloneVNode(oldNode);
+				// Transfer id for refs
+				if ( oldNode._id )
+					newNode._id = oldNode._id
 				newNode.value = newFunction;
 				// Mount new node and replace old node dom
 				const parent = oldNode.dom.parentElement;
@@ -143,13 +152,16 @@ export function enableReflexRefresh( meta, cloneVNode, diffNode, recursivelyUpda
 				recursivelyUpdateMountState(newNode, true);
 				// Unmount old node and remove its dom
 				recursivelyUpdateMountState(oldNode, false);
+				oldNode.dom = null
+				if ( oldNode._ref )
+					oldNode._ref._setFromVNode( oldNode )
 				parent.removeChild(oldNode.dom);
 			});
 		});
 		// Do not fast-refresh if no reflex components where in this file
 		if (!hadAtLeastOneComponent) {
 			// FIXME ?
-			window.location.reload();
+			// window.location.reload();
 			// meta.hot.invalidate();
 		}
 	};

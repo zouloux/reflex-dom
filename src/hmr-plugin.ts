@@ -5,7 +5,7 @@
 // Import reflex lib from module and not helper, easier
 const injectedCodeBefore = (reflexLibImport, reflexRefreshLibImport) => `
 // Injected code - Reflex Refresh plugin
-import { cloneVNode as __refreshDep1, diffNode as __refreshDep2, recursivelyUpdateMountState as __refreshDep3, setRenderHandler as __refreshDep4 } from "${reflexLibImport}"
+import { cloneVNode as __refreshDep1, diffNode as __refreshDep2, recursivelyUpdateMountState as __refreshDep3, hookComponentMount as __refreshDep4 } from "${reflexLibImport}"
 import { enableReflexRefresh } from "${reflexRefreshLibImport}"
 `;
 

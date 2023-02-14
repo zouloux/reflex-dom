@@ -386,9 +386,6 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 
 // ----------------------------------------------------------------------------- DIFF NODE
 
-let _renderHandler
-export function setRenderHandler ( handler ) { _renderHandler = handler }
-
 export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any, ComponentFunction> ) :GReturn {
 	// Select current component before rendering
 	_currentComponent = node.component;
@@ -417,8 +414,6 @@ export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<an
 	let result = _currentComponent._render.apply(
 		_currentComponent, [ _currentComponent._proxy ?? node.props, _currentComponent ] // FIXME : Add component or ref as second argument
 	)
-	// Call reflex render for external tools
-	_renderHandler?.( _currentComponent )
 	// Keep _currentComponent, we'll unselect it later on purpose.
 	return result as GReturn
 }
@@ -480,32 +475,31 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 		// By default, we always update component on refreshes
 		let shouldUpdate = true
 		if ( !forceUpdate && !renderResult && oldNode ) {
-			// FIXME : We check should update on functional and factory components
-			shouldUpdate = (
-				// Use shouldUpdate function on component API
-				component.shouldUpdate
-				? component.shouldUpdate( newNode.props, oldNode.props )
-				// Otherwise shallow props compare with children check
-				: !shallowPropsCompare( newNode.props, oldNode.props, true )
-			)
-
-			if ( shouldUpdate ) {
-				// This is a factory component
-				if ( component.vnode.value.isFactory === true ) {
-					// Do not update here, update props on state
-					// and let the state update its dependencies
-					//shouldUpdate = false
-					component._propState.set({
-						...component._defaultProps,
-						...newNode.props
-					})
-					// We rendered with a state, do not update with a render
-					shouldUpdate = false
-				}
+			// This is a factory component
+			if ( component.vnode.value.isFactory === true ) {
+				// Do not update here, update props on state
+				// and let the state update its dependencies
+				//shouldUpdate = false
+				component._propState.set({
+					...component._defaultProps,
+					...newNode.props
+				})
+				// We rendered with a state, do not update with a render
+				shouldUpdate = false
 			}
-			// Keep dom reference from old node if we should not update
-			else
-				newNode.dom = oldNode.dom
+			else {
+				// FIXME : We check should update on functional and factory components
+				shouldUpdate = (
+					// Use shouldUpdate function on component API
+					component.shouldUpdate
+					? component.shouldUpdate( newNode.props, oldNode.props )
+					// Otherwise shallow props compare with children check
+					: !shallowPropsCompare( newNode.props, oldNode.props, true )
+				)
+				// Keep dom reference from old node if we should not update
+				if ( !shouldUpdate )
+					newNode.dom = oldNode.dom
+			}
 		}
 		// If this component needs a render (factory function), render it
 		if ( !renderResult && shouldUpdate )
