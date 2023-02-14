@@ -17,7 +17,7 @@ export { recursivelyUpdateMountState, mounted, unmounted, rendered, afterNextRen
 export { h, h as createElement, createVNode, cloneVNode } from "./jsx"
 
 // Export types ( do not export too much to keep it simple )
-export type { IState, TInitialValue, TEffect, IStateOptions, TComputed } from "./states"
+export type { IState, IComputeState, TInitialValue, TEffect, IStateOptions, TComputed } from "./states"
 export type { IRef, IRefs } from "./ref"
 export type { ComponentInstance } from "./component"
 export type {

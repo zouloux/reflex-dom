@@ -57,7 +57,7 @@ export type IState<GType> = {
 	dispose ():void
 }
 
-interface IComputeState<GType> extends IState<GType> {
+export interface IComputeState<GType> extends IState<GType> {
 	update ():void
 }
 

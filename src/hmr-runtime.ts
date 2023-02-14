@@ -149,8 +149,6 @@ export function enableReflexRefresh( meta, cloneVNode, diffNode, recursivelyUpda
 				// Unmount old node and remove its dom
 				recursivelyUpdateMountState(oldNode, false);
 				parent.removeChild(oldNode.dom);
-				if ( oldNode._ref )
-					oldNode._ref._setFromVNode( null )
 				oldNode.dom = null
 			});
 		});
