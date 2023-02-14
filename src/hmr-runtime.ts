@@ -44,6 +44,7 @@ const _allReflexComponents = {};
 
 
 function registerComponentFromRender ( component, tries ) {
+	if ( !component.isMounted ) return
 	// Get function path
 	const functionPath = component.vnode.value.__functionPath
 	// Module not ready yet, wait a bit more
@@ -60,11 +61,11 @@ function registerComponentFromRender ( component, tries ) {
 }
 
 function tryRegisterComponentFromRender ( component, tries = 0 ) {
-	if ( tries > 2 )
-		console.warn('Component not ready yet', component)
-	else if ( tries > 5 )
-		return
-	setTimeout( () => registerComponentFromRender( component, tries ), 100 )
+	// if ( tries > 2 )
+	// 	console.warn('Component not ready yet', component)
+	// else
+	if ( tries > 10 ) return
+	setTimeout( () => registerComponentFromRender( component, tries ), 30 )
 }
 
 let _renderHookEnabled = false
@@ -72,7 +73,7 @@ function initRenderHook ( hookComponentMount ) {
 	if ( _renderHookEnabled ) return
 	_renderHookEnabled = true
 	hookComponentMount( (component, mounted) => {
-		console.info('hookComponentMount', component, mounted)
+		// console.info('hookComponentMount', component, mounted)
 		if ( mounted ) {
 			// Component just rendered, its not added to the dom yet.
 			// Because its all in sync, we can just wait end of tick
@@ -149,13 +150,13 @@ export function enableReflexRefresh( meta, cloneVNode, diffNode, recursivelyUpda
 				const parent = oldNode.dom.parentElement;
 				diffNode(newNode, null, oldNode._nodeEnv);
 				parent.insertBefore(newNode.dom, oldNode.dom);
-				recursivelyUpdateMountState(newNode, true);
+				//recursivelyUpdateMountState(newNode, true);
 				// Unmount old node and remove its dom
 				recursivelyUpdateMountState(oldNode, false);
-				oldNode.dom = null
-				if ( oldNode._ref )
-					oldNode._ref._setFromVNode( oldNode )
 				parent.removeChild(oldNode.dom);
+				if ( oldNode._ref )
+					oldNode._ref._setFromVNode( null )
+				oldNode.dom = null
 			});
 		});
 		// Do not fast-refresh if no reflex components where in this file

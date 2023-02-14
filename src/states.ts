@@ -139,7 +139,7 @@ export function state <GType> (
 	// List of side effects / node / components to update
 	const _effects = new Set<TEffect>()
 	const _effectDisposes = new Set<TDisposeHandler>()
-	const _changedHandlers = new Set<TEffect>()
+	const _changeds = new Set<TEffect>()
 	const _nodes = new Set<VNode>()
 	const _components = new Set<ComponentInstance>()
 
@@ -205,14 +205,14 @@ export function state <GType> (
 		await Promise.all( promises )
 
 		// Call changed handler after dom mutations
-		_changedHandlers.forEach( e => _invalidateEffect( e ) )
+		_changeds.forEach( e => _invalidateEffect( e ) )
 	}
 
 	function dispose () {
 		initialValue = null
 		_effects.clear()
 		_effectDisposes.clear()
-		_changedHandlers.clear()
+		_changeds.clear()
 		_nodes.clear()
 		_components.clear()
 	}
@@ -236,8 +236,10 @@ export function state <GType> (
 				_currentStates.add( this )
 			}
 			// Register current after changed handler
-			else if ( _currentChanged )
-				_changedHandlers.add( _currentChanged )
+			else if ( _currentChanged ) {
+				_changeds.add( _currentChanged )
+				_currentStates.add( this )
+			}
 			// Register current text node
 			else if ( currentNode && (currentNode.type === 3 || currentNode.type === 2) && currentNode.value === this ) {
 				// Save component to current text node to optimize later
@@ -274,18 +276,19 @@ export function state <GType> (
 		// Remove an effect handler
 		_removeEffect ( handler:TEffect ) {
 			_effects?.delete( handler )
+			_changeds?.delete( handler )
 		},
 	}
 }
 
 // ----------------------------------------------------------------------------- EFFECTS / CHANGED
 
-function _disposeEffect ( associatedStates:IState<any>[] ) {
+function _disposeEffect ( associatedStates:IState<any>[], handler ) {
 	// TODO : Dispose + register in component for later disposal
 	// TODO : TEST + OPTIM
 	for ( const state of associatedStates )
 		// @ts-ignore
-		associatedStates._removeEffect( handler )
+		state._removeEffect( handler )
 }
 
 function _captureAssociatedStates () {
@@ -321,7 +324,7 @@ export function effect ( handler:TEffect ):TDisposeHandler {
 	// This function will remove the handler from all associated states
 	// If this effect is ran into a factory component, it will be automatically
 	// dispose when the component is unmounted.
-	return unmounted( () => _disposeEffect(associatedStates) )
+	return unmounted( () => _disposeEffect(associatedStates, handler) )
 }
 
 /**
@@ -336,7 +339,7 @@ export function changed ( handler:TEffect ):TDisposeHandler {
 		associatedStates = _captureAssociatedStates()
 		_currentChanged = null
 	})
-	return unmounted( () => _disposeEffect(associatedStates) )
+	return unmounted( () => _disposeEffect(associatedStates, handler) )
 }
 
 // ----------------------------------------------------------------------------- COMPUTE
