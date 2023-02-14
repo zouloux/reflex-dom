@@ -1,14 +1,14 @@
-import { hookComponentMount } from "./component";
 
 /**
  * Filter all functions from a module and call a handler with name and function.
  */
 function getFunctionsFromModule(module, handler) {
+	if ( typeof module !== "object" ) return
 	Object.keys(module).map(entityName => {
 		const entity = module[entityName];
-		if (typeof entity !== "function")
+		if ( typeof entity !== "function" )
 			return;
-		handler(entityName, entity);
+		handler( entityName, entity );
 	});
 }
 /**
@@ -55,31 +55,24 @@ function registerComponentFromRender ( component, tries ) {
 		_allReflexComponents[ functionPath ] = {};
 	// Get instance dom path for this instance
 	const componentDomPath = getComponentDOMPath( component );
-	// console.log('Register', name, componentDomPath)
 	// Register this module instance
 	_allReflexComponents[ functionPath ][ componentDomPath ] = component;
 }
 
-function tryRegisterComponentFromRender ( component, tries = 0 ) {
-	// if ( tries > 2 )
-	// 	console.warn('Component not ready yet', component)
-	// else
+function tryRegisterComponentFromRender ( component, tries ) {
 	if ( tries > 10 ) return
 	setTimeout( () => registerComponentFromRender( component, tries ), 30 )
 }
 
 let _renderHookEnabled = false
-function initRenderHook ( hookComponentMount ) {
+function initComponentMountHook ( hookComponentMount ) {
 	if ( _renderHookEnabled ) return
 	_renderHookEnabled = true
 	hookComponentMount( (component, mounted) => {
-		// console.info('hookComponentMount', component, mounted)
 		if ( mounted ) {
-			// Component just rendered, its not added to the dom yet.
-			// Because its all in sync, we can just wait end of tick
-			self.queueMicrotask(() => {
-				tryRegisterComponentFromRender( component );
-			})
+			// Component just rendered, not added to the dom yet.
+			// Because all sync, we can just wait end of tick
+			self.queueMicrotask(() => registerComponentFromRender( component, 0 ) )
 		}
 		else {
 			const functionPath = component.vnode.value.__functionPath
@@ -99,11 +92,11 @@ function initRenderHook ( hookComponentMount ) {
  */
 export function enableReflexRefresh( meta, cloneVNode, diffNode, recursivelyUpdateMountState, hookComponentMount ) {
 
-	// Every reflex render will register its component instance to be replacable by HMR
-	initRenderHook( hookComponentMount )
+	// Every reflex mount will register its component instance to be HMR-proof
+	initComponentMountHook( hookComponentMount )
 
 	// Here we are getting module path.
-	// Because we can have 2 differents components with the same function name, we need to differenciate them.
+	// Because we can have 2 different components with the same function name, we need to differentiate them.
 	// But to tell on each component on which module they are from,
 	// we need to import the current module to have all exported members available.
 	// I didn't find a way to have them directly here. this / self / exports / import.* does not work
@@ -117,40 +110,40 @@ export function enableReflexRefresh( meta, cloneVNode, diffNode, recursivelyUpda
 
 	// Accept hot module reloading for this module
 	return ( module ) => {
-		// We need to re-register reflex modules with the new module
-		//registerReflexComponents(module);
 		// Get all functions from this new module
 		let hadAtLeastOneComponent = false;
-		getFunctionsFromModule(module, (name, fn) => {
+		getFunctionsFromModule(module, (name, newFunction) => {
 			// Target component in global register with its key
 			const componentKey = getFunctionKeyPath(meta, name);
 			// If this function is not a registered and running reflex component
-			if (!(componentKey in _allReflexComponents))
+			if ( !(componentKey in _allReflexComponents) )
 				return;
 			const componentInstances = _allReflexComponents[componentKey];
-			Object.keys(componentInstances).map(instancePath => {
+			Object.keys( componentInstances ).map( instancePath => {
 				// Target old and new functions
 				const oldFunction = componentInstances[instancePath];
-				const newFunction = module[name];
 				hadAtLeastOneComponent = true;
 				// Target and clone old node
 				// We replace the component's function with the new module
 				const oldNode = oldFunction.vnode;
 				// FIXME : Check old node, sometime not valid
 				if ( !oldNode ) {
-					console.error(`Reflex.hmrRuntime // Invalid old node`, name, newFunction, oldFunction);
+					// console.error(`Reflex.hmrRuntime // Invalid old node`, name, newFunction, oldFunction);
 					return;
 				}
+				// Clone old node to keep props and stuff
 				const newNode = cloneVNode(oldNode);
 				// Transfer id for refs
 				if ( oldNode._id )
 					newNode._id = oldNode._id
+				// Override new function from new module
 				newNode.value = newFunction;
+				// Reset component instance so diffNode will re-create it
+				newNode.component = null
 				// Mount new node and replace old node dom
 				const parent = oldNode.dom.parentElement;
-				diffNode(newNode, null, oldNode._nodeEnv);
-				parent.insertBefore(newNode.dom, oldNode.dom);
-				//recursivelyUpdateMountState(newNode, true);
+				diffNode( newNode, null, oldNode._nodeEnv );
+				parent.insertBefore( newNode.dom, oldNode.dom );
 				// Unmount old node and remove its dom
 				recursivelyUpdateMountState(oldNode, false);
 				parent.removeChild(oldNode.dom);
