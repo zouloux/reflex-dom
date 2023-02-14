@@ -30,7 +30,6 @@ function getComponentDOMPath(target) {
 	return id;
 }
 
-
 // Compute component key with module url
 // Do not take cache busters with ?t= into account otherwise this will be useless
 const getFunctionKeyPath = (meta, name) => `${meta.url.split("?")[0]}/${name}`;
@@ -42,9 +41,11 @@ const getFunctionKeyPath = (meta, name) => `${meta.url.split("?")[0]}/${name}`;
 // into different modules
 const _allReflexComponents = {};
 
+// -----------------------------------------------------------------------------
 
 function registerComponentFromRender ( component, tries ) {
-	if ( !component.isMounted ) return
+	if ( !component.isMounted )
+		return; // FIXME : Verbose here
 	// Get function path
 	const functionPath = component.vnode.value.__functionPath
 	// Module not ready yet, wait a bit more
@@ -60,7 +61,8 @@ function registerComponentFromRender ( component, tries ) {
 }
 
 function tryRegisterComponentFromRender ( component, tries ) {
-	if ( tries > 10 ) return
+	if ( tries > 10 )
+		return; // FIXME : Verbose here
 	setTimeout( () => registerComponentFromRender( component, tries ), 30 )
 }
 
@@ -76,8 +78,8 @@ function initComponentMountHook ( hookComponentMount ) {
 		}
 		else {
 			const functionPath = component.vnode.value.__functionPath
-			const componentDomPath = getComponentDOMPath( component );
-			delete _allReflexComponents[ functionPath ][ componentDomPath ];
+			const componentDomPath = getComponentDOMPath( component )
+			delete _allReflexComponents[ functionPath ][ componentDomPath ]
 		}
 	})
 }
@@ -114,23 +116,23 @@ export function enableReflexRefresh( meta, cloneVNode, diffNode, recursivelyUpda
 		let hadAtLeastOneComponent = false;
 		getFunctionsFromModule(module, (name, newFunction) => {
 			// Target component in global register with its key
-			const componentKey = getFunctionKeyPath(meta, name);
+			const componentPath = getFunctionKeyPath( meta, name );
 			// If this function is not a registered and running reflex component
-			if ( !(componentKey in _allReflexComponents) )
-				return;
-			const componentInstances = _allReflexComponents[componentKey];
+			if ( !(componentPath in _allReflexComponents) )
+				return; // FIXME : Verbose here
+			const componentInstances = _allReflexComponents[ componentPath] ;
 			Object.keys( componentInstances ).map( instancePath => {
 				// Target old and new functions
 				const oldFunction = componentInstances[instancePath];
+				if ( !oldFunction )
+					return; // FIXME : Verbose here
 				hadAtLeastOneComponent = true;
 				// Target and clone old node
 				// We replace the component's function with the new module
 				const oldNode = oldFunction.vnode;
 				// FIXME : Check old node, sometime not valid
-				if ( !oldNode ) {
-					// console.error(`Reflex.hmrRuntime // Invalid old node`, name, newFunction, oldFunction);
-					return;
-				}
+				if ( !oldNode )
+					return; // FIXME : Verbose here
 				// Clone old node to keep props and stuff
 				const newNode = cloneVNode(oldNode);
 				// Transfer id for refs
@@ -154,6 +156,7 @@ export function enableReflexRefresh( meta, cloneVNode, diffNode, recursivelyUpda
 		});
 		// Do not fast-refresh if no reflex components where in this file
 		if (!hadAtLeastOneComponent) {
+			// FIXME : Verbose here
 			// FIXME ?
 			// window.location.reload();
 			// meta.hot.invalidate();

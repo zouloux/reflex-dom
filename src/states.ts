@@ -135,7 +135,6 @@ export function state <GType> (
 	// Prepare initial value if it's a function
 	initialValue = _prepareInitialValue( initialValue )
 
-
 	// List of side effects / node / components to update
 	const _effects = new Set<TEffect>()
 	const _effectDisposes = new Set<TDisposeHandler>()
@@ -209,12 +208,13 @@ export function state <GType> (
 	}
 
 	function dispose () {
-		initialValue = null
-		_effects.clear()
-		_effectDisposes.clear()
-		_changeds.clear()
-		_nodes.clear()
-		_components.clear()
+		initialValue = null;
+		// _effects.clear()
+		// _effectDisposes.clear()
+		// _changeds.clear()
+		// _nodes.clear()
+		// _components.clear()
+		[_effects, _effectDisposes, _changeds, _nodes, _components].map( e => e.clear() )
 	}
 
 	// if this state is created into a factory phase of a component,
