@@ -286,9 +286,10 @@ export function state <GType> (
 function _disposeEffect ( associatedStates:IState<any>[], handler ) {
 	// TODO : Dispose + register in component for later disposal
 	// TODO : TEST + OPTIM
-	for ( const state of associatedStates )
-		// @ts-ignore
-		state._removeEffect( handler )
+	if ( associatedStates )
+		for ( const state of associatedStates )
+			// @ts-ignore
+			state._removeEffect( handler )
 }
 
 function _captureAssociatedStates () {
