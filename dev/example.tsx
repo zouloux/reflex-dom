@@ -30,19 +30,6 @@ function ReflexApp( props, component:ComponentInstance ) {
 		}
 	})
 
-	mounted(() => {
-		console.log("MOUNTED")
-		console.log(component.vnode.dom.parentElement)
-	})
-	rendered(() => {
-		console.log("RENDERED")
-		console.log(component.vnode.dom.parentElement)
-	})
-	afterNextRender(() => {
-		console.log("ANR")
-		console.log(component.vnode.dom.parentElement)
-	})
-
 	// Returns a render function
 	// Classes can be arrays ! Falsy elements of the array will be discarded
 	return () => <div class={[ "ReflexApp", props.modifier, false ]}>

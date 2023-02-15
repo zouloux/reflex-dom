@@ -63,7 +63,7 @@ export interface IComputeState<GType> extends IState<GType> {
 
 type TDisposeHandler = () => void
 
-export type TEffect = () => (void|TDisposeHandler) // FIXME : Promise<void>
+export type TEffect = () => (void|TDisposeHandler|Promise<any>)
 
 export type TComputed <GType> = () => GType
 
@@ -146,7 +146,7 @@ export function state <GType> (
 	if ( _currentEffect )
 		_effects.add( _currentEffect )
 
-	function _addEffectDispose ( handler:TEffect|void ) {
+	function _addEffectDispose ( handler:TEffect|void|Promise<any> ) {
 		typeof handler === "function" && _effectDisposes?.add( handler )
 	}
 
