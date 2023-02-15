@@ -1,3 +1,4 @@
+import { recursivelyUpdateMountState } from "./component";
 
 /**
  * Filter all functions from a module and call a handler with name and function.
@@ -146,6 +147,7 @@ export function enableReflexRefresh( meta, cloneVNode, diffNode, recursivelyUpda
 				const parent = oldNode.dom.parentElement;
 				diffNode( newNode, null, oldNode._nodeEnv );
 				parent.insertBefore( newNode.dom, oldNode.dom );
+				recursivelyUpdateMountState(newNode, true)
 				// Unmount old node and remove its dom
 				recursivelyUpdateMountState(oldNode, false);
 				parent.removeChild(oldNode.dom);

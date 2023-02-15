@@ -1,8 +1,8 @@
-import { h, render, state, changed, ref, mounted, compute } from "../src";
+import { h, render, state, changed, ref, mounted, compute, ComponentInstance, rendered, afterNextRender } from "../src";
 import { drawReflexDebug } from "../src/debug";
 
 // Reflex components can be pure functions or factory functions
-function ReflexApp(props) {
+function ReflexApp( props, component:ComponentInstance ) {
 	// Basic state implementation. States are signal.
 	const counter = state(0);
 	const increment = () => counter.value++;
@@ -28,6 +28,19 @@ function ReflexApp(props) {
 			color: counter.value % 2 === 0 ? "red" : "yellow",
 			transition: "200ms color"
 		}
+	})
+
+	mounted(() => {
+		console.log("MOUNTED")
+		console.log(component.vnode.dom.parentElement)
+	})
+	rendered(() => {
+		console.log("RENDERED")
+		console.log(component.vnode.dom.parentElement)
+	})
+	afterNextRender(() => {
+		console.log("ANR")
+		console.log(component.vnode.dom.parentElement)
 	})
 
 	// Returns a render function

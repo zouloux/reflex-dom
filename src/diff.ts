@@ -236,6 +236,26 @@ function _injectChildren ( parentDom:Element, node:VNode, nodeEnv:INodeEnv ) {
 		_registerKey( node, child )
 		if ( child.dom )
 			parentDom.appendChild( child.dom )
+		_mountFreshNode( child )
+		_dispatchRender( child )
+	}
+}
+
+function _mountFreshNode ( node:VNode ) {
+	// If component is not mounted yet, mount it recursively
+	if ( node.type === 7/*COMPONENTS*/ && !node.component.isMounted )
+		recursivelyUpdateMountState( node, true )
+}
+
+function _dispatchRender ( node:VNode ) {
+	// Execute after render handlers
+	if ( node.type === 7/*COMPONENTS*/ && node.value.isFactory !== false ) {
+		const { component } = node
+		_dispatch( component._renderHandlers, component )
+		if ( component._nextRenderHandlers.length ) {
+			_dispatch( component._nextRenderHandlers, component )
+			component._nextRenderHandlers = []
+		}
 	}
 }
 
@@ -367,6 +387,9 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			collapseCount --
 		}
+		// Mount node
+		_mountFreshNode( newChildNode )
+		_dispatchRender( newChildNode )
 	}
 	// Remove old children which are not reused
 	const totalOld = oldChildren.length
@@ -483,11 +506,8 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 				// Otherwise shallow props compare with children check
 				: !shallowPropsCompare( newNode.props, oldNode.props, true )
 			)
-			// Keep dom reference from old node if we should not update
-			if ( !shouldUpdate )
-				newNode.dom = oldNode.dom
 			// Otherwise, if we should update a factory component
-			else if ( component.vnode.value.isFactory === true ) {
+			if ( shouldUpdate && component.vnode.value.isFactory === true ) {
 				// Do not continue regular update, update props on state
 				// and let the state update its dependencies
 				component._propState.set({
@@ -498,6 +518,9 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 				// do not continue regular update with a render
 				shouldUpdate = false
 			}
+			// Keep dom reference from old node if we should not update
+			if ( !shouldUpdate )
+				newNode.dom = oldNode.dom
 		}
 		// If this component needs a render (factory function), render it
 		if ( !renderResult && shouldUpdate )
@@ -516,21 +539,26 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 		newNode._nodeEnv = nodeEnv
 	// Update ref on node
 	_updateNodeRef( newNode )
+
+	// if ( newNode.dom && newNode.dom.parentElement ) {
+	// 	_dispatchRender( newNode )
+	// }
 	// Now that component and its children are ready
-	if ( newNode.type === 7/*COMPONENTS*/ ) {
-		// If component is not mounted yet, mount it recursively
-		if ( !newNode.component.isMounted )
-			recursivelyUpdateMountState( newNode, true )
-		// Execute after render handlers
-		if ( newNode.value.isFactory !== false ) {
-			_dispatch( newNode.component._renderHandlers, newNode.component )
-			if ( newNode.component._nextRenderHandlers.length ) {
-				_dispatch( newNode.component._nextRenderHandlers, newNode.component )
-				newNode.component._nextRenderHandlers = []
-			}
-		}
-	}
+	// if ( newNode.type === 7/*COMPONENTS*/ ) {
+	// 	// If component is not mounted yet, mount it recursively
+	// 	if ( !newNode.component.isMounted )
+	// 		recursivelyUpdateMountState( newNode, true )
+	// 	// Execute after render handlers
+	// 	if ( newNode.value.isFactory !== false ) {
+	// 		_dispatch( newNode.component._renderHandlers, newNode.component )
+	// 		if ( newNode.component._nextRenderHandlers.length ) {
+	// 			_dispatch( newNode.component._nextRenderHandlers, newNode.component )
+	// 			newNode.component._nextRenderHandlers = []
+	// 		}
+	// 	}
+	// }
 	// Diff children for node that are containers and not components
-	else if ( newNode.type > 4/*CONTAINERS*/ )
+	// else if ( newNode.type > 4/*CONTAINERS*/ )
+	if ( newNode.type > 4/*CONTAINERS*/ )
 		_diffChildren( newNode, oldNode, nodeEnv )
 }

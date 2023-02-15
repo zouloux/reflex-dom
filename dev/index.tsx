@@ -1,9 +1,9 @@
-import { h, ref, render, state, compute } from "../src";
+import { h, ref, render, state, compute, mounted, ComponentInstance } from "../src";
 import { drawReflexDebug, MemoryUsage } from "../src/debug";
 
 // -----------------------------------------------------------------------------
 
-function DevApp () {
+function DevApp ( props, component:ComponentInstance ) {
 
 	const testStateA1 = state( 1 )
 	const testStateA2 = compute( () => testStateA1.value * 2 )
