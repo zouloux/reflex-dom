@@ -17,7 +17,7 @@ __Reflex__ is a tiny and fast reactive UI library.
 ![](https://img.shields.io/badge/0-dependency-success)
 <br>
 [![gzip size](http://img.badgesize.io/https://unpkg.com/reflex-dom/reflex-dom/dist/reflex.es2017.min.js?compression=gzip&label=gzip)](https://unpkg.com/reflex-dom/reflex-dom/dist/reflex.es2017.min.js)
-[![brotli size](http://img.badges![](docs/api/_images/example.gif)ize.io/https://esm.sh/v89/reflex-dom/es2022/reflex-dom.js?compression=brotli&label=brotli)](https://esm.sh/v89/reflex-dom/es2022/reflex-dom.js)
+[![brotli size](http://img.badgesize.io/https://esm.sh/v89/reflex-dom/es2022/reflex-dom.js?compression=brotli&label=brotli)](https://esm.sh/v89/reflex-dom/es2022/reflex-dom.js)
 
 ---
 
