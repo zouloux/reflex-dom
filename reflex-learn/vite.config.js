@@ -8,7 +8,7 @@ export default defineConfig( () => {
 		build: {
 			outDir: resolve("../docs/learn/"),
 			manifest: true,
-			// assetsDir: "./",
+			assetsDir: "./",
 			rollupOptions: {
 				input: [
 					resolve("./src/index.html")
