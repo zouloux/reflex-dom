@@ -101,7 +101,7 @@ export function drawReflexDebug () {
 	 * Track and draw direct text mutations.
 	 * FIXME : How to track arguments, change color ?
 	 */
-	track.mutation = (node, type?:string) => {
+	track.mutation = ( node, type?:string) => {
 		// FIXME : Arguments debug
 		if ( type ) return
 		// Get text node position with text selection because we cannot use getClientBoundingRect

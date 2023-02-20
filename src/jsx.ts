@@ -18,10 +18,10 @@ export function h ( value:any, props:any, ...children:any[] ) {
 	// Because jsx may pass null as argument
 	if ( props == null ) props = {}
 	// Remove __source and __self in debug mode
-	if ( process.env.NODE_ENV !== "production" ) {
-		delete props.__source
-		delete props.__self
-	}
+	// if ( process.env.NODE_ENV !== "production" ) {
+	// 	delete props.__source
+	// 	delete props.__self
+	// }
 	// Target children, do not merge, we do not allow usage of both children arrays
 	props.children = props.children ? props.children : children
 	// Browse children to patch types

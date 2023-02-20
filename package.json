@@ -1,8 +1,8 @@
 {
-	"name": "@zouloux/reflex",
+	"name": "reflex-dom",
 	"type": "module",
 	"version": "0.14.11",
-	"description": "Reflex is a tiny 3kb virtual-dom library with factory based functional components.",
+	"description": "Reflex is a tiny and fast reactive UI  library.",
 	"main": "./dist/index.es2017.cjs",
 	"module": "./dist/index.es2020.mjs",
 	"unpkg": "./dist/reflex.es2017.min.js",

@@ -4,12 +4,7 @@ import {
 } from "./common";
 import { cloneVNode, createVNode } from "./jsx";
 import { IInternalRef } from "./ref";
-import {
-	_createComponentInstance,
-	recursivelyUpdateMountState,
-	ComponentInstance,
-	shallowPropsCompare
-} from "./component";
+import { _createComponentInstance, recursivelyUpdateMountState, ComponentInstance, shallowPropsCompare } from "./component";
 import { state } from "./states";
 
 // ----------------------------------------------------------------------------- CONSTANTS
@@ -117,7 +112,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 		// States are diffed directly from state
 	}
 	else {
-		const document = nodeEnv.document as Document
+		const { document } = nodeEnv as { document: Document }
 		if ( newNode.type === 0/*NULL*/ )
 			dom = document.createComment('')
 		else if ( newNode.type === 1/*TEXT*/ || newNode.type === 3/*STATE*/ ) {
@@ -149,7 +144,8 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 	if ( oldNode ) for ( let name in oldNode.props ) {
 		// Do not process children and remove only if not in new node
 		if (
-			name === "children" || name === "key" || name === "ref"
+			["children", "key", "ref"].includes( name ) // FIXME : Check perfs vs code golfing here
+			// name === "children" || name === "key" || name === "ref"
 			|| (name in newNode.props && newNode.props[ name ] === oldNode.props[ name ])
 		)
 			continue;
@@ -230,38 +226,35 @@ function _registerKey ( parentNode:VNode, childNode:VNode ) {
  */
 function _injectChildren ( parentDom:Element, node:VNode, nodeEnv:INodeEnv ) {
 	const totalChildren = node.props.children.length
-	for ( let i = 0; i< totalChildren; ++i ) {
+	for ( let i = 0; i < totalChildren; ++i ) {
 		const child = node.props.children[ i ]
 		diffNode( child, null, nodeEnv )
 		_registerKey( node, child )
-		if ( child.dom )
-			parentDom.appendChild( child.dom )
-		_mountFreshNode( child )
-		_dispatchRender( child )
+		child.dom && parentDom.appendChild( child.dom )
+		_mountFreshNodeAndDispatchRender( child )
 	}
 }
 
-function _mountFreshNode ( node:VNode ) {
+function _mountFreshNodeAndDispatchRender ( node:VNode ) {
 	// If component is not mounted yet, mount it recursively
-	if ( node.type === 7/*COMPONENTS*/ && !node.component.isMounted )
-		recursivelyUpdateMountState( node, true )
-}
-
-function _dispatchRender ( node:VNode ) {
-	// Execute after render handlers
-	if ( node.type === 7/*COMPONENTS*/ && node.value.isFactory !== false ) {
-		const { component } = node
-		_dispatch( component._renderHandlers, component )
-		if ( component._nextRenderHandlers.length ) {
-			_dispatch( component._nextRenderHandlers, component )
-			component._nextRenderHandlers = []
+	if ( node.type === 7/*COMPONENTS*/ ) {
+		if ( !node.component.isMounted )
+			recursivelyUpdateMountState( node, true )
+		// Execute after render handlers
+		if ( node.value.isFactory !== false ) {
+			const { component } = node
+			_dispatch( component._renderHandlers, component )
+			if ( component._nextRenderHandlers.length ) {
+				_dispatch( component._nextRenderHandlers, component )
+				component._nextRenderHandlers = []
+			}
 		}
 	}
 }
 
 // TODO : DOC
-let previousParentContainer:VNode
-let previousParentContainerDom:Element
+let _previousParentContainer:VNode
+let _previousParentContainerDom:Element
 
 /**
  * TODO DOC
@@ -272,11 +265,11 @@ let previousParentContainerDom:Element
 export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEnv?:INodeEnv ) {
 	// console.log( "_diffChildren", newParentNode, oldParentNode );
 	// TODO : DOC
-	let parentDom = (newParentNode.dom ?? previousParentContainerDom) as Element
+	let parentDom = (newParentNode.dom ?? _previousParentContainerDom) as Element
 	// TODO : DOC
 	// FIXME : Why do we have to keep both node and dom ?
-	previousParentContainer = newParentNode
-	previousParentContainerDom = previousParentContainer.dom as Element
+	_previousParentContainer = newParentNode
+	_previousParentContainerDom = _previousParentContainer.dom as Element
 	// TODO : DOC
 	// No old parent node, or empty old parent node, we inject directly without checks.
 	// FIXME : This optim may not work if list not only child
@@ -292,7 +285,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 	if (
 		newParentNode.type === 8/*LIST*/
 		&& oldParentNode
-		&& previousParentContainer.props.children.length === 0
+		&& _previousParentContainer.props.children.length === 0
 		&& newChildren.length === 0
 		&& oldChildren.length > 0
 	) {
@@ -324,7 +317,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			&& newParentNode._keys
 			&& !newParentNode._keys.has( oldChildNode.key )
 		) {
-			collapseCount ++
+			++collapseCount
 		}
 		// Has key, same key found in old, same type on both
 		/** MOVE & UPDATE KEYED CHILD **/
@@ -355,7 +348,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			// console.log("create from key", newChildNode)
 			diffNode( newChildNode, null, nodeEnv )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
-			collapseCount --
+			--collapseCount
 		}
 		// Found at same index, with same type.
 		// Old node does not have a key.
@@ -385,11 +378,10 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			// console.log("create no key", newChildNode)
 			diffNode( newChildNode, null, nodeEnv )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
-			collapseCount --
+			--collapseCount
 		}
 		// Mount node
-		_mountFreshNode( newChildNode )
-		_dispatchRender( newChildNode )
+		_mountFreshNodeAndDispatchRender( newChildNode )
 	}
 	// Remove old children which are not reused
 	const totalOld = oldChildren.length
@@ -409,7 +401,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 
 // ----------------------------------------------------------------------------- DIFF NODE
 
-export function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any, ComponentFunction> ) :GReturn {
+function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any, ComponentFunction> ) :GReturn {
 	// Select current component before rendering
 	_currentComponent = node.component;
 	// Only on factory components
@@ -539,26 +531,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 		newNode._nodeEnv = nodeEnv
 	// Update ref on node
 	_updateNodeRef( newNode )
-
-	// if ( newNode.dom && newNode.dom.parentElement ) {
-	// 	_dispatchRender( newNode )
-	// }
-	// Now that component and its children are ready
-	// if ( newNode.type === 7/*COMPONENTS*/ ) {
-	// 	// If component is not mounted yet, mount it recursively
-	// 	if ( !newNode.component.isMounted )
-	// 		recursivelyUpdateMountState( newNode, true )
-	// 	// Execute after render handlers
-	// 	if ( newNode.value.isFactory !== false ) {
-	// 		_dispatch( newNode.component._renderHandlers, newNode.component )
-	// 		if ( newNode.component._nextRenderHandlers.length ) {
-	// 			_dispatch( newNode.component._nextRenderHandlers, newNode.component )
-	// 			newNode.component._nextRenderHandlers = []
-	// 		}
-	// 	}
-	// }
 	// Diff children for node that are containers and not components
-	// else if ( newNode.type > 4/*CONTAINERS*/ )
 	if ( newNode.type > 4/*CONTAINERS*/ )
 		_diffChildren( newNode, oldNode, nodeEnv )
 }

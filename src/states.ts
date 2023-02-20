@@ -2,12 +2,6 @@ import { diffNode, getCurrentComponent, _getCurrentDiffingNode, _setDomAttribute
 import { _dispatch, track, VNode, VNodeTypes } from "./common";
 import { afterNextRender, ComponentInstance, unmounted } from "./component";
 
-/**
- * TODO / A TESTER
- * 	- Si on accède a un state dans un effect après un if, il faut vérifier que ça fonctionne bien
- * 	- Vérifier que les disposes fonctionnent bien
- */
-
 // ----------------------------------------------------------------------------- BATCHED TASK
 
 // Micro task polyfill
@@ -16,11 +10,11 @@ const _microtask = self.queueMicrotask ?? ( h => self.setTimeout( h, 0 ) )
 type TTaskHandler <GType> = ( bucket:Set<GType> ) => void
 
 // TODO : Doc
-export function _createBatchedTask <GType> ( task:TTaskHandler<GType> ) {
+function _createBatchedTask <GType> ( task:TTaskHandler<GType> ) {
 	const bucket = new Set<GType>()
 	const resolves = []
 	return ( element:GType, resolve?:() => any ) => {
-		!bucket.size && _microtask( () => {
+		bucket.size || _microtask( () => {
 			task( bucket )
 			bucket.clear()
 			_dispatch( resolves )
@@ -207,19 +201,17 @@ export function state <GType> (
 		_changeds.forEach( e => _invalidateEffect( e ) )
 	}
 
-	function dispose () {
-		initialValue = null;
-		// _effects.clear()
-		// _effectDisposes.clear()
-		// _changeds.clear()
-		// _nodes.clear()
-		// _components.clear()
-		[_effects, _effectDisposes, _changeds, _nodes, _components].map( e => e.clear() )
-	}
-
 	// if this state is created into a factory phase of a component,
 	// auto-dispose it on component unmount
-	unmounted( dispose )
+	let dispose = unmounted(() => {
+		initialValue = null;
+		_effects.clear()
+		_effectDisposes.clear()
+		_changeds.clear()
+		_nodes.clear()
+		_components.clear()
+		// [_effects, _effectDisposes, _changeds, _nodes, _components].map( e => e.clear() ) // FIXME : Bad CodeGolf
+	})
 
 	return {
 		// --- PUBLIC API ---
@@ -351,16 +343,16 @@ export function changed ( handler:TEffect ):TDisposeHandler {
  */
 export function compute <GType> ( handler:TComputed<GType> ):IComputeState<GType> {
 	// FIXME : Can't we optimize state initialisation here ?
-	const s:IComputeState<GType> = state<GType>() as IComputeState<GType>
+	const internalState:IComputeState<GType> = state<GType>() as IComputeState<GType>
 	// FIXME : Async effect should work here
-	s.update = () => s.set( handler() )
-	const effectDispose = effect( s.update )
-	const { dispose } = s
-	s.dispose = unmounted(() => {
+	internalState.update = () => internalState.set( handler() )
+	const effectDispose = effect( internalState.update )
+	const { dispose } = internalState
+	internalState.dispose = unmounted(() => {
 		effectDispose()
 		dispose()
 	})
-	return s
+	return internalState
 }
 
 // TODO : No need for batch if renders are batched ? Effect will not be batched.
