@@ -11,12 +11,13 @@ __Reflex__ is a tiny and fast reactive UI library.
 - 🤘️ HMR Support for Vite
 
 [![npm](https://img.shields.io/npm/v/reflex-dom.svg)](http://npm.im/reflex-dom)
+![](https://img.shields.io/badge/Version-beta-orange)
 <br>
 ![](https://img.shields.io/badge/Build-passing-success)
 ![](https://img.shields.io/badge/0-dependency-success)
 <br>
 [![gzip size](http://img.badgesize.io/https://unpkg.com/reflex-dom/reflex-dom/dist/reflex.es2017.min.js?compression=gzip&label=gzip)](https://unpkg.com/reflex-dom/reflex-dom/dist/reflex.es2017.min.js)
-[![brotli size](http://img.badgesize.io/https://esm.sh/v89/reflex-dom/es2022/reflex-dom.js?compression=brotli&label=brotli)](https://esm.sh/v89/reflex-dom/es2022/reflex-dom.js)
+[![brotli size](http://img.badges![](docs/api/_images/example.gif)ize.io/https://esm.sh/v89/reflex-dom/es2022/reflex-dom.js?compression=brotli&label=brotli)](https://esm.sh/v89/reflex-dom/es2022/reflex-dom.js)
 
 ---
 
@@ -37,7 +38,7 @@ export function App (props) {
     <h1>Hello from {props.name} 👋</h1>
     <button onClick={increment}>Increment</button>&nbsp;
     <button onClick={reset}>Reset</button>&nbsp;
-    <span ref={$counter}>Counter : {counter}</span>
+    <span>Counter : {counter}</span>
   </div>
 }
 render( <App name="Reflex" />, document.body );
@@ -45,6 +46,8 @@ render( <App name="Reflex" />, document.body );
 
 ![](docs/api/_images/example.gif)
 
-### [→ Play with this example on StackBlitz](https://stackblitz.com/edit/node-freprp?file=index.tsx)
-### [→ Learn Reflex in 5 minutes with an interactive tutorial](https://zouloux.github.io/reflex/learn/)
-### [→ See API documentation](https://zouloux.github.io/reflex/docs/)
+---
+
+## [🎮 - Play with this example on StackBlitz](https://stackblitz.com/edit/node-freprp?file=index.tsx)
+## [👨‍🏫 - Learn Reflex in 5 minutes](https://zouloux.github.io/reflex/learn/)
+## [📘 - See API documentation](https://zouloux.github.io/reflex/docs/)
