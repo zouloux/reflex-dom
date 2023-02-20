@@ -1,8 +1,10 @@
 {
 	"name": "reflex-dom",
 	"type": "module",
-	"version": "0.14.13",
+	"version": "0.14.14",
 	"description": "Reflex is a tiny and fast reactive UI  library.",
+	"author": "Alexis Bouhet (ZoulouX)",
+	"license": "MIT",
 	"main": "./reflex-dom/dist/index.es2017.cjs",
 	"module": "./reflex-dom/dist/index.es2020.mjs",
 	"unpkg": "./reflex-dom/dist/reflex.es2017.min.js",
@@ -17,12 +19,11 @@
 	"scripts": {
 		"reset": "rm -rf node_modules && npm i",
 		"clean": "rm -rf ./reflex-dom/dist/*",
-		"build": "npm run clean && tsbundle build",
-		"docs": "static-http ./pages/docs/",
-		"publish": "npm run clean && tsbundle publish"
+		"build": "npm run clean --silent && tsbundle build",
+		"docs": "static-http docs/api/",
+		"learn": "cd reflex-learn && npm run build --silent",
+		"publish": "npm run clean --silent && npm run learn --silent && tsbundle publish"
 	},
-	"author": "Alexis Bouhet (ZoulouX)",
-	"license": "MIT",
 	"devDependencies": {
 		"@types/node": "^18.8.3",
 		"@zouloux/static-http": "^1.0.0",

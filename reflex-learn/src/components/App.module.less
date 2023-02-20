@@ -1,0 +1,17 @@
+
+@_navigationSize: 20vw;
+
+.App {
+	width: 100vw;
+	height: 100vh;
+}
+
+._iframe {
+	border: none;
+	position: absolute;
+	top: 0;
+	left: @_navigationSize;
+	right: 0;
+	width: calc( 100vw - @_navigationSize ) !important;
+	height: 100vh;
+}

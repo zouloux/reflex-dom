@@ -1,0 +1,64 @@
+{
+  "index.css": {
+    "file": "assets/index-159fff8f.css",
+    "src": "index.css"
+  },
+  "index.html": {
+    "css": [
+      "assets/index-159fff8f.css"
+    ],
+    "dynamicImports": [
+      "stack/index.html?raw",
+      "stack/index.ts?raw",
+      "stack/package.json?raw",
+      "stack/package-lock.json?raw",
+      "stack/tsconfig.json?raw",
+      "stack/vite.config.js?raw",
+      "stack/steps/00.render.tsx?raw",
+      "stack/steps/01.state.tsx?raw"
+    ],
+    "file": "assets/index-384e565e.js",
+    "isEntry": true,
+    "src": "index.html"
+  },
+  "stack/index.html?raw": {
+    "file": "assets/index-2cf871c2.js",
+    "isDynamicEntry": true,
+    "src": "stack/index.html?raw"
+  },
+  "stack/index.ts?raw": {
+    "file": "assets/index-67be587e.js",
+    "isDynamicEntry": true,
+    "src": "stack/index.ts?raw"
+  },
+  "stack/package-lock.json?raw": {
+    "file": "assets/package-lock-409bb638.js",
+    "isDynamicEntry": true,
+    "src": "stack/package-lock.json?raw"
+  },
+  "stack/package.json?raw": {
+    "file": "assets/package-fdcaf8d0.js",
+    "isDynamicEntry": true,
+    "src": "stack/package.json?raw"
+  },
+  "stack/steps/00.render.tsx?raw": {
+    "file": "assets/00.render-7d0b9912.js",
+    "isDynamicEntry": true,
+    "src": "stack/steps/00.render.tsx?raw"
+  },
+  "stack/steps/01.state.tsx?raw": {
+    "file": "assets/01.state-a4d32eab.js",
+    "isDynamicEntry": true,
+    "src": "stack/steps/01.state.tsx?raw"
+  },
+  "stack/tsconfig.json?raw": {
+    "file": "assets/tsconfig-d0416cf7.js",
+    "isDynamicEntry": true,
+    "src": "stack/tsconfig.json?raw"
+  },
+  "stack/vite.config.js?raw": {
+    "file": "assets/vite.config-70b30b3c.js",
+    "isDynamicEntry": true,
+    "src": "stack/vite.config.js?raw"
+  }
+}
