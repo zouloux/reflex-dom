@@ -1,7 +1,7 @@
 
 ## Get started
 
-Install it with `npm i @zouloux/reflex`.
+Install it with `npm i reflex-dom`.
 
 #### With typescript
 You will need at least those options into `tsconfig.json` :

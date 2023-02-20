@@ -1,4 +1,3 @@
-import { recursivelyUpdateMountState } from "./component";
 
 /**
  * Filter all functions from a module and call a handler with name and function.
@@ -88,10 +87,10 @@ function initComponentMountHook ( hookComponentMount ) {
 /**
  * Enable reflex refresh
  * @param meta import.meta
- * @param cloneVNode imported from "@zouloux/reflex
- * @param diffNode imported from "@zouloux/reflex
- * @param recursivelyUpdateMountState imported from "@zouloux/reflex
- * @param hookComponentMount imported from "@zouloux/reflex
+ * @param cloneVNode imported from "reflex-dom"
+ * @param diffNode imported from "reflex-dom"
+ * @param recursivelyUpdateMountState imported from "reflex-dom"
+ * @param hookComponentMount imported from "reflex-dom"
  */
 export function enableReflexRefresh( meta, cloneVNode, diffNode, recursivelyUpdateMountState, hookComponentMount ) {
 

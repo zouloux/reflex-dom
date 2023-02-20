@@ -1,7 +1,7 @@
 {
 	"name": "reflex-dom",
 	"type": "module",
-	"version": "0.14.12",
+	"version": "0.14.13",
 	"description": "Reflex is a tiny and fast reactive UI  library.",
 	"main": "./reflex-dom/dist/index.es2017.cjs",
 	"module": "./reflex-dom/dist/index.es2020.mjs",

@@ -10,12 +10,12 @@ __Reflex__ is a tiny and fast reactive UI library.
 - 🍰 Easy to learn
 - 🤘️ HMR Support for Vite
 
-[![npm](https://img.shields.io/npm/v/@zouloux/reflex.svg)](http://npm.im/@zouloux/reflex)
+[![npm](https://img.shields.io/npm/v/reflex-dom.svg)](http://npm.im/reflex-dom)
 ![](https://img.shields.io/badge/Build-passing-success)
 ![](https://img.shields.io/badge/0-dependency-success)
 <br>
-[![gzip size](http://img.badgesize.io/https://unpkg.com/@zouloux/reflex/dist/reflex.es2017.min.js?compression=gzip&label=gzip)](https://unpkg.com/@zouloux/reflex/dist/reflex.es2017.min.js)
-[![brotli size](http://img.badgesize.io/https://esm.sh/v89/@zouloux/reflex/es2022/reflex.bundle.js?compression=brotli&label=brotli)](https://esm.sh/v89/@zouloux/reflex/es2022/reflex.bundle.js)
+[![gzip size](http://img.badgesize.io/https://unpkg.com/reflex-dom/dist/reflex.es2017.min.js?compression=gzip&label=gzip)](https://unpkg.com/reflex-dom/dist/reflex.es2017.min.js)
+[![brotli size](http://img.badgesize.io/https://esm.sh/v89/reflex-dom/es2022/reflex.bundle.js?compression=brotli&label=brotli)](https://esm.sh/v89/reflex-dom/es2022/reflex.bundle.js)
 
 ---
 

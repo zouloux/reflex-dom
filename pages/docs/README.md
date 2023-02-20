@@ -39,15 +39,15 @@ Library weight will be around `3kb gzipped`. It may grow a bit over time if we a
 > Check official benchmark on [js-framework-benchmark](https://krausest.github.io/js-framework-benchmark/2022/table_chrome_104.0.5112.79.html)
 
 For now Reflex performances are between petit-dom and Preact. It can be greatly improved since Reflex is still in beta!
-About size, see [Reflex bundle](https://unpkg.com/@zouloux/reflex) vs [Preact bundle](https://unpkg.com/preact) (without states)
+About size, see [Reflex bundle](https://unpkg.com/reflex-dom) vs [Preact bundle](https://unpkg.com/preact) (without states)
 
 ### Unpkg and Esmsh
 
-__Reflex__ is available on [Unpkg](https://unpkg.com/@zouloux/reflex) ![](./bits/reflex.es2017.min.js.svg)
+__Reflex__ is available on [Unpkg](https://unpkg.com/reflex-dom) ![](./bits/reflex.es2017.min.js.svg)
 - [see unpkg usage example](https://zouloux.github.io/reflex/demos/5-no-bundler-demo/index.html)
 
 Also available on Esm.sh
-- [Esm.sh](https://esm.sh/@zouloux/reflex)
+- [Esm.sh](https://esm.sh/reflex-dom)
 
 > Its better to specify used version in your code to avoid code breaking and also for cache and response time.
 

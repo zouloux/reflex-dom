@@ -39,8 +39,8 @@ export function reflexRefresh ( options ) {
 				return;
 
 			// Target reflex libs for the runtime
-			const reflexLibImport = await this.resolve('@zouloux/reflex')
-			const reflexRefreshLibImport = await this.resolve('@zouloux/reflex/hmr-runtime')
+			const reflexLibImport = await this.resolve('reflex-dom')
+			const reflexRefreshLibImport = await this.resolve('reflex-dom/hmr-runtime')
 
 			// Inject imports and hot.accept
 			return {
