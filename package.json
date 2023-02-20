@@ -1,25 +1,24 @@
 {
 	"name": "reflex-dom",
 	"type": "module",
-	"version": "0.14.11",
+	"version": "0.14.12",
 	"description": "Reflex is a tiny and fast reactive UI  library.",
-	"main": "./dist/index.es2017.cjs",
-	"module": "./dist/index.es2020.mjs",
-	"unpkg": "./dist/reflex.es2017.min.js",
-	"types": "./dist/index.d.ts",
+	"main": "./reflex-dom/dist/index.es2017.cjs",
+	"module": "./reflex-dom/dist/index.es2020.mjs",
+	"unpkg": "./reflex-dom/dist/reflex.es2017.min.js",
+	"types": "./reflex-dom/dist/index.d.ts",
 	"exports": {
-		".": "./dist/index.es2020.mjs",
-		"./hmr-plugin": "./dist/hmr-plugin.es2020.mjs",
-		"./hmr-runtime": "./dist/hmr-runtime.es2020.mjs",
-		"./debug": "./dist/debug.es2020.mjs",
-		"./render-to-string": "./dist/renderToString.es2020.mjs"
+		".": "./reflex-dom/dist/index.es2020.mjs",
+		"./hmr-plugin": "./reflex-dom/dist/hmr-plugin.es2020.mjs",
+		"./hmr-runtime": "./reflex-dom/dist/hmr-runtime.es2020.mjs",
+		"./debug": "./reflex-dom/dist/debug.es2020.mjs",
+		"./render-to-string": "./reflex-dom/dist/renderToString.es2020.mjs"
 	},
 	"scripts": {
 		"reset": "rm -rf node_modules && npm i",
-		"clean": "rm -rf .parcel-cache dist",
+		"clean": "rm -rf ./reflex-dom/dist/*",
 		"build": "npm run clean && tsbundle build",
-		"dev": "parcel serve dev --no-source-maps",
-		"docs": "static-http ./docs/",
+		"docs": "static-http ./pages/docs/",
 		"publish": "npm run clean && tsbundle publish"
 	},
 	"author": "Alexis Bouhet (ZoulouX)",
@@ -29,23 +28,21 @@
 		"@zouloux/static-http": "^1.0.0",
 		"@zouloux/store": "^0.1.2",
 		"@zouloux/tsbundle": "^1.4.0",
-		"parcel": "^2.7.0",
-		"process": "^0.11.10",
-		"timers-browserify": "^2.0.12",
+		"vite": "^4.1.3",
 		"typescript": "^4.8.4"
 	},
 	"tsbundle": {
 		"exportMap": {
 			"Reflex": "./index"
 		},
-		"output": "./dist",
+		"output": "./reflex-dom/dist",
 		"formats": [
 			"es2017.cjs",
 			"es2020.mjs"
 		],
 		"files": [
 			{
-				"input": "./src/index.ts",
+				"input": "./reflex-dom/src/index.ts",
 				"formats": [
 					"es2017.min.js"
 				],
@@ -53,10 +50,10 @@
 				"exportBits": true
 			},
 			{
-				"input": "./src/index.ts"
+				"input": "./reflex-dom/src/index.ts"
 			},
 			{
-				"input": "./src/debug.ts"
+				"input": "./reflex-dom/src/debug.ts"
 			},
 			{
 				"formats": [
@@ -64,16 +61,16 @@
 					"es2020.mjs",
 					"es2017.min.js"
 				],
-				"input": "./src/renderToString.ts",
+				"input": "./reflex-dom/src/renderToString.ts",
 				"filterGlob": "renderToString.*"
 			},
 			{
-				"input": "./src/hmr-plugin.ts",
+				"input": "./reflex-dom/src/hmr-plugin.ts",
 				"outName": "hmr-plugin",
 				"filterGlob": "hmr-plugin.*"
 			},
 			{
-				"input": "./src/hmr-runtime.ts",
+				"input": "./reflex-dom/src/hmr-runtime.ts",
 				"outName": "hmr-runtime",
 				"filterGlob": "hmr-runtime.*"
 			}
