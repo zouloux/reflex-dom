@@ -19,14 +19,29 @@ __Reflex__ is a tiny and fast reactive UI library.
 
 ---
 
-```typescript
-
-
+```shell
+npm i reflex-dom
 ```
 
-![](./docs/_images/example.gif)
+```typescript jsx
+import { h, render, state } from 'reflex-dom';
+export function App (props) {
+  const counter = state(0);
+  const increment = () => counter.value++;
+  const reset = () => counter.value = 0;
+  return () => <div>
+    <h1>Hello from {props.name} 👋</h1>
+    <button onClick={increment}>Increment</button>&nbsp;
+    <button onClick={reset}>Reset</button>&nbsp;
+    <span ref={$counter}>Counter : {counter}</span>
+  </div>
+}
+render( <App name="Reflex" />, document.body );
+```
 
-[→ Play with this example on CodeSandbox](https://codesandbox.io/s/reflex-example-9v6pgl?file=/src/index.tsx)
+![](./pages/docs/_images/example.gif)
+
+### [→ Play with this example on StackBlitz](https://stackblitz.com/edit/node-freprp?file=index.tsx)
 
 ---
 
@@ -68,4 +83,5 @@ function StatelessComponent ( props ) {
 
 ---
 
-### [→ See online documentation](https://zouloux.github.io/reflex/)
+### [→ Learn Reflex with Stackblitz](https://zouloux.github.io/reflex/learn/)
+### [→ See online documentation](https://zouloux.github.io/reflex/docs/)
