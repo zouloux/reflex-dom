@@ -2,16 +2,11 @@
  * TODO : Keep states and scroll positions between refreshes !
  */
 
-// Import reflex lib from module and not helper, easier
-const injectedCodeBefore = (reflexLibImport, reflexRefreshLibImport) => `
+// For some reason, hot.accept() needs to be into module and cannot be called from runtime file
+const injectedCodeAfter = (reflexLibImport, reflexRefreshLibImport) => `
 // Injected code - Reflex Refresh plugin
 import { cloneVNode as __refreshDep1, diffNode as __refreshDep2, recursivelyUpdateMountState as __refreshDep3, hookComponentMount as __refreshDep4 } from "${reflexLibImport}"
 import { enableReflexRefresh } from "${reflexRefreshLibImport}"
-`;
-
-// For some reason, hot.accept() needs to be into module and cannot be called from runtime file
-const injectedCodeAfter = `
-// Injected Code - Reflex Refresh plugin
 if ( import.meta.hot ) {
 	const __acceptViteRefresh = enableReflexRefresh( import.meta, __refreshDep1, __refreshDep2, __refreshDep3, __refreshDep4 )
 	import.meta.hot.accept( __acceptViteRefresh )
@@ -43,13 +38,8 @@ export function reflexRefresh ( options ) {
 			const reflexRefreshLibImport = await this.resolve('reflex-dom/hmr-runtime')
 
 			// Inject imports and hot.accept
-			return {
-				code: (
-					injectedCodeBefore(reflexLibImport.id, reflexRefreshLibImport.id)
-					+ code
-					+ injectedCodeAfter
-				)
-			}
+			code += injectedCodeAfter(reflexLibImport.id, reflexRefreshLibImport.id)
+			return { code }
 		}
 	}
 }
