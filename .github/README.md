@@ -50,4 +50,4 @@ render( <App name="Reflex" />, document.body );
 
 ## [🎮 - Play with this example on StackBlitz](https://stackblitz.com/edit/node-freprp?file=index.tsx)
 ## [👨‍🏫 - Learn Reflex in 5 minutes](https://zouloux.github.io/reflex/learn/)
-## [📘 - See API documentation](https://zouloux.github.io/reflex/docs/)
+## [📘 - See API documentation](https://zouloux.github.io/reflex/api/)

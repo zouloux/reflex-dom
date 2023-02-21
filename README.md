@@ -10,4 +10,4 @@ __Reflex__ is a tiny and fast reactive UI library.
 - 🍰 Easy to learn
 - 🤘️ HMR Support for Vite
 
-Check document and tutorials on [Github](https://github.com/zouloux/reflex)
+Check API and tutorials on [Github](https://github.com/zouloux/reflex)
