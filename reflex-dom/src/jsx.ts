@@ -32,14 +32,14 @@ export function h ( value:any, props:any, ...children:any[] ) {
 		// Detect text nodes
 		if ( typeofChild === "string" || typeofChild === "number" )
 			props.children[ i ] = createVNode( 1/*TEXT*/, child )
-		// Detect states
-		else if ( typeofChild === "object" && child.type === 3 )
+		// Detect states ( object, non-null, with type 3 )
+		else if ( typeofChild === "object" && child && child.type === 3 )
 			props.children[ i ] = createVNode( 3/*STATE*/, child )
 		// Detect array nodes
 		else if ( Array.isArray(child) )
 			props.children[ i ] = createVNode( 8/*LIST*/, null, { children: child } )
 		// Detect null / undefined and boolean nodes (it means we have a condition )
-		else if ( child == null || typeofChild === "boolean" )
+		else if ( typeofChild === "boolean" || !child )
 			props.children[ i ] = createVNode( 0/*NULL*/ )
 	}
 	// Virtual node type here can be only component or element
