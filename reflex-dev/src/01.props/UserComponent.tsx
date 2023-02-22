@@ -71,25 +71,25 @@ export function UserComponent ( props:IUserComponentProps ) {
 	// })
 
 	const isAdmin = compute( () => props.user.isAdmin )
-	effect(() => {
-		console.log("admin is", isAdmin.value)
-		return () => {
-			console.log("admin was", isAdmin.value)
-		}
-	})
+	// effect(() => {
+	// 	console.log("admin is", isAdmin.value)
+	// 	return () => {
+	// 		console.log("admin was", isAdmin.value)
+	// 	}
+	// })
 
 	const firstname = compute( () => props.user.firstname )
 	const lastname = compute( () => props.user.lastname )
 
 	// FIXME : Should be called once !
-	effect(() => {
-		console.log(`-> ${firstname} ${lastname}`)
-	})
+	// effect(() => {
+	// 	console.log(`-> ${firstname} ${lastname}`)
+	// })
 
 	const $title = ref<HTMLDivElement>()
-	changed(() => {
-		console.log("After dom update", firstname.value, "/", $title.dom.innerHTML)
-	})
+	// changed(() => {
+	// 	console.log("After dom update", firstname.value, "/", $title.dom.innerHTML)
+	// })
 
 	const avatarSrc = compute( () => `https://i.pravatar.cc/150?u=${props.user.id}` )
 
@@ -127,7 +127,7 @@ interface IStatelessWithDefaultProps {
 
 // This component will only be rendered when props changes.
 StatelessWithDefaultProps.isFactory = false
-function StatelessWithDefaultProps ( props:IStatelessWithDefaultProps ) {
+export function StatelessWithDefaultProps ( props:IStatelessWithDefaultProps ) {
 	// Default props works also on stateless components
 	defaultProps( props, {
 		defaultTitle: "Name is "

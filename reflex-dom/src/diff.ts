@@ -9,9 +9,6 @@ import { state } from "./states";
 
 // ----------------------------------------------------------------------------- CONSTANTS
 
-// Virtual node object is injected into associated dom elements with this name
-export const _DOM_PRIVATE_VIRTUAL_NODE_KEY = "__v"
-
 // Attached listeners to a dom element are stored in this array
 export const _DOM_PRIVATE_LISTENERS_KEY = "__l"
 
@@ -174,7 +171,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 		)
 			continue;
 		// Insert HTML directly without warning
-		if ( name == "innerHTML" )
+		if ( name === "innerHTML" )
 			dom.innerHTML = value
 		// Events starts with "on". On preact this is optimized with [0] == "o"
 		// But recent benchmarks are pointing to startsWith usage as faster
@@ -410,7 +407,8 @@ function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any, Comp
 		// Create the props proxy with its state
 		if ( !_currentComponent._proxy ) {
 			// Create prop states to track dependencies
-			const s = state( node.props )
+			// @ts-ignore
+			const s = state( node.props, { _p: true } )
 			_currentComponent._propState = s
 			// Create proxy and map getter to the state to track effects
 			// FIXME : Proxy is not browsable :(

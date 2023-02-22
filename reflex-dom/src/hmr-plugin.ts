@@ -2,18 +2,30 @@
  * TODO : Keep states and scroll positions between refreshes !
  */
 
-// For some reason, hot.accept() needs to be into module and cannot be called from runtime file
-const injectedCodeAfter = (reflexLibImport, reflexRefreshLibImport) => `
+import { basename } from "path"
+
+const injectedCodeAfter = ( moduleName, reflexLibImport, reflexRefreshLibImport ) => `
 // Injected code - Reflex Refresh plugin
-import { cloneVNode as __refreshDep1, diffNode as __refreshDep2, recursivelyUpdateMountState as __refreshDep3, hookComponentMount as __refreshDep4 } from "${reflexLibImport}"
-import { enableReflexRefresh } from "${reflexRefreshLibImport}"
+import * as __currentModule from "./${moduleName}"
+import { cloneVNode as __cloneVNode, diffNode as __diffNode, recursivelyUpdateMountState as __recursivelyUpdateMountState, featureHook as __featureHook, getCurrentComponent as __getCurrentComponent } from "${reflexLibImport}"
+import { enableReflexRefresh as __enableReflexRefresh } from "${reflexRefreshLibImport}"
 if ( import.meta.hot ) {
-	const __acceptViteRefresh = enableReflexRefresh( import.meta, __refreshDep1, __refreshDep2, __refreshDep3, __refreshDep4 )
+	const __acceptViteRefresh = __enableReflexRefresh(
+		import.meta.url,
+		__currentModule,
+		__cloneVNode,
+		__diffNode,
+		__recursivelyUpdateMountState,
+		__featureHook,
+		__getCurrentComponent,
+	)
+	// Needs to be in this file
 	import.meta.hot.accept( __acceptViteRefresh )
 }
 `
 
-export function reflexRefresh ( options ) {
+
+export function reflexRefresh ( pluginOptions ) {
 	let isProduction = false;
 	return {
 		name: 'reflexRefresh',
@@ -25,7 +37,7 @@ export function reflexRefresh ( options ) {
 				// Do not use HMR in production
 				isProduction
 				// Only check jsx and tsx files
-				|| !/\.(t|j)sx?$/.test(id)
+				|| !/\.([tj])sx/.test( id )
 				// Do not check files into node_modules
 				|| id.includes('node_modules')
 				// Do not check workers
@@ -34,11 +46,23 @@ export function reflexRefresh ( options ) {
 				return;
 
 			// Target reflex libs for the runtime
-			const reflexLibImport = await this.resolve('reflex-dom')
-			const reflexRefreshLibImport = await this.resolve('reflex-dom/hmr-runtime')
-
+			let reflexLibImport;
+			let reflexRefreshLibImport;
+			// In dev mode, load from ts files in src
+			if ( pluginOptions.enabledHMRDevMode ) {
+				reflexLibImport = await this.resolve('/../../reflex-dom/src/index')
+				reflexRefreshLibImport = await this.resolve('/../../reflex-dom/src/hmr-runtime')
+			}
+			// In regular mode, load from installed lib
+			else {
+				reflexLibImport = await this.resolve('reflex-dom')
+				reflexRefreshLibImport = await this.resolve('reflex-dom/hmr-runtime')
+			}
+			// Compute module name to import it into itself
+			let moduleName = basename( id )
+			moduleName = moduleName.substring(0, moduleName.lastIndexOf("."));
 			// Inject imports and hot.accept
-			code += injectedCodeAfter(reflexLibImport.id, reflexRefreshLibImport.id)
+			code += injectedCodeAfter( moduleName, reflexLibImport.id, reflexRefreshLibImport.id )
 			return { code }
 		}
 	}

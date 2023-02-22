@@ -1,4 +1,4 @@
-import { _dispatch, ComponentFunction, LifecycleHandler, MountHandler, RenderFunction, VNode } from "./common";
+import { _dispatch, _featureHooks, ComponentFunction, LifecycleHandler, MountHandler, RenderFunction, VNode } from "./common";
 import { IState } from "./states";
 import { getCurrentComponent } from "./diff";
 
@@ -23,6 +23,8 @@ export interface ComponentInstance <GProps extends object = object> { // FIXME :
 	_nextRenderHandlers		:(() => any)[] 		// Called after next render only, then removed
 	_unmountHandlers		:LifecycleHandler[]
 	_defaultProps			?:Partial<GProps>
+
+	//_states					?:[]
 
 	// FIXME :
 	// _hmrStates				?:any[]
@@ -52,10 +54,8 @@ export function _createComponentInstance
 
 // ----------------------------------------------------------------------------- MOUNT / UNMOUNT
 
-let _componentHookHandler
-export function hookComponentMount ( handler ) { _componentHookHandler = handler }
-
 export function _mountComponent ( component:ComponentInstance ) {
+	if ( component.isMounted ) return
 	// Call every mount handler and store returned unmount handlers
 	const total = component._mountHandlers.length
 	for ( let i = 0; i < total; ++i ) {
@@ -68,11 +68,12 @@ export function _mountComponent ( component:ComponentInstance ) {
 	// Reset mount handlers, no need to keep them
 	component._mountHandlers = []
 	component.isMounted = true;
-	_componentHookHandler?.( component, true )
+	_dispatch(_featureHooks, null, 1, component, true )
 }
 
 export function _unmountComponent ( component:ComponentInstance ) {
-	_componentHookHandler?.( component, false )
+	if ( !component.isMounted ) return;
+	_dispatch(_featureHooks, null, 1, component, false )
 	_dispatch(component._unmountHandlers, component)
 	component.isMounted = false;
 	// Cut component branch from virtual node to allow GC to destroy component

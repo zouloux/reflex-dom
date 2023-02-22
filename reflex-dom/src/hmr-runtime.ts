@@ -1,22 +1,35 @@
 
+// ----------------------------------------------------------------------------- UTILS
+
 /**
- * Filter all functions from a module and call a handler with name and function.
+ * Browse every functions that are exported from a module object
  */
-function getFunctionsFromModule(module, handler) {
-	if ( typeof module !== "object" ) return
-	Object.keys(module).map(entityName => {
-		const entity = module[entityName];
-		if ( typeof entity !== "function" )
-			return;
-		handler( entityName, entity );
-	});
+function browseModuleFunctions ( module, handler ) {
+	Object.keys( module ).map( memberName => {
+		const member = module[ memberName ]
+		if ( typeof member === "function" )
+			handler( memberName, member )
+	})
 }
+
+const _reflexIDKey = "__reflexID"
+
+const _domPathKey = "__domPath"
+
 /**
- * Get dom path from a current mounted coponent.
- * Will concat all child index beetween body and component
+ * Compute unique component Reflex ID
+ * Remove cache busters ( ?t= ) otherwise this will be useless
+ */
+const computeComponentID = ( url:string, name:string ) => `${url.split("?")[0]}::${name}`;
+
+/**
+ * Get dom path from a current mounted component.
+ * Will concat all child index between body and component
  * Ex : 0/2/1/0$
  */
-function getComponentDOMPath(target) {
+function getComponentDOMPath ( target ) {
+	if ( target[_domPathKey] )
+		return target[_domPathKey]
 	const vnode = target.vnode;
 	let dom = vnode.dom;
 	let id = "$";
@@ -27,138 +40,163 @@ function getComponentDOMPath(target) {
 		id = index + "/" + id;
 		dom = dom.parentElement;
 	}
+	target[_domPathKey] = id
 	return id;
 }
 
-// Compute component key with module url
-// Do not take cache busters with ?t= into account otherwise this will be useless
-const getFunctionKeyPath = (meta, name) => `${meta.url.split("?")[0]}/${name}`;
+// ----------------------------------------------------------------------------- REGISTER COMPONENTS
 
-// Wasted some time here :
-// Components register needs to be global and not scoped to enableReflexRefresh
-// Otherwise every time it will be emptied !
-// We use meta.url for keys to not override functions with same name which are
-// into different modules
+// All hot swappable components, by Reflex ID and dom path
+// [ reflexID ][ domPath ]
 const _allReflexComponents = {};
 
-// -----------------------------------------------------------------------------
-
-function registerComponentFromRender ( component, tries ) {
-	if ( !component.isMounted )
-		return; // FIXME : Verbose here
-	// Get function path
-	const functionPath = component.vnode.value.__functionPath
-	// Module not ready yet, wait a bit more
-	if ( !functionPath )
-		return tryRegisterComponentFromRender( component, tries + 1 )
-	// Create registry of instances
-	if ( !( functionPath in _allReflexComponents ) )
-		_allReflexComponents[ functionPath ] = {};
-	// Get instance dom path for this instance
-	const componentDomPath = getComponentDOMPath( component );
-	// Register this module instance
-	_allReflexComponents[ functionPath ][ componentDomPath ] = component;
-}
-
-function tryRegisterComponentFromRender ( component, tries ) {
-	if ( tries > 10 )
-		return; // FIXME : Verbose here
-	setTimeout( () => registerComponentFromRender( component, tries ), 30 )
-}
-
-let _renderHookEnabled = false
-function initComponentMountHook ( hookComponentMount ) {
-	if ( _renderHookEnabled ) return
-	_renderHookEnabled = true
-	hookComponentMount( (component, mounted) => {
+let _hooksReady = false
+function initHooks ( featureHook, getCurrentComponent ) {
+	if ( _hooksReady ) return
+	_hooksReady = true
+	// Hook every component mount
+	featureHook( (hookType, component, mounted ) => {
+		if ( hookType !== 1 ) return;
+		const componentID = component?.vnode?.value?.[ _reflexIDKey ]
+		if ( !componentID ) return;
+		// Register
 		if ( mounted ) {
-			// Component just rendered, not added to the dom yet.
-			// Because all sync, we can just wait end of tick
-			self.queueMicrotask(() => registerComponentFromRender( component, 0 ) )
+			// Register this instance as "hot swappable"
+			if ( !( componentID in _allReflexComponents ) )
+				_allReflexComponents[ componentID ] = {};
+			// FIXME : Should be already added to the body !
+			queueMicrotask(() => {
+				// Get instance dom path for this instance
+				const componentDomPath = getComponentDOMPath( component );
+				// console.log("mounted", mounted, componentID, componentDomPath );
+				// Register this module instance
+				_allReflexComponents[ componentID ][ componentDomPath ] = component;
+			})
 		}
+		// Unregister
 		else {
-			const functionPath = component.vnode.value.__functionPath
-			const componentDomPath = getComponentDOMPath( component )
-			delete _allReflexComponents[ functionPath ][ componentDomPath ]
+			// FIXME : Is it really useful ? It seems to cause more problems than solutions.
+			// const componentDomPath = getComponentDOMPath( component )
+			// if (
+			// 	!(componentID in _allReflexComponents)
+			// 	|| !(componentDomPath in _allReflexComponents[ componentID ])
+			// )
+			// 	return // FIXME : Verbose : Component moved in DOM tree
+			// delete _allReflexComponents[ componentID ][ componentDomPath ]
 		}
 	})
+	// Hook every state created
+	/*
+	featureHook( (hookType, state, stateOptions) => {
+		if ( hookType !== 5 ) return
+		// If this is a state for props, do not manage it
+		if ( stateOptions._p ) return
+		// Get associated component, we keep states only for swapped component.
+		const component = getCurrentComponent();
+		if ( !component ) {
+			console.warn("State outside of a component", state)
+			return;
+		}
+		// Register this state for this component
+		component.__states ??= []
+		component.__states.push( state )
+		// function transferState () {
+		// queueMicrotask(() => {
+			// Get states from previous components of the same path
+			// const componentDomPath = getComponentDOMPath( component );
+			// const componentID = component?.vnode?.value?.[ _reflexIDKey ]
+			// const previousComponent = _allReflexComponents[ componentID ]?.[ componentDomPath ]
+		const previousComponent = component.vnode.__oldComponent
+		console.log('previous', previousComponent)
+		return;
+			// if (previousComponent) {
+			// 	console.log( componentDomPath,previousComponent.__states.length)
+			// }
+			// Continue only on valid components
+			if ( !previousComponent || !previousComponent.__states ) return
+			// Try to get equivalent state
+			// FIXME : If a state is pushed from the top here, it will fail
+			const fromState = previousComponent.__states.shift();
+			// Inject old state to new state
+			if ( !fromState ) return;
+			console.log('>', fromState.peek())
+			state.sneak( fromState.peek() )
+		// }
+		// component._mountHandlers = [ transferState, ...component._mountHandlers ];
+
+	})*/
 }
+// ----------------------------------------------------------------------------- HOT SWAP A COMPONENT
+
+function swapComponent ( node, newFunction, cloneVNode, diffNode, recursivelyUpdateMountState ) {
+	// Clone old node to keep props and stuff
+	const newNode = cloneVNode(node);
+	// Transfer id for refs
+	if ( node._id )
+		newNode._id = node._id
+	// Override new function from new module
+	newNode.value = newFunction;
+	// Reset component instance so diffNode will re-create it
+	newNode.component = null
+	// Mount new node and replace old node dom
+	const parent = node.dom.parentElement;
+	diffNode( newNode, null, node._nodeEnv );
+	parent.insertBefore( newNode.dom, node.dom );
+	newNode.__oldComponent = node.component
+	recursivelyUpdateMountState(newNode, true)
+	// Unmount old node and remove its dom
+	recursivelyUpdateMountState(node, false);
+	parent.removeChild(node.dom);
+	node.dom = null
+}
+
 
 /**
  * Enable reflex refresh
- * @param meta import.meta
+ * @param moduleURL import.meta.url
+ * @param module Imported module object
  * @param cloneVNode imported from "reflex-dom"
  * @param diffNode imported from "reflex-dom"
  * @param recursivelyUpdateMountState imported from "reflex-dom"
- * @param hookComponentMount imported from "reflex-dom"
+ * @param featureHook imported from "reflex-dom"
+ * @param getCurrentComponent imported from "reflex-dom"
  */
-export function enableReflexRefresh( meta, cloneVNode, diffNode, recursivelyUpdateMountState, hookComponentMount ) {
-
-	// Every reflex mount will register its component instance to be HMR-proof
-	initComponentMountHook( hookComponentMount )
-
-	// Here we are getting module path.
-	// Because we can have 2 different components with the same function name, we need to differentiate them.
-	// But to tell on each component on which module they are from,
-	// we need to import the current module to have all exported members available.
-	// I didn't find a way to have them directly here. this / self / exports / import.* does not work
-	// Because it's async, we sometime have renderHook happening before the import.then.
-	// This is why we have tryRegisterComponentFromRender which will retry until its ready
-	import( meta.url ).then( module => {
-		getFunctionsFromModule(module, (name, fn) => {
-			fn.__functionPath = getFunctionKeyPath( meta, name )
-		})
+export function enableReflexRefresh ( moduleURL, module, cloneVNode, diffNode, recursivelyUpdateMountState, featureHook, getCurrentComponent ) {
+	// Inject a unique ID into each exported functions.
+	// This ID contain module URL and function name to be unique.
+	browseModuleFunctions( module, (name, member) => {
+		member[ _reflexIDKey ] = computeComponentID( moduleURL, name )
 	})
-
-	// Accept hot module reloading for this module
-	return ( module ) => {
-		// Get all functions from this new module
+	// Hook reflex and register every new components
+	initHooks( featureHook, getCurrentComponent )
+	// Return an HMR accept function, scoped for this module
+	return ( newModule ) => {
+		// Browse all new module functions
 		let hadAtLeastOneComponent = false;
-		getFunctionsFromModule(module, (name, newFunction) => {
-			// Target component in global register with its key
-			const componentPath = getFunctionKeyPath( meta, name );
+		browseModuleFunctions( newModule, (name, newFunction) => {
+			// Check if function source-code changed
+			if ( module[name].toString() === newFunction.toString() ) return
+			// Check if this function is a registered reflex component
+			const componentID = computeComponentID( moduleURL, name )
 			// If this function is not a registered and running reflex component
-			if ( !(componentPath in _allReflexComponents) )
-				return; // FIXME : Verbose here
-			const componentInstances = _allReflexComponents[ componentPath] ;
-			Object.keys( componentInstances ).map( instancePath => {
+			if ( !(componentID in _allReflexComponents) )
+				return;
+			// Brows all component instances
+			const componentInstances = _allReflexComponents[ componentID ] ;
+			Object.keys( componentInstances ).map( domPath => {
 				// Target old and new functions
-				const oldFunction = componentInstances[instancePath];
-				if ( !oldFunction )
+				const oldComponent = componentInstances[ domPath ];
+				if ( !oldComponent?.vnode )
 					return; // FIXME : Verbose here
+				// FIXME : Try catch ?
+				// Hot swap this component
+				swapComponent( oldComponent.vnode, newFunction, cloneVNode, diffNode, recursivelyUpdateMountState )
 				hadAtLeastOneComponent = true;
-				// Target and clone old node
-				// We replace the component's function with the new module
-				const oldNode = oldFunction.vnode;
-				// FIXME : Check old node, sometime not valid
-				if ( !oldNode )
-					return; // FIXME : Verbose here
-				// Clone old node to keep props and stuff
-				const newNode = cloneVNode(oldNode);
-				// Transfer id for refs
-				if ( oldNode._id )
-					newNode._id = oldNode._id
-				// Override new function from new module
-				newNode.value = newFunction;
-				// Reset component instance so diffNode will re-create it
-				newNode.component = null
-				// Mount new node and replace old node dom
-				const parent = oldNode.dom.parentElement;
-				diffNode( newNode, null, oldNode._nodeEnv );
-				parent.insertBefore( newNode.dom, oldNode.dom );
-				recursivelyUpdateMountState(newNode, true)
-				// Unmount old node and remove its dom
-				recursivelyUpdateMountState(oldNode, false);
-				parent.removeChild(oldNode.dom);
-				oldNode.dom = null
-			});
-		});
-		// Do not fast-refresh if no reflex components where in this file
-		if (!hadAtLeastOneComponent) {
-			// FIXME : Verbose here
-			// FIXME ?
-			// window.location.reload();
-			// meta.hot.invalidate();
+			})
+		})
+		if ( !hadAtLeastOneComponent ) {
+			// FIXME : Refresh ?
+			console.warn("HMR module changed but not candidate.")
 		}
-	};
+	}
 }

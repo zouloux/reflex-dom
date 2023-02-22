@@ -1,5 +1,5 @@
 import { diffNode, getCurrentComponent, _getCurrentDiffingNode, _setDomAttribute } from "./diff";
-import { _dispatch, track, VNode, VNodeTypes } from "./common";
+import { _dispatch, _featureHooks, VNode, VNodeTypes } from "./common";
 import { afterNextRender, ComponentInstance, unmounted } from "./component";
 
 // ----------------------------------------------------------------------------- BATCHED TASK
@@ -84,9 +84,9 @@ const _invalidateEffect = _createBatchedTask<TEffect>( effects => {
  */
 export const invalidateComponent = _createBatchedTask<ComponentInstance>( components => {
 	for ( const component of components ) {
-		const r = track.diff?.( component.vnode )
+		const finishHandlers = _dispatch(_featureHooks, null, 2, component.vnode)
 		diffNode( component.vnode, component.vnode, undefined, true )
-		r?.()
+		_dispatch( finishHandlers )
 	}
 });
 
@@ -108,23 +108,6 @@ export function state <GType> (
 	initialValue	?:TInitialValue<GType>,
 	stateOptions	:Partial<IStateOptions<GType>> = {}
 ):IState<GType> {
-
-	// FIXME : HMR, this code need to be enabled only when HMR plugin is enabled
-	// const c = getCurrentComponent()
-	// if ( c ) {
-	// 	// Retrieve HMR state
-	// 	if ( c._hmrStates && c._hmrStateIndex in c._hmrStates )
-	// 		initialValue = c._hmrStates[ c._hmrStateIndex ++ ]
-	// 	// Prepare HMR State
-	// 	if ( !c._hmrStates ) {
-	// 		c._hmrStates = []
-	// 		c._hmrStateIndex = 0;
-	// 	}
-	// 	// Save HMR State
-	// 	c._hmrStates.push( () => initialValue )
-	// 	console.log('S', c.name, initialValue, c._hmrStateIndex)
-	// }
-	// FIXME -----
 
 	// Prepare initial value if it's a function
 	initialValue = _prepareInitialValue( initialValue )
@@ -179,7 +162,7 @@ export function state <GType> (
 						_setDomAttribute( node.dom as Element, node.key, "" )
 					_setDomAttribute( node.dom as Element, node.key, initialValue )
 				}
-				track.mutation?.( node, node.key )
+				_dispatch( _featureHooks, null, 3, node, node.key )
 			}
 
 		// Dispatch all component refresh at the same time and wait for all to be updated
@@ -213,7 +196,7 @@ export function state <GType> (
 		// [_effects, _effectDisposes, _changeds, _nodes, _components].map( e => e.clear() ) // FIXME : Bad CodeGolf
 	})
 
-	return {
+	const s = {
 		// --- PUBLIC API ---
 		// Get current value and register effects
 		get value () {
@@ -271,6 +254,9 @@ export function state <GType> (
 			_changeds?.delete( handler )
 		},
 	}
+
+	_dispatch(_featureHooks, null, 5, s, stateOptions)
+	return s;
 }
 
 // ----------------------------------------------------------------------------- EFFECTS / CHANGED

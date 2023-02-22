@@ -1,7 +1,7 @@
 import { h } from "./jsx";
 import { mounted } from "./component";
 import { compute } from "./states";
-import { track } from "./common";
+import { featureHook } from "./common";
 
 // ----------------------------------------------------------------------------- TRACK PERFORMANCES
 
@@ -71,7 +71,8 @@ export function drawReflexDebug () {
 	/**
 	 * Track and draw components rendering.
 	 */
-	track.diff = ( node => {
+	const componentRenderingHookListener = featureHook( (type, node) => {
+		if ( type !== 2 ) return
 		// Target component name
 		// @ts-ignore
 		let name = node.value?.name
@@ -95,15 +96,16 @@ export function drawReflexDebug () {
 			dom._renderingTimeout = setTimeout(() => classList.remove("_reflexDebugRendering"), 600)
 		}
 		return p
-	})
+	});
 
 	/**
 	 * Track and draw direct text mutations.
 	 * FIXME : How to track arguments, change color ?
 	 */
-	track.mutation = ( node, type?:string) => {
+	const mutationHookListener = featureHook(( type, node, argument?:string) => {
+		if ( type !== 3 ) return
 		// FIXME : Arguments debug
-		if ( type ) return
+		if ( argument ) return
 		// Get text node position with text selection because we cannot use getClientBoundingRect
 		const range = document.createRange();
 		range.selectNode(node.dom);
@@ -122,11 +124,11 @@ export function drawReflexDebug () {
 		// div.style.left = rect.left + 'px'
 		document.body.append( div )
 		setTimeout(() => div.parentElement.removeChild( div ), 300)
-	}
+	})
 
 	return () => {
 		document.head.removeChild( style )
-		delete track.diff
-		delete track.mutation
+		componentRenderingHookListener();
+		mutationHookListener();
 	}
 }

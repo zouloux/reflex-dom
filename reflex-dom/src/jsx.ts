@@ -17,29 +17,29 @@ export function h ( value:any, props:any, ...children:any[] ) {
 	// Init props as empty object here and not in signature
 	// Because jsx may pass null as argument
 	if ( props == null ) props = {}
-	// Remove __source and __self in debug mode
-	// if ( process.env.NODE_ENV !== "production" ) {
-	// 	delete props.__source
-	// 	delete props.__self
-	// }
 	// Target children, do not merge, we do not allow usage of both children arrays
-	props.children = props.children ? props.children : children
+	// props.children = props.children ? props.children : children
+	props.children ??= children
 	// Browse children to patch types
 	const total = props.children.length
 	for ( let i = 0; i < total; ++i ) {
 		const child = props.children[ i ]
-		const typeofChild = typeof child
+		const typeOfChild = typeof child
 		// Detect text nodes
-		if ( typeofChild === "string" || typeofChild === "number" )
+		if ( typeOfChild === "string" || typeOfChild === "number" )
 			props.children[ i ] = createVNode( 1/*TEXT*/, child )
 		// Detect states ( object, non-null, with type 3 )
-		else if ( typeofChild === "object" && child && child.type === 3 )
+		// Using bigger "child !== null" and not "child" -> https://esbench.com/bench/63f48b796c89f600a570216e
+		// Using !== and not != because it cannot be undefined here
+		else if ( typeOfChild === "object" && child !== null && child.type === 3 )
 			props.children[ i ] = createVNode( 3/*STATE*/, child )
 		// Detect array nodes
 		else if ( Array.isArray(child) )
 			props.children[ i ] = createVNode( 8/*LIST*/, null, { children: child } )
 		// Detect null / undefined and boolean nodes (it means we have a condition )
-		else if ( typeofChild === "boolean" || !child )
+		// Using bigger "child == null" -> https://esbench.com/bench/63f48b796c89f600a570216e
+		// Using == and not === to catch undefined here
+		else if ( typeOfChild === "boolean" || child == null )
 			props.children[ i ] = createVNode( 0/*NULL*/ )
 	}
 	// Virtual node type here can be only component or element

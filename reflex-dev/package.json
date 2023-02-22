@@ -2,7 +2,7 @@
   "name": "reflex-dev",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --force",
     "build": "vite build --emptyOutDir"
   },
   "devDependencies": {

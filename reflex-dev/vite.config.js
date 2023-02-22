@@ -16,7 +16,9 @@ export default defineConfig( () => {
 			},
 		},
 		plugins: [
-			reflexRefresh()
+			reflexRefresh({
+				enabledHMRDevMode: true
+			})
 		]
 	}
 })

@@ -31,6 +31,7 @@ export function PropsDemoApp () {
 		{/* Update state with a new random user */}
 		<button onClick={ e => currentUser.set( getRandomUser ) }>Change user</button>
 		<br />
+		test
 		{/* Render current random user into a component */}
 		<UserComponent user={ currentUser.value } {...toggleExistingProps()} />
 	</div>

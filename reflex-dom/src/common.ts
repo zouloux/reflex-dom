@@ -93,26 +93,26 @@ export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler|((
 
 // All VNode types are inlined manually with a comment.
 // No way to inline automatically with TS for now.
-const _VNodeTypes_NULL 			= 0
-const _VNodeTypes_TEXT 			= 1
-const _VNodeTypes_ARGUMENT 		= 2
-const _VNodeTypes_STATE 		= 3
-const _VNodeTypes_CONTAINERS 	= 4
-const _VNodeTypes_ROOT 			= 5
-const _VNodeTypes_ELEMENT 		= 6
-const _VNodeTypes_COMPONENT 	= 7
-const _VNodeTypes_LIST 			= 8
+type _VNodeTypes_NULL 			= 0
+type _VNodeTypes_TEXT 			= 1
+type _VNodeTypes_ARGUMENT 		= 2
+type _VNodeTypes_STATE 			= 3
+type _VNodeTypes_CONTAINERS 	= 4
+type _VNodeTypes_ROOT 			= 5
+type _VNodeTypes_ELEMENT 		= 6
+type _VNodeTypes_COMPONENT 		= 7
+type _VNodeTypes_LIST 			= 8
 
 export type VNodeTypes =
-	| typeof _VNodeTypes_NULL
-	| typeof _VNodeTypes_TEXT
-	| typeof _VNodeTypes_ARGUMENT
-	| typeof _VNodeTypes_STATE
-	| typeof _VNodeTypes_CONTAINERS
-	| typeof _VNodeTypes_ROOT
-	| typeof _VNodeTypes_ELEMENT
-	| typeof _VNodeTypes_COMPONENT
-	| typeof _VNodeTypes_LIST
+	| _VNodeTypes_NULL
+	| _VNodeTypes_TEXT
+	| _VNodeTypes_ARGUMENT
+	| _VNodeTypes_STATE
+	| _VNodeTypes_CONTAINERS
+	| _VNodeTypes_ROOT
+	| _VNodeTypes_ELEMENT
+	| _VNodeTypes_COMPONENT
+	| _VNodeTypes_LIST
 
 export type VNodeElementValue = keyof (HTMLElementTagNameMap|SVGElementTagNameMap)
 export type VNodeTextValue = string
@@ -170,17 +170,30 @@ export interface HasClassProp {
 
 // ----------------------------------------------------------------------------- DISPATCH
 
-export function _dispatch ( handlers:Function[], scope?:any ) {
-	handlers.forEach( h => h.apply(scope) )
+// Can we minimize it ?
+export const _dispatch =
+	( handlers:Function[], scope?:any, ...rest:any[] ) =>
+		handlers.map( h => h?.apply(scope, rest) );
+
+// ----------------------------------------------------------------------------- FEATURE HOOKS
+
+
+
+// FIXME : This should take the minimum size possible ->
+export let _featureHooks:THookHandler[] = []
+
+type THookHandler = ( type:number, ...rest ) => any|void
+
+/**
+ * Hook into Reflex core functions.
+ * Will call handler for every hook. Handler have to check type
+ * 0 -> Rendered a root. [ previousNode, newNode ]
+ * 1 -> Component mounted or unmounted [ componentInstance, isMounted ]
+ * 2 -> Updating a component node [ vNode ]. Have to return a handler, called when diffing finished.
+ * 3 -> Mutating a dom element [ key ]
+ * @param handler
+ */
+export function featureHook ( handler:THookHandler ) {
+	_featureHooks.push( handler )
+	return () => _featureHooks = _featureHooks.filter( e => e !== handler )
 }
-
-// ----------------------------------------------------------------------------- TRACK
-
-export interface IReflexTrackOptions
-{
-	diff ( node:VNode ):(() => void)
-	mutation ( node:VNode, argumentName?:string ) : void
-}
-
-
-export const track:Partial<IReflexTrackOptions> = {}
