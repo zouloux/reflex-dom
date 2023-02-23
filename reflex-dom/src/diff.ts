@@ -1,10 +1,10 @@
 import {
-	_dispatch, ComponentFunction, ComponentReturn, INodeEnv,
+	_dispatch, _featureHooks, ComponentFunction, ComponentReturn, INodeEnv,
 	RenderDom, RenderFunction, VNode
 } from "./common";
 import { cloneVNode, createVNode } from "./jsx";
 import { IInternalRef } from "./ref";
-import { _createComponentInstance, recursivelyUpdateMountState, ComponentInstance, shallowPropsCompare } from "./component";
+import { _createComponentInstance, ComponentInstance, shallowPropsCompare } from "./component";
 import { state } from "./states";
 
 // ----------------------------------------------------------------------------- CONSTANTS
@@ -200,6 +200,74 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 	return dom;
 }
 
+// ----------------------------------------------------------------------------- RECURSIVELY MOUNT / UNMOUNT
+
+export function _diffAndMount ( newNode:VNode, oldNode:VNode, nodeEnv?:INodeEnv, forceUpdate = false ) {
+	const finishHandlers = _dispatch(_featureHooks, null, 2/* DIFFING NODE */, newNode)
+	diffNode( newNode, oldNode, nodeEnv, forceUpdate )
+	recursivelyUpdateMountState( newNode, true )
+	_dispatch( finishHandlers );
+}
+
+export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
+	if ( node.type === 7/*COMPONENTS*/ ) {
+		// FIXME : Can optimize and code-golf this
+		const { component } = node
+		if ( component ) { // FIXME : Is this check usefull ?
+			// First, we recursively mount children before mounting the parent component
+			recursivelyUpdateMountState( component.children, doMount )
+			// --- MOUNT
+			if ( doMount && !component.isMounted ) {
+				// Execute after render handlers
+				if ( component.vnode.value.isFactory !== false ) {
+					// Call every mount handler and store returned unmount handlers
+					// FIXME : Can we use _dispatch here ?
+					const total = component._mountHandlers.length
+					for ( let i = 0; i < total; ++i ) {
+						const mountedReturn = component._mountHandlers[ i ].apply( component );
+						// Allow mounted handler to return a single unmount
+						if ( typeof mountedReturn === "function" )
+							component._unmountHandlers.push( mountedReturn )
+						// Allow mounted handler to return an array of unmount
+						else if ( Array.isArray( mountedReturn ) )
+							mountedReturn.filter( v => v ).map( h => component._unmountHandlers.push( h ) )
+					}
+					// Reset mount handlers, no need to keep them
+					component._mountHandlers = []
+					component.isMounted = true;
+					_dispatch( component._renderHandlers, component )
+					_dispatch( component._nextRenderHandlers, component )
+					component._nextRenderHandlers = []
+				}
+				_dispatch(_featureHooks, null, 1/* MOUNT / UNMOUNT */, component, true )
+			}
+			// --- UNMOUNT
+			else if ( !doMount && component.isMounted ) {
+				_dispatch(_featureHooks, null, 1/* MOUNT / UNMOUNT */, component, false )
+				_dispatch(component._unmountHandlers, component)
+				component.isMounted = false;
+				// Cut component branch from virtual node to allow GC to destroy component
+				delete component.vnode.component
+				delete component.vnode
+				// FIXME : Do we need to do this ? Is it efficient or is it just noise ?
+				// delete component.vnode
+				// delete component._mountHandlers;
+				// delete component._renderHandlers;
+				// delete component._unmountHandlers;
+				// delete component._afterRenderHandlers;
+				// delete component.methods
+				// delete component._observables
+				// TODO : Remove all listeners ?
+			}
+		}
+	}
+	else if ( node.type > 4/*CONTAINERS*/ ) {
+		const total = node.props.children.length
+		for ( let i = 0; i < total; ++i )
+			recursivelyUpdateMountState( node.props.children[ i ], doMount )
+	}
+}
+
 // ----------------------------------------------------------------------------- DIFF CHILDREN
 
 /**
@@ -215,39 +283,7 @@ function _registerKey ( parentNode:VNode, childNode:VNode ) {
 	}
 }
 
-/**
- * TODO DOC
- * @param parentDom
- * @param node
- * @param nodeEnv
- */
-function _injectChildren ( parentDom:Element, node:VNode, nodeEnv:INodeEnv ) {
-	const totalChildren = node.props.children.length
-	for ( let i = 0; i < totalChildren; ++i ) {
-		const child = node.props.children[ i ]
-		diffNode( child, null, nodeEnv )
-		_registerKey( node, child )
-		child.dom && parentDom.appendChild( child.dom )
-		_mountFreshNodeAndDispatchRender( child )
-	}
-}
 
-function _mountFreshNodeAndDispatchRender ( node:VNode ) {
-	// If component is not mounted yet, mount it recursively
-	if ( node.type === 7/*COMPONENTS*/ ) {
-		if ( !node.component.isMounted )
-			recursivelyUpdateMountState( node, true )
-		// Execute after render handlers
-		if ( node.value.isFactory !== false ) {
-			const { component } = node
-			_dispatch( component._renderHandlers, component )
-			if ( component._nextRenderHandlers.length ) {
-				_dispatch( component._nextRenderHandlers, component )
-				component._nextRenderHandlers = []
-			}
-		}
-	}
-}
 
 // TODO : DOC
 let _previousParentContainer:VNode
@@ -271,10 +307,18 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 	// No old parent node, or empty old parent node, we inject directly without checks.
 	// FIXME : This optim may not work if list not only child
 	// if ( !oldParentNode )
-	if ( !oldParentNode || oldParentNode.props.children.length === 0 )
-		return _injectChildren( parentDom, newParentNode, nodeEnv )
 	// Target children lists
 	const newChildren = newParentNode.props.children
+	const total = newChildren.length
+	if ( !oldParentNode || oldParentNode.props.children.length === 0 ) {
+		for ( let i = 0; i < total; ++i ) {
+			const child = newChildren[ i ]
+			diffNode( child, null, nodeEnv )
+			_registerKey( newParentNode, child )
+			child.dom && parentDom.appendChild( child.dom )
+		}
+		return
+	}
 	const oldChildren = oldParentNode.props.children
 	// If we are on a list which has been cleared
 	// And this list is the only child of its parent node
@@ -292,7 +336,6 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 		return;
 	}
 	// Register keys of new children to detect changes without having to search
-	const total = newChildren.length
 	if ( !total ) return;
 	let i:number
 	for ( i = 0; i < total; ++i )
@@ -377,8 +420,6 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			--collapseCount
 		}
-		// Mount node
-		_mountFreshNodeAndDispatchRender( newChildNode )
 	}
 	// Remove old children which are not reused
 	const totalOld = oldChildren.length
@@ -407,6 +448,8 @@ function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any, Comp
 		// Create the props proxy with its state
 		if ( !_currentComponent._proxy ) {
 			// Create prop states to track dependencies
+			// We give _p quietly so HMR will know this is a prop state,
+			// that shouldn't be kept between refreshes
 			// @ts-ignore
 			const s = state( node.props, { _p: true } )
 			_currentComponent._propState = s
@@ -491,8 +534,8 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = new
 			// We check should update on functional and factory components
 			shouldUpdate = (
 				// Use shouldUpdate function on component API
-				component.shouldUpdate
-				? component.shouldUpdate( newNode.props, oldNode.props )
+				component._shouldUpdate
+				? component._shouldUpdate( newNode.props, oldNode.props )
 				// Otherwise shallow props compare with children check
 				: !shallowPropsCompare( newNode.props, oldNode.props, true )
 			)

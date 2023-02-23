@@ -1,4 +1,4 @@
-import { _dispatch, _featureHooks, ComponentFunction, LifecycleHandler, MountHandler, RenderFunction, VNode } from "./common";
+import { ComponentFunction, LifecycleHandler, MountHandler, RenderFunction, VNode } from "./common";
 import { IState } from "./states";
 import { getCurrentComponent } from "./diff";
 
@@ -12,9 +12,8 @@ export interface ComponentInstance <GProps extends object = object> { // FIXME :
 	name					:string
 	isMounted				:boolean;
 	children				?:VNode
-	shouldUpdate			?:TShouldUpdate<GProps>
 	// --- Private members, will be mangled
-	// _shouldUpdate			?:TShouldUpdate<GProps>
+	_shouldUpdate			?:TShouldUpdate<GProps>
 	_proxy					?:object
 	_propState				?:IState<GProps>
 	_render					:RenderFunction
@@ -23,12 +22,6 @@ export interface ComponentInstance <GProps extends object = object> { // FIXME :
 	_nextRenderHandlers		:(() => any)[] 		// Called after next render only, then removed
 	_unmountHandlers		:LifecycleHandler[]
 	_defaultProps			?:Partial<GProps>
-
-	//_states					?:[]
-
-	// FIXME :
-	// _hmrStates				?:any[]
-	// _hmrStateIndex			?:number
 }
 
 // ----------------------------------------------------------------------------- CREATE COMPONENT INSTANCE
@@ -52,121 +45,84 @@ export function _createComponentInstance
 	}
 }
 
-// ----------------------------------------------------------------------------- MOUNT / UNMOUNT
-
-export function _mountComponent ( component:ComponentInstance ) {
-	if ( component.isMounted ) return
-	// Call every mount handler and store returned unmount handlers
-	const total = component._mountHandlers.length
-	for ( let i = 0; i < total; ++i ) {
-		const mountedReturn = component._mountHandlers[ i ].apply( component );
-		if ( typeof mountedReturn === "function" )
-			component._unmountHandlers.push( mountedReturn )
-		else if ( Array.isArray( mountedReturn ) )
-			mountedReturn.filter( v => v ).map( h => component._unmountHandlers.push( h ) )
-	}
-	// Reset mount handlers, no need to keep them
-	component._mountHandlers = []
-	component.isMounted = true;
-	_dispatch(_featureHooks, null, 1, component, true )
-}
-
-export function _unmountComponent ( component:ComponentInstance ) {
-	if ( !component.isMounted ) return;
-	_dispatch(_featureHooks, null, 1, component, false )
-	_dispatch(component._unmountHandlers, component)
-	component.isMounted = false;
-	// Cut component branch from virtual node to allow GC to destroy component
-	delete component.vnode.component
-	delete component.vnode
-	// FIXME : Do we need to do this ? Is it efficient or is it just noise ?
-	// delete component.vnode
-	// delete component._mountHandlers;
-	// delete component._renderHandlers;
-	// delete component._unmountHandlers;
-	// delete component._afterRenderHandlers;
-	// delete component.methods
-	// delete component._observables
-	// TODO : Remove all listeners ?
-}
-
-/**
- * TODO : There is a bug on mounted( () => { this.vnode.dom })
- * 	Dom is not ready, sometimes parent is not there (orphan child) ?
- * 	Need to check and test this !
- */
-
-export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
-	if ( node.type === 7/*COMPONENTS*/ ) {
-		const { component } = node
-		if ( component ) {
-			recursivelyUpdateMountState( component.children, doMount )
-			doMount ? _mountComponent( component ) : _unmountComponent( component )
-		}
-	}
-	else if ( node.type > 4/*CONTAINERS*/ ) {
-		const total = node.props.children.length
-		for ( let i = 0; i < total; ++i )
-			recursivelyUpdateMountState( node.props.children[ i ], doMount )
-	}
-}
-
 // ----------------------------------------------------------------------------- EXTENSIONS
 
+/**
+ * FACTORY COMPONENTS ONLY
+ * Handler is called when component is mounted, rendered, and added to the DOM.
+ * Can return an unmount handler, or a list of unmount handler.
+ * Can be asynchronous but without return.
+ * @param handler
+ */
 export function mounted ( handler:MountHandler ) {
-	// FIXME : In dev mode, maybe check if component is mounted ?
 	getCurrentComponent()?._mountHandlers.push( handler )
 }
 
+/**
+ * FACTORY COMPONENTS ONLY
+ * Handler is called when component is unmounted, just before removed from the DOM.
+ * Can be asynchronous.
+ */
 export function unmounted ( handler:LifecycleHandler ) {
-	// FIXME : In dev mode, maybe check if component is mounted ?
 	getCurrentComponent()?._unmountHandlers.push( handler )
 	return handler
 }
 
+/**
+ * FACTORY COMPONENTS ONLY
+ * Handler is called just after component is rendered.
+ * Can be asynchronous.
+ */
 export function rendered ( handler:LifecycleHandler ) {
-	// FIXME : In dev mode, maybe check if component is mounted ?
-	// FIXME : transform to async MountHandler ?
 	getCurrentComponent()?._renderHandlers.push( handler )
 }
 
+/**
+ * FACTORY COMPONENTS ONLY
+ * Handler is called once, at next render.
+ * Can be asynchronous.
+ */
 export function afterNextRender ( handler:LifecycleHandler ) {
-	// FIXME : In dev mode, maybe check if component is mounted ?
 	getCurrentComponent()?._nextRenderHandlers.push( handler )
 }
 
 // ----------------------------------------------------------------------------- DEFAULT PROPS
 
+/**
+ * Set default props
+ * @param props Props object from first argument.
+ * @param defaults Defaults to inject into props.
+ */
 export function defaultProps <
 	GProps extends object,
 	GDefaults extends Partial<GProps>,
 > ( props:GProps, defaults:GDefaults ) {
-	const c = getCurrentComponent()
-	c._defaultProps = defaults
-	if ( c._propState )
-		props = c._propState.peek() as GProps
+	const component = getCurrentComponent()
+	component._defaultProps = defaults
+	if ( component._propState )
+		props = component._propState.peek() as GProps
 	for ( let i in defaults )
 		if ( !(i in props) )
 			// @ts-ignore
 			props[ i ] = defaults[ i ]
 }
 
-
-const _noUpdate:TShouldUpdate = (a, b) => false
-
+/**
+ * Optimize rendering by providing a shouldUpdate handler.
+ * This handler will have old and new props as argument, and should return :
+ * - false to keep current step and skip next rendering
+ * - true to re-render the component with the new props.
+ * Set handler to false as a shorthand to never update this component again when props changes.
+ * @param handler
+ */
 export const shouldUpdate = ( handler:TShouldUpdate|boolean ) =>
-	getCurrentComponent().shouldUpdate = handler === false ? _noUpdate : handler as TShouldUpdate
+	getCurrentComponent()._shouldUpdate = handler === false ? () => false : handler as TShouldUpdate
 
 
 // Shallow compare two objects, applied only for props between new and old virtual nodes.
 // Will not compare "children" which is always different
 // https://esbench.com/bench/62a138846c89f600a5701904
 // TODO : re-bench against with for i in loop (test small and huge props)
-
-/**
- * TODO : DOC
- */
-
 export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) => (
 	// Same amount of properties ?
 	Object.keys( a ).length === Object.keys( b ).length

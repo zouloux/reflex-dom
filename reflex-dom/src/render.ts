@@ -1,5 +1,5 @@
 import { IAbstractDocument, IAbstractElement, VNode, _featureHooks, _dispatch } from "./common";
-import { diffNode } from "./diff";
+import { _diffAndMount } from "./diff";
 import { createVNode } from "./jsx";
 
 // ----------------------------------------------------------------------------- CONSTANTS
@@ -14,13 +14,12 @@ export function render ( rootNode:VNode, parentElement:HTMLElement|IAbstractElem
 	// This node is never rendered, we just attach it to the parentElement and render its children
 	const root = createVNode( 5/*ROOT*/, null, { children: [rootNode] } )
 	root.dom = parentElement as HTMLElement
-	const finishHandlers = _dispatch(_featureHooks, null, 2, root)
-	diffNode( root, parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ], {
+	const oldNode = parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ]
+	_diffAndMount(root, oldNode, {
 		isSVG: false,
 		document: documentInterface
 	})
-	_dispatch( finishHandlers );
-	_dispatch( _featureHooks, null, 0, parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ], root );
+	_dispatch( _featureHooks, null, 0/* NEW ROOT */, oldNode, root );
 	parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ] = root
 }
 

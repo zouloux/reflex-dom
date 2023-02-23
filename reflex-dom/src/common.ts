@@ -72,7 +72,7 @@ export type ComponentReturn <GProps extends object = object> = RenderFunction<GP
 export type FactoryComponent <GProps extends object = object> = ( props?:GProps ) => RenderFunction
 export type ComponentFunction <GProps extends object = object> = ( RenderFunction<GProps> | FactoryComponent<GProps> ) & TComponentFunctionProperties
 
-export type LifecycleHandler <GReturn = void> = (...rest) => GReturn
+export type LifecycleHandler <GReturn = void|Promise<void>> = (...rest) => GReturn
 export type MountHandler = LifecycleHandler|LifecycleHandler<LifecycleHandler|((LifecycleHandler|boolean)[])>
 
 // ----------------------------------------------------------------------------- JSX H / CREATE ELEMENT
@@ -176,10 +176,9 @@ export const _dispatch =
 		handlers.map( h => h?.apply(scope, rest) );
 
 // ----------------------------------------------------------------------------- FEATURE HOOKS
-
-
-
 // FIXME : This should take the minimum size possible ->
+
+
 export let _featureHooks:THookHandler[] = []
 
 type THookHandler = ( type:number, ...rest ) => any|void
@@ -187,10 +186,11 @@ type THookHandler = ( type:number, ...rest ) => any|void
 /**
  * Hook into Reflex core functions.
  * Will call handler for every hook. Handler have to check type
- * 0 -> Rendered a root. [ previousNode, newNode ]
- * 1 -> Component mounted or unmounted [ componentInstance, isMounted ]
- * 2 -> Updating a component node [ vNode ]. Have to return a handler, called when diffing finished.
- * 3 -> Mutating a dom element [ key ]
+ * 0 -> NEW ROOT			Rendered a root. [ previousNode, newNode ]
+ * 1 -> MOUNT / UNMOUNT 	Component mounted or unmounted [ componentInstance, isMounted ]
+ * 2 -> DIFFING NODE		Updating a component node [ vNode ]. Have to return a handler, called when diffing finished.
+ * 3 -> MUTATING NODE		Mutating a dom element [ key ]
+ * 4 -> NEW STATE			A new state is created
  * @param handler
  */
 export function featureHook ( handler:THookHandler ) {

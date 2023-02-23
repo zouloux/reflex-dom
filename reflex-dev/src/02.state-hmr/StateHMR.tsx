@@ -1,16 +1,29 @@
-import { h, mounted, state } from "../../../reflex-dom/src";
+import { afterNextRender, changed, effect, h, mounted, state } from "../../../reflex-dom/src";
+import { OtherComponent } from "./OtherComponent";
 
-const getRandom = () => ~~(Math.random() * 10 )
+const getRandom = () => 0//~~(Math.random() * 10 )
 
 export function StateHMR ( p ) {
 
 	const topState = state( getRandom() )
 
+	// console.log("INIT 2")
+	//
 	// mounted(() => {
 	// 	console.log("mounted")
 	// 	return () => {
 	// 		console.log("unmounted")
 	// 	}
+	// })
+	// afterNextRender(() => {
+	// 	console.log("afterNextRender 2 4")
+	// })
+	// changed(() => {
+	// 	console.log("CHANGED", "hello", topState.value)
+	// })
+	// effect(() => {
+	//
+	// 	console.log("EFFECT", topState.value)
 	// })
 
 	return () => <div>
@@ -20,17 +33,5 @@ export function StateHMR ( p ) {
 		<OtherComponent id={3} />
 		<OtherComponent id={4} />
 		<OtherComponent id={5} />
-	</div>
-}
-
-
-export function OtherComponent ( props ) {
-	const state1 = state( getRandom() )
-	const state2 = state( getRandom() )
-	return () => <div>
-		<h3>{ props.id }</h3>
-		<button onClick={ e => state1.value ++ }>State 1 : {state1}</button>
-		<button onClick={ e => state2.value ++ }>State 2 : {state2}</button>
-		<hr />
 	</div>
 }

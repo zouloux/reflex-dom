@@ -1,4 +1,10 @@
-import { diffNode, getCurrentComponent, _getCurrentDiffingNode, _setDomAttribute } from "./diff";
+import {
+	diffNode,
+	getCurrentComponent,
+	_getCurrentDiffingNode,
+	_setDomAttribute,
+	recursivelyUpdateMountState, _diffAndMount
+} from "./diff";
 import { _dispatch, _featureHooks, VNode, VNodeTypes } from "./common";
 import { afterNextRender, ComponentInstance, unmounted } from "./component";
 
@@ -83,11 +89,8 @@ const _invalidateEffect = _createBatchedTask<TEffect>( effects => {
  * Will batch components to validated in a microtask to avoid unnecessary renders.
  */
 export const invalidateComponent = _createBatchedTask<ComponentInstance>( components => {
-	for ( const component of components ) {
-		const finishHandlers = _dispatch(_featureHooks, null, 2, component.vnode)
-		diffNode( component.vnode, component.vnode, undefined, true )
-		_dispatch( finishHandlers )
-	}
+	for ( const component of components )
+		_diffAndMount( component.vnode, component.vnode, undefined, true )
 });
 
 // ----------------------------------------------------------------------------- STATE
@@ -162,20 +165,23 @@ export function state <GType> (
 						_setDomAttribute( node.dom as Element, node.key, "" )
 					_setDomAttribute( node.dom as Element, node.key, initialValue )
 				}
-				_dispatch( _featureHooks, null, 3, node, node.key )
+				_dispatch( _featureHooks, null, 3/* MUTATING NODE */, node, node.key )
 			}
 
 		// Dispatch all component refresh at the same time and wait for all to be updated
 		const promises = []
 		for ( const component of _components ) {
 			// Refresh component synchronously
-			stateOptions.directInvalidation
-			? diffNode( component.vnode, component.vnode )
+			if (stateOptions.directInvalidation) {
+				diffNode( component.vnode, component.vnode )
+				recursivelyUpdateMountState( component.vnode, true )
+			}
 			// Invalidate component asynchronously
 			// FIXME : Resolve counter way to avoid Promise constructor here ? #perfs
-			: promises.push( new Promise<void>(
-				r => invalidateComponent( component, r )
-			))
+			else
+				promises.push( new Promise<void>(
+					r => invalidateComponent( component, r )
+				))
 		}
 		_components.clear();
 		await Promise.all( promises )
@@ -186,8 +192,9 @@ export function state <GType> (
 
 	// if this state is created into a factory phase of a component,
 	// auto-dispose it on component unmount
-	let dispose = unmounted(() => {
-		initialValue = null;
+	const dispose = unmounted(() => {
+		// FIXME : For HMR, maybe delay it ? Maybe disable =null when hmr enabled ?
+		// initialValue = null;
 		_effects.clear()
 		_effectDisposes.clear()
 		_changeds.clear()
@@ -255,7 +262,7 @@ export function state <GType> (
 		},
 	}
 
-	_dispatch(_featureHooks, null, 5, s, stateOptions)
+	_dispatch(_featureHooks, null, 4/* NEW STATE */, s, stateOptions)
 	return s;
 }
 

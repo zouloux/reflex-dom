@@ -1,31 +1,27 @@
-/**
- * TODO : Keep states and scroll positions between refreshes !
- */
-
 import { basename } from "path"
 
 const injectedCodeAfter = ( moduleName, reflexLibImport, reflexRefreshLibImport ) => `
 // Injected code - Reflex Refresh plugin
 import * as __currentModule from "./${moduleName}"
-import { cloneVNode as __cloneVNode, diffNode as __diffNode, recursivelyUpdateMountState as __recursivelyUpdateMountState, featureHook as __featureHook, getCurrentComponent as __getCurrentComponent } from "${reflexLibImport}"
+import * as __reflexLib from "${reflexLibImport}"
 import { enableReflexRefresh as __enableReflexRefresh } from "${reflexRefreshLibImport}"
 if ( import.meta.hot ) {
 	const __acceptViteRefresh = __enableReflexRefresh(
 		import.meta.url,
 		__currentModule,
-		__cloneVNode,
-		__diffNode,
-		__recursivelyUpdateMountState,
-		__featureHook,
-		__getCurrentComponent,
+		__reflexLib,
 	)
-	// Needs to be in this file
+	// Accept call needs to be in this module
 	import.meta.hot.accept( __acceptViteRefresh )
 }
 `
 
 
 export function reflexRefresh ( pluginOptions ) {
+	pluginOptions = {
+		enabledHMRDevMode: false,
+		...pluginOptions,
+	}
 	let isProduction = false;
 	return {
 		name: 'reflexRefresh',
