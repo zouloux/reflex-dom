@@ -7,14 +7,15 @@ import S from "./App.module.less"
 const filesToImport = {
 	// Core files
 	'index.html' 			: () => import(`../stack/index.html?raw`),
-	'index.ts' 				: () => import(`../stack/index.ts?raw`),
+	'index.tsx' 			: () => import(`../stack/index.tsx?raw`),
 	'package.json' 			: () => import(`../stack/package.json?raw`),
 	'package-lock.json' 	: () => import(`../stack/package-lock.json?raw`),
 	'tsconfig.json' 		: () => import(`../stack/tsconfig.json?raw`),
 	'vite.config.js' 		: () => import(`../stack/vite.config.js?raw`),
 	// Steps
 	'steps/00.render.tsx' 	: () => import(`../stack/steps/00.render.tsx?raw`),
-	'steps/01.state.tsx' 	: () => import(`../stack/steps/01.state.tsx?raw`),
+	'steps/01.props.tsx' 	: () => import(`../stack/steps/01.props.tsx?raw`),
+	'steps/02.state.tsx' 	: () => import(`../stack/steps/02.state.tsx?raw`),
 }
 
 const stepFiles = Object.keys( filesToImport ).filter( f => f.startsWith('steps/') )
@@ -33,8 +34,9 @@ async function importFiles () {
 
 export function App ( props, component:ComponentInstance ) {
 	let _editor:VM
+	let files:Record<string, string>
 	mounted( async () => {
-		const files = await importFiles();
+		files = await importFiles();
 		_editor = await sdk.embedProject(
 			'iframe', {
 				title: 'Learn Reflex',
@@ -72,16 +74,25 @@ export function App ( props, component:ComponentInstance ) {
 
 	const step = state( -1 )
 
+	let isFirst = true
 	changed( async () => {
 		const file = stepFiles[ step.value ]
-		if ( !_editor ) return;
+		if ( !_editor )
+			return
+		await _editor.editor.openFile( file )
+		if ( isFirst ) {
+			isFirst = false
+			return
+		}
+		// Replace first line of index.tsx
+		const indexLines = files["index.tsx"].split("\n")
+		indexLines.shift();
+		indexLines.unshift(`import * as CurrentStep from './${file}'`)
+		const indexRaw = indexLines.join("\n")
 		await _editor.applyFsDiff({
 			destroy: [],
-			create: {
-				'index.ts' : `import './${file}'`
-			},
+			create: { 'index.tsx' : indexRaw },
 		})
-		await _editor.editor.openFile( file )
 	})
 
 	function changeStep ( delta:number ) {

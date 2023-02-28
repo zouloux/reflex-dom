@@ -1,35 +1,36 @@
 {
   "index.css": {
-    "file": "index-159fff8f.css",
+    "file": "index-4e761b3d.css",
     "src": "index.css"
   },
   "index.html": {
     "css": [
-      "index-159fff8f.css"
+      "index-4e761b3d.css"
     ],
     "dynamicImports": [
       "stack/index.html?raw",
-      "stack/index.ts?raw",
+      "stack/index.tsx?raw",
       "stack/package.json?raw",
       "stack/package-lock.json?raw",
       "stack/tsconfig.json?raw",
       "stack/vite.config.js?raw",
       "stack/steps/00.render.tsx?raw",
-      "stack/steps/01.state.tsx?raw"
+      "stack/steps/01.props.tsx?raw",
+      "stack/steps/02.state.tsx?raw"
     ],
-    "file": "index-4b57008f.js",
+    "file": "index-ce1ce8cd.js",
     "isEntry": true,
     "src": "index.html"
   },
   "stack/index.html?raw": {
-    "file": "index-2cf871c2.js",
+    "file": "index-baf17d17.js",
     "isDynamicEntry": true,
     "src": "stack/index.html?raw"
   },
-  "stack/index.ts?raw": {
-    "file": "index-67be587e.js",
+  "stack/index.tsx?raw": {
+    "file": "index-d96ba6d8.js",
     "isDynamicEntry": true,
-    "src": "stack/index.ts?raw"
+    "src": "stack/index.tsx?raw"
   },
   "stack/package-lock.json?raw": {
     "file": "package-lock-409bb638.js",
@@ -37,19 +38,24 @@
     "src": "stack/package-lock.json?raw"
   },
   "stack/package.json?raw": {
-    "file": "package-fdcaf8d0.js",
+    "file": "package-e6a548d8.js",
     "isDynamicEntry": true,
     "src": "stack/package.json?raw"
   },
   "stack/steps/00.render.tsx?raw": {
-    "file": "00.render-7d0b9912.js",
+    "file": "00.render-bb8e2342.js",
     "isDynamicEntry": true,
     "src": "stack/steps/00.render.tsx?raw"
   },
-  "stack/steps/01.state.tsx?raw": {
-    "file": "01.state-a4d32eab.js",
+  "stack/steps/01.props.tsx?raw": {
+    "file": "01.props-56a93c4d.js",
     "isDynamicEntry": true,
-    "src": "stack/steps/01.state.tsx?raw"
+    "src": "stack/steps/01.props.tsx?raw"
+  },
+  "stack/steps/02.state.tsx?raw": {
+    "file": "02.state-3be48001.js",
+    "isDynamicEntry": true,
+    "src": "stack/steps/02.state.tsx?raw"
   },
   "stack/tsconfig.json?raw": {
     "file": "tsconfig-d0416cf7.js",

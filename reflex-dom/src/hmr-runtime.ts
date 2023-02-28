@@ -15,6 +15,8 @@ let _reflexLib
  * Browse every functions that are exported from a module object
  */
 function browseModuleFunctions ( module, handler ) {
+	if ( !module || typeof module !== "object" ) return
+	// FIXME : Register error for full refresh ?
 	Object.keys( module ).map( memberName => {
 		const member = module[ memberName ]
 		if ( typeof member === "function" )
@@ -108,7 +110,9 @@ function initHooks () {
 		// Get associated component, we keep states only for swapped component.
 		const component = _reflexLib.getCurrentComponent();
 		if ( !component ) {
-			console.warn("State outside of a component", state)
+			// FIXME : Verbose
+			// FIXME : Do we need to keep state on those ?
+			// console.warn("State outside of a component", state)
 			return;
 		}
 		// Register this state for this component
@@ -146,6 +150,9 @@ function initHooks () {
 function swapComponent ( node, newFunction ) {
 	// Clone old node to keep props and stuff
 	const newNode = _reflexLib.cloneVNode(node);
+	// Do not replace unmounted components
+	if ( !node.component.isMounted )
+		return;
 	// Transfer id for refs
 	if ( node._id )
 		newNode._id = node._id
@@ -153,10 +160,11 @@ function swapComponent ( node, newFunction ) {
 	newNode.value = newFunction;
 	// Reset component instance so diffNode will re-create it with the new function
 	newNode.component = null
-	// Mount new node and replace old node dom
-	const parent = node.dom.parentElement;
+	let parent
 	// Try here to avoid duplicating the node if an error occurred
 	try {
+		// Mount new node and replace old node dom
+		parent = node.dom.parentElement;
 		_reflexLib.diffNode( newNode, null, node._nodeEnv );
 		parent.insertBefore( newNode.dom, node.dom );
 		// FIXME : This is also where children states can't be kept.

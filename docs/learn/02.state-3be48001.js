@@ -1,4 +1,4 @@
-import { h, render, state } from 'reflex-dom';
+const n=`import { h, state } from 'reflex-dom';
 
 export function App(props) {
 	const counter = state( 0 )
@@ -13,4 +13,5 @@ export function App(props) {
 	);
 }
 
-render(<App />, document.body);
+// NOTE : render() is now called outside this file for convenience
+`;export{n as default};

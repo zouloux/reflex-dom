@@ -14,7 +14,7 @@ const t=`{
 		"vite": "^4.1.1"
 	},
 	"dependencies": {
-		"reflex-dom": "^0.14.13"
+		"reflex-dom": "^0.16.0"
 	}
 }
 `;export{t as default};
