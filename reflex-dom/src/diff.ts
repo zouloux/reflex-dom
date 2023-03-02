@@ -219,7 +219,8 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 			// --- MOUNT
 			if ( doMount && !component.isMounted ) {
 				// Execute after render handlers
-				if ( component.vnode.value.isFactory !== false ) {
+				component.isMounted = true;
+				if ( node.value.isFactory !== false ) {
 					// Call every mount handler and store returned unmount handlers
 					// FIXME : Can we use _dispatch here ?
 					const total = component._mountHandlers.length
@@ -234,7 +235,6 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 					}
 					// Reset mount handlers, no need to keep them
 					component._mountHandlers = []
-					component.isMounted = true;
 					_dispatch( component._renderHandlers, component )
 					_dispatch( component._nextRenderHandlers, component )
 					component._nextRenderHandlers = []
@@ -247,7 +247,7 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 				_dispatch(component._unmountHandlers, component)
 				component.isMounted = false;
 				// Cut component branch from virtual node to allow GC to destroy component
-				delete component.vnode.component
+				delete node.component
 				delete component.vnode
 				// FIXME : Do we need to do this ? Is it efficient or is it just noise ?
 				// delete component.vnode

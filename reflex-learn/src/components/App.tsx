@@ -4,29 +4,13 @@ import { VM } from "@stackblitz/sdk/typings/vm";
 import { limitRange } from "@zouloux/ecma-core";
 import S from "./App.module.less"
 
-const filesToImport = {
-	// Core files
-	'index.html' 			: () => import(`../stack/index.html?raw`),
-	'index.tsx' 			: () => import(`../stack/index.tsx?raw`),
-	'package.json' 			: () => import(`../stack/package.json?raw`),
-	'package-lock.json' 	: () => import(`../stack/package-lock.json?raw`),
-	'tsconfig.json' 		: () => import(`../stack/tsconfig.json?raw`),
-	'vite.config.js' 		: () => import(`../stack/vite.config.js?raw`),
-	// Steps
-	'steps/00.render.tsx' 	: () => import(`../stack/steps/00.render.tsx?raw`),
-	'steps/01.props.tsx' 	: () => import(`../stack/steps/01.props.tsx?raw`),
-	'steps/02.state.tsx' 	: () => import(`../stack/steps/02.state.tsx?raw`),
-}
-
-const stepFiles = Object.keys( filesToImport ).filter( f => f.startsWith('steps/') )
-
 async function importFiles () {
 	const output = {}
-	const fileNames = Object.keys( filesToImport )
-	for ( const fileName of fileNames ) {
-		const importer = filesToImport[ fileName ]
-		const rawFile = await importer()
-		output[ fileName ] = rawFile.default
+	const files = await import.meta.glob('../stack/**/*.*', { as : 'url' })
+	for ( let fileName in files ) {
+		let currentFile = await files[fileName]()
+		fileName = fileName.substring(9, fileName.length)
+		output[ fileName ] = currentFile
 	}
 	return output
 }
@@ -34,16 +18,18 @@ async function importFiles () {
 
 export function App ( props, component:ComponentInstance ) {
 	let _editor:VM
-	let files:Record<string, string>
+	let _loadedFiles:Record<string, string>
+	let _stepFiles:string[] = []
 	mounted( async () => {
-		files = await importFiles();
+		_loadedFiles = await importFiles();
+		_stepFiles = Object.keys( _loadedFiles ).filter( f => f.startsWith('steps/') )
 		_editor = await sdk.embedProject(
 			'iframe', {
 				title: 'Learn Reflex',
 				description: 'Learn Reflex tutorial',
 				template: 'node',
 				files: {
-					...files,
+					..._loadedFiles,
 					'loading' : 'Stackblitz is loading'
 				}
 			}, {
@@ -76,7 +62,7 @@ export function App ( props, component:ComponentInstance ) {
 
 	let isFirst = true
 	changed( async () => {
-		const file = stepFiles[ step.value ]
+		const file = _stepFiles[ step.value ]
 		if ( !_editor )
 			return
 		await _editor.editor.openFile( file )
@@ -85,7 +71,7 @@ export function App ( props, component:ComponentInstance ) {
 			return
 		}
 		// Replace first line of index.tsx
-		const indexLines = files["index.tsx"].split("\n")
+		const indexLines = _loadedFiles["index.tsx"].split("\n")
 		indexLines.shift();
 		indexLines.unshift(`import * as CurrentStep from './${file}'`)
 		const indexRaw = indexLines.join("\n")

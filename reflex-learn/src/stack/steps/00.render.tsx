@@ -8,4 +8,4 @@ function App(props) {
 	);
 }
 
-render(<App name="world" />, document.body);
+render(<App name="world" />, document.getElementById("App"));

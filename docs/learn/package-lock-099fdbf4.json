@@ -1,4 +1,4 @@
-const t=`{
+{
 	"name": "learn-reflex",
 	"version": "1.0.0",
 	"lockfileVersion": 2,
@@ -935,4 +935,3 @@ const t=`{
 		}
 	}
 }
-`;export{t as default};

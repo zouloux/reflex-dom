@@ -151,8 +151,11 @@ function swapComponent ( node, newFunction ) {
 	// Clone old node to keep props and stuff
 	const newNode = _reflexLib.cloneVNode(node);
 	// Do not replace unmounted components
-	if ( !node.component.isMounted )
+	if ( !node.component.isMounted ) {
+		// FIXME
+		// console.warn(`HMR Runtime // Cannot swap an unmounted component`, node)
 		return;
+	}
 	// Transfer id for refs
 	if ( node._id )
 		newNode._id = node._id
@@ -165,7 +168,7 @@ function swapComponent ( node, newFunction ) {
 	try {
 		// Mount new node and replace old node dom
 		parent = node.dom.parentElement;
-		_reflexLib.diffNode( newNode, null, node._nodeEnv );
+		_reflexLib.diffNode( newNode, null, node._nodeEnv, true );
 		parent.insertBefore( newNode.dom, node.dom );
 		// FIXME : This is also where children states can't be kept.
 		//			Because we update a children which may be overridden by parent swap later
