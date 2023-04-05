@@ -13,7 +13,8 @@ import { afterNextRender, ComponentInstance, unmounted } from "./component";
 // Micro task polyfill
 const _microtask = self.queueMicrotask ?? ( h => self.setTimeout( h, 0 ) )
 
-type TTaskHandler <GType> = ( bucket:Set<GType> ) => void
+// type TTaskHandler <GType> = ( bucket:Set<GType> ) => void
+type TTaskHandler <GType> = ( element:GType ) => void
 
 // TODO : Doc
 function _createBatchedTask <GType> ( task:TTaskHandler<GType> ) {
@@ -21,7 +22,9 @@ function _createBatchedTask <GType> ( task:TTaskHandler<GType> ) {
 	const resolves = []
 	return ( element:GType, resolve?:() => any ) => {
 		bucket.size || _microtask( () => {
-			task( bucket )
+			// task( bucket )
+			for ( const element of bucket )
+				task( element )
 			bucket.clear()
 			_dispatch( resolves )
 		});
@@ -36,8 +39,8 @@ export type TInitialValue <GType> = GType | ((oldValue?:GType) => GType)
 
 export const _prepareInitialValue = <GType> ( initialValue:TInitialValue<GType>, oldValue?:GType ) => (
 	typeof initialValue == "function"
-	? ( initialValue as (oldValue?:GType) => GType )(oldValue)
-	: initialValue as GType
+		? ( initialValue as (oldValue?:GType) => GType )(oldValue)
+		: initialValue as GType
 )
 
 // ----------------------------------------------------------------------------- STATE TYPES
@@ -61,43 +64,53 @@ export interface IComputeState<GType> extends IState<GType> {
 	update ():void
 }
 
-type TDisposeHandler = () => void
 
-export type TEffect = () => (void|TDisposeHandler|Promise<any>)
+export type TDisposeHandler = () => void
+
+// It looks like PHPStorm does not like this one
+export type TEffectHandler <
+	GCheck extends any[] = [],
+	// GArguments extends any[] = [ ...GCheck, ...GCheck ],
+	GArguments extends any[] = GCheck,
+> = ( ...rest:GArguments ) => TDisposeHandler|void|Promise<void>
+
+type TCheckEffect<GCheck extends any[] = []> = () => GCheck
+
 
 export type TComputed <GType> = () => GType
+
+type TEffect<GCheck extends any[] = any[]> = {
+	_check		:TCheckEffect<GCheck>|null
+	_handler	:TEffectHandler<GCheck>
+	_dom		:boolean
+	_values		:GCheck
+	_dispose	:TDisposeHandler
+}
+
 
 export interface IStateOptions<GType> {
 	// filter				?:(newValue:GType, oldValue:GType) => GType,
 	directInvalidation	?:boolean
 }
 
-
 // ----------------------------------------------------------------------------- INVALIDATE EFFECT
 
-const _invalidateEffect = _createBatchedTask<TEffect>( effects => {
-	// FIXME : Which one is better ?
-	// _dispatch( Array.from( effects ) )
-	for ( const effect of effects )
-		effect()
-});
+const _invalidateEffect = _createBatchedTask<TEffectHandler>( effect )
 
 // ----------------------------------------------------------------------------- INVALIDATE COMPONENT
 
 /**
  * Invalidate a component instance.
- * Will batch components to validated in a microtask to avoid unnecessary renders.
+ * Will batch components in a microtask to avoid unnecessary renders.
  */
-export const invalidateComponent = _createBatchedTask<ComponentInstance>( components => {
-	for ( const component of components )
-		_diffAndMount( component.vnode, component.vnode, undefined, true )
-});
+export const invalidateComponent = _createBatchedTask<ComponentInstance>(
+	component => _diffAndMount( component.vnode, component.vnode, undefined, true )
+);
 
 // ----------------------------------------------------------------------------- STATE
 
 // TODO : DOC
 let _currentEffect:TEffect
-let _currentChanged:TEffect
 
 // TODO : DOC
 let _currentStates = new Set<IState<any>>()
@@ -117,8 +130,6 @@ export function state <GType> (
 
 	// List of side effects / node / components to update
 	const _effects = new Set<TEffect>()
-	const _effectDisposes = new Set<TDisposeHandler>()
-	const _changeds = new Set<TEffect>()
 	const _nodes = new Set<VNode>()
 	const _components = new Set<ComponentInstance>()
 
@@ -126,31 +137,28 @@ export function state <GType> (
 	if ( _currentEffect )
 		_effects.add( _currentEffect )
 
-	function _addEffectDispose ( handler:TEffect|void|Promise<any> ) {
-		typeof handler === "function" && _effectDisposes?.add( handler )
-	}
-
 	// Update the state value and dispatch changes
 	async function updateValue ( newValue:GType, forceUpdate = false ) {
 		// FIXME : Throw error in dev mode
-		if ( !_effects ) return
+		if ( !_effects )
+			return
 		// Halt update if not forced and if new value is same as previous
-		if ( newValue === initialValue && !forceUpdate ) return
+		if ( newValue === initialValue && !forceUpdate )
+			return
 
-		// TODO : DOC
-		for ( const unmountEffect of _effectDisposes )
-			unmountEffect()
-		_effectDisposes.clear();
+		// Call dispose on all associated effects.
+		// effect and changed
+		for ( const effect of _effects )
+			effect._dispose?.()
 
-		// Store new value into the argument variable
+		// Store new value in
+		// to the argument variable
 		initialValue = newValue
 
-		// TODO : Effects should be promisable
-		// 		But for now it bugs and changed handlers cannot be batched
-		//		We need a custom handler for the batch clear handler
-		// TODO : DOC
+		// Call all associated effect handlers ( not changed )
+		// Do not attach effects // FIXME
 		for ( const effect of _effects )
-			_addEffectDispose( effect() )
+			!effect._dom && _callEffect( effect )
 
 		// Then dispatch direct dom updates
 		for ( const node of _nodes )
@@ -172,7 +180,7 @@ export function state <GType> (
 		const promises = []
 		for ( const component of _components ) {
 			// Refresh component synchronously
-			if (stateOptions.directInvalidation) {
+			if ( stateOptions.directInvalidation ) {
 				diffNode( component.vnode, component.vnode )
 				recursivelyUpdateMountState( component.vnode, true )
 			}
@@ -186,8 +194,10 @@ export function state <GType> (
 		_components.clear();
 		await Promise.all( promises )
 
-		// Call changed handler after dom mutations
-		_changeds.forEach( e => _invalidateEffect( e ) )
+		// Call all associated changed handler ( not effect )
+		// Do not attach effects // FIXME
+		for ( const effect of _effects )
+			effect._dom && _invalidateEffect( () => _callEffect( effect ) )
 	}
 
 	// if this state is created into a factory phase of a component,
@@ -196,19 +206,17 @@ export function state <GType> (
 		// FIXME : For HMR, maybe delay it ? Maybe disable =null when hmr enabled ?
 		// initialValue = null;
 		_effects.clear()
-		_effectDisposes.clear()
-		_changeds.clear()
 		_nodes.clear()
 		_components.clear()
-		// [_effects, _effectDisposes, _changeds, _nodes, _components].map( e => e.clear() ) // FIXME : Bad CodeGolf
 	})
 
-	const s = {
+	const _localState = {
 		// --- PUBLIC API ---
 		// Get current value and register effects
 		get value () {
 			// FIXME : Throw error in dev mode
-			if ( !_effects ) return
+			if ( !_effects )
+				return
 			// Get current node and component
 			const currentNode = _getCurrentDiffingNode()
 			const currentComponent = getCurrentComponent()
@@ -217,13 +225,8 @@ export function state <GType> (
 				_effects.add( _currentEffect )
 				_currentStates.add( this )
 			}
-			// Register current after changed handler
-			else if ( _currentChanged ) {
-				_changeds.add( _currentChanged )
-				_currentStates.add( this )
-			}
 			// Register current text node
-			else if ( currentNode && (currentNode.type === 3 || currentNode.type === 2) && currentNode.value === this ) {
+			else if ( currentNode && (currentNode.type === 3/* TEXT */ || currentNode.type === 2 /* ARGUMENT */) && currentNode.value === this ) {
 				// Save component to current text node to optimize later
 				currentNode.component = currentComponent
 				_nodes.add( currentNode )
@@ -251,30 +254,25 @@ export function state <GType> (
 		// Remove and clean this state
 		dispose,
 		// --- PRIVATE API ---
-		// @ts-ignore --- Private method for effect
-		// Add an effect dispose handler
-		_addEffectDispose,
 		// @ts-ignore Private method for effect
 		// Remove an effect handler
-		_removeEffect ( handler:TEffect ) {
-			_effects?.delete( handler )
-			_changeds?.delete( handler )
+		_removeEffect ( effect:TEffect ) {
+			_effects?.delete( effect )
 		},
 	}
-
-	_dispatch(_featureHooks, null, 4/* NEW STATE */, s, stateOptions)
-	return s;
+	// Call hook for new state created
+	_dispatch(_featureHooks, null, 4/* NEW STATE */, _localState, stateOptions)
+	return _localState;
 }
 
 // ----------------------------------------------------------------------------- EFFECTS / CHANGED
 
-function _disposeEffect ( associatedStates:IState<any>[], handler ) {
+function _detachEffectFromStates ( associatedStates:IState<any>[], effect:TEffect ) {
 	// TODO : Dispose + register in component for later disposal
 	// TODO : TEST + OPTIM
-	if ( associatedStates )
-		for ( const state of associatedStates )
-			// @ts-ignore
-			state._removeEffect( handler )
+	for ( const state of associatedStates )
+		// @ts-ignore
+		state._removeEffect( effect )
 }
 
 function _captureAssociatedStates () {
@@ -284,56 +282,93 @@ function _captureAssociatedStates () {
 	return associatedStates
 }
 
-/**
- * TODO : DOC + TEST
- * @param handler
- */
-export function effect ( handler:TEffect ):TDisposeHandler {
-	// Register this effect as running so all states can catch the handler
-	_currentEffect = handler
-	// Run the handler once,
-	// all states acceded from this effect will caught the effect handler
-	// FIXME : How about async effect ? Can it stop rendering of component ?
-	const effectDispose = handler()
-	// Clone associated states list to be able to
-	// FIXME 	How about a state listened in a condition ?
-	//  		It will not be into associatedStates ...
-	const associatedStates = _captureAssociatedStates()
-	// If we had a handler returned by the effect
-	// Attach it to all associated states
-	if ( effectDispose )
-		for ( const state of associatedStates )
-			// @ts-ignore
-			state._addEffectDispose( effectDispose )
-	_currentEffect = null
-	// Return a dispose function
-	// This function will remove the handler from all associated states
-	// If this effect is ran into a factory component, it will be automatically
-	// dispose when the component is unmounted.
-	return unmounted( () => _disposeEffect(associatedStates, handler) )
+function _callEffectHandler ( effect:TEffect, values?:any[] ) {
+	// Call handler with old values
+	const effectDispose = effect._handler( ...effect._values )
+	// Register value as previous values after effect has been called
+	effect._values = values
+	// Save dispose function, override it if a function is not returned after
+	effect._dispose = ( typeof effectDispose === "function" ? effectDispose : null )
 }
 
-/**
- * TODO : DOC + TEST
- * @param handler
- */
-export function changed ( handler:TEffect ):TDisposeHandler {
-	let associatedStates
-	afterNextRender(() => {
-		_currentChanged = handler
-		handler()
-		associatedStates = _captureAssociatedStates()
-		_currentChanged = null
-	})
-	return unmounted( () => _disposeEffect(associatedStates, handler) )
+function _callEffect ( effect:TEffect, attach = false ) {
+	// Attach before check and handler
+	if ( attach )
+		_currentEffect = effect
+	// If we have a check function, check values and attach on this function
+	if ( effect._check ) {
+		// Convert states to their values
+		const values = effect._check().map( v => v && v.type === 3/* STATE */ ? v.value : v )
+		// Detach after check so effect handler will not attach to states
+		if ( attach )
+			_currentEffect = null
+		// Check if values changed. Never skip if those are the first values we have.
+	 	if ( !effect._values.length || values.find((v, i) => effect._values[i] !== v) !== null )
+			 _callEffectHandler( effect, values )
+		// const skipHandler = !!effect._values.length && values.find((v, i) => effect._values[i] !== v) === null
+		// if ( !skipHandler ) {
+			// Call effect if not skipped
+			// _callEffectHandler( effect, values )
+		// }
+	}
+	else {
+		// Run the handler once,
+		_callEffectHandler( effect, [false] )
+		// Detach after and handler
+		if ( attach )
+			_currentEffect = null
+	}
+}
+
+function _createEffect <GCheck extends any[]> ( _handler:TEffectHandler<GCheck>, _check:TCheckEffect<GCheck>, _dom:boolean ):TEffect<GCheck> {
+	// Register this effect as running so all states can catch the handler
+	return {
+		_handler,
+		_check,
+		_dom,
+		// @ts-ignore
+		_values: [!_check],
+		_dispose: null,
+	}
+}
+
+// TODO : DOC
+function _prepareEffect <GCheck extends any[]> ( handler:TEffectHandler<GCheck>, dom:boolean, check?:TCheckEffect<GCheck> ) {
+	const _effect = _createEffect( handler, check, false )
+	let _associatedStates:IState<any>[]
+	function _run () {
+		// Call effect now and attach to states
+		_callEffect( _effect, true )
+		// Clone associated states list to be able to detach later
+		_associatedStates = _captureAssociatedStates()
+	}
+	dom ? afterNextRender( _run ) : _run()
+	return unmounted( () => _detachEffectFromStates(_associatedStates, _effect) )
+}
+
+// TODO : DOC
+export function effect <GCheck extends any[]> ( handler:TEffectHandler<[boolean]> ):TDisposeHandler {
+	return _prepareEffect( handler, false )
+}
+
+// TODO : DOC
+export function changed <GCheck extends any[]> ( handler?:TEffectHandler<[boolean]> ):TDisposeHandler {
+	return _prepareEffect( handler, true )
+}
+
+// TODO : DOC
+export function checkEffect <GCheck extends any[]> ( check:TCheckEffect<GCheck>, handler:TEffectHandler<GCheck>, ):TDisposeHandler {
+	return _prepareEffect( handler, false, check)
+}
+
+// TODO : DOC
+export function checkChanged <GCheck extends any[]> ( check:TCheckEffect<GCheck>, handler:TEffectHandler<GCheck>, ):TDisposeHandler {
+	return _prepareEffect( handler, true, check)
 }
 
 // ----------------------------------------------------------------------------- COMPUTE
 
-/**
- * TODO : DOC + TEST
- * @param handler
- */
+// TODO : DOC
 export function compute <GType> ( handler:TComputed<GType> ):IComputeState<GType> {
 	// FIXME : Can't we optimize state initialisation here ?
 	const internalState:IComputeState<GType> = state<GType>() as IComputeState<GType>
