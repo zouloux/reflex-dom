@@ -1,9 +1,31 @@
-import { afterNextRender, changed, compute, effect, h, mounted, state } from "../../../reflex-dom/src";
+import {
+	afterNextRender,
+	changed,
+	checkChanged,
+	checkEffect,
+	compute,
+	effect,
+	h,
+	mounted,
+	state
+} from "../../../reflex-dom/src";
 
 export function Effects () {
 
 
 	const s1 = state( 0 )
+	const s2 = state( 0 )
+	const s3 = compute(() => s1.value * 2)
+
+	// effect(() => {
+	// 	console.log(">", s1.value, s2.value)
+	// })
+	checkEffect(() => [s1, s3], () => {
+		console.log(">>", s1.value, s2.value, s3.value)
+	})
+	// checkChanged(() => [s1, s3], () => {
+	// 	console.log(">>", s1.value, s2.value, s3.value)
+	// })
 	// const c1 = compute(() => s1.value * 2 )
 	//
 	// const renderState = state()
@@ -17,13 +39,11 @@ export function Effects () {
 	return () => <div>
 		<button onClick={ e => s1.value ++ }>Inc</button>
 		<button onClick={ e => s1.value = 0 }>Reset</button>
+		<button onClick={ e => {s1.value ++; s2.value ++;} }>Inc Both</button>
 		{ Date.now() }
-		<p>Value { s1.value }</p>
-		<p>State { s1 }</p>
-		{/*EFFECTS*/}
-		{/*<hr />*/}
-		{/*<h2>{ s1 }</h2>*/}
-		{/*<button onClick={ e => renderState.value = Math.random() }>Re render</button>*/}
-		{/*<div hidden>{ renderState.value + "-" }</div>*/}
+		{/*<p>Value 1 { s1.value }</p>*/}
+		{/*<p>Value 2 { s1.value }</p>*/}
+		<p>State 1 { s1 }</p>
+		<p>State 2 { s2 }</p>
 	</div>
 }

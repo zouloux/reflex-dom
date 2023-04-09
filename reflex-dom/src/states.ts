@@ -304,13 +304,8 @@ function _callEffect ( effect:TEffect, attach = false ) {
 		if ( attach )
 			_currentEffect = null
 		// Check if values changed. Never skip if those are the first values we have.
-	 	if ( !effect._values.length || values.find((v, i) => effect._values[i] !== v) !== null )
+	 	if ( !effect._values.length || values.find((v, i) => effect._values[i] !== v) != null )
 			 _callEffectHandler( effect, values )
-		// const skipHandler = !!effect._values.length && values.find((v, i) => effect._values[i] !== v) === null
-		// if ( !skipHandler ) {
-			// Call effect if not skipped
-			// _callEffectHandler( effect, values )
-		// }
 	}
 	else {
 		// Run the handler once,
@@ -328,7 +323,7 @@ function _createEffect <GCheck extends any[]> ( _handler:TEffectHandler<GCheck>,
 		_check,
 		_dom,
 		// @ts-ignore
-		_values: [!_check],
+		_values: _check ? [] : [true],
 		_dispose: null,
 	}
 }
