@@ -161,7 +161,7 @@ export function state <GType> (
 			!effect._dom && _callEffect( effect )
 
 		// Then dispatch direct dom updates
-		for ( const node of _nodes )
+		for ( const node of _nodes ) {
 			// Skip this node if the whole component needs to be refreshed
 			if ( !_components.has( node.component ) ) {
 				// Do direct dom update
@@ -175,6 +175,7 @@ export function state <GType> (
 				}
 				_dispatch( _featureHooks, null, 3/* MUTATING NODE */, node, node.key )
 			}
+		}
 
 		// Dispatch all component refresh at the same time and wait for all to be updated
 		const promises = []

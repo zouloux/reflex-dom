@@ -104,9 +104,13 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 	let dom:RenderDom
 	if ( oldNode ) {
 		dom = oldNode.dom
-		if ( newNode.type === 1/*TEXT*/ && oldNode.value !== newNode.value )
+		if ( (
+			newNode.type === 1/*TEXT*/ && oldNode.value !== newNode.value
+			// If the whole component is re-rendered by any state change that is not a signal
+			// We need to update all signal based text values
+			|| newNode.type === 3/*STATE*/
+		))
 			dom.nodeValue = newNode.value as string
-		// States are diffed directly from state
 	}
 	else {
 		const { document } = nodeEnv as { document: Document }
