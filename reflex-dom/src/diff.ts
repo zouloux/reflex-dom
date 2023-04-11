@@ -78,19 +78,24 @@ export function _setDomAttribute ( dom:Element, name:string, value:any ) {
 	// className as class for non jsx components
 	if ( name == "className" )
 		name = "class"
-	// Manage class as arrays
-	if ( name == "class" && Array.isArray( value ) )
-		value = value.flat( 1 ).filter( v => v !== true && !!v ).join(" ").trim()
-	// Manage style as object only
-	else if ( name == "style" && typeof value == "object" ) {
-		// https://esbench.com/bench/62ecb9866c89f600a5701b47
-		Object.keys( value ).forEach(
-			k => _setStyle( (dom as HTMLElement).style, k, value[k] )
-		);
-		return;
+	if ( value === false || value === null )
+		dom.removeAttribute( name )
+	else if ( value === true )
+		dom.setAttribute( name, "" )
+	else {
+		// Manage class as arrays
+		if ( name == "class" && Array.isArray( value ) )
+			value = value.flat( 1 ).filter( v => v !== true && !!v ).join(" ").trim()
+		// Manage style as object only
+		else if ( name == "style" && typeof value == "object" ) {
+			// https://esbench.com/bench/62ecb9866c89f600a5701b47
+			Object.keys( value ).forEach(
+				k => _setStyle( (dom as HTMLElement).style, k, value[k] )
+			);
+			return;
+		}
+		dom.setAttribute( name, value )
 	}
-	// FIXME : What about checked / disabled / autoplay ...
-	dom.setAttribute( name, value === true ? "" : value )
 }
 
 /**
