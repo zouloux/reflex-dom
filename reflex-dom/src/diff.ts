@@ -213,9 +213,11 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 
 export function _diffAndMount ( newNode:VNode, oldNode:VNode, nodeEnv?:INodeEnv, forceUpdate = false ) {
 	const finishHandlers = _dispatch(_featureHooks, null, 2/* DIFFING NODE */, newNode)
-	diffNode( newNode, oldNode, nodeEnv, forceUpdate )
-	recursivelyUpdateMountState( newNode, true )
-	_dispatch( finishHandlers );
+	if ( newNode ) {
+		diffNode( newNode, oldNode, nodeEnv, forceUpdate )
+		recursivelyUpdateMountState( newNode, true )
+		_dispatch( finishHandlers );
+	}
 }
 
 export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
