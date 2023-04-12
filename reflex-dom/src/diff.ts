@@ -174,7 +174,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 		// Do not continue if attribute or event did not change
 		if (
 			name === "children" || name === "key" || name === "ref"
-			|| value !== undefined
+			|| value === undefined
 			|| ( oldNode && name in oldNode.props && oldNode.props[ name ] === value )
 		)
 			continue;
