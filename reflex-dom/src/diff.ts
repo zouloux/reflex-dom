@@ -220,7 +220,7 @@ export function _diffAndMount ( newNode:VNode, oldNode:VNode, nodeEnv?:INodeEnv,
 }
 
 export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
-	if ( node.type === 7/*COMPONENTS*/ ) {
+	if ( node?.type === 7/*COMPONENTS*/ ) {
 		// FIXME : Can optimize and code-golf this
 		const { component } = node
 		if ( component ) { // FIXME : Is this check usefull ?
@@ -271,7 +271,7 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 			}
 		}
 	}
-	else if ( node.type > 4/*CONTAINERS*/ ) {
+	else if ( node?.type > 4/*CONTAINERS*/ ) {
 		const total = node.props.children.length
 		for ( let i = 0; i < total; ++i )
 			recursivelyUpdateMountState( node.props.children[ i ], doMount )
