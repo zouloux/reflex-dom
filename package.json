@@ -1,7 +1,7 @@
 {
 	"name": "reflex-dom",
 	"type": "module",
-	"version": "0.17.5",
+	"version": "0.17.6",
 	"description": "Reflex is a tiny and fast reactive UI  library.",
 	"author": "Alexis Bouhet (ZoulouX)",
 	"license": "MIT",

@@ -82,18 +82,17 @@ export function _setDomAttribute ( dom:Element, name:string, value:any ) {
 		dom.removeAttribute( name )
 	else if ( value === true )
 		dom.setAttribute( name, "" )
+	// Manage style as object only
+	else if ( name == "style" && typeof value == "object" ) {
+		// https://esbench.com/bench/62ecb9866c89f600a5701b47
+		Object.keys( value ).forEach(
+			k => _setStyle( (dom as HTMLElement).style, k, value[k] )
+		);
+	}
 	else {
 		// Manage class as arrays
 		if ( name == "class" && Array.isArray( value ) )
 			value = value.flat( 1 ).filter( v => v !== true && !!v ).join(" ").trim()
-		// Manage style as object only
-		else if ( name == "style" && typeof value == "object" ) {
-			// https://esbench.com/bench/62ecb9866c89f600a5701b47
-			Object.keys( value ).forEach(
-				k => _setStyle( (dom as HTMLElement).style, k, value[k] )
-			);
-			return;
-		}
 		dom.setAttribute( name, value )
 	}
 }
@@ -175,7 +174,6 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 		// Do not continue if attribute or event did not change
 		if (
 			name === "children" || name === "key" || name === "ref"
-			|| !value
 			|| ( oldNode && name in oldNode.props && oldNode.props[ name ] === value )
 		)
 			continue;
@@ -197,7 +195,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 		// Other attributes
 		else {
 			// If value is a state, track its changes by creating an "argument state" type of node
-			if ( typeof value === "object" && value.type === 3 ) {
+			if ( value !== null && typeof value === "object" && value.type === 3 ) {
 				_currentDiffingNode = createVNode( 2/*ARGUMENT*/, value, null, name )
 				_currentDiffingNode.dom = dom;
 				value = value.value
