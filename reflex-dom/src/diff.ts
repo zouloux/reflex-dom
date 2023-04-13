@@ -171,10 +171,15 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 	// Update props
 	for ( let name in newNode.props ) {
 		let value = newNode.props[ name ];
-		// Do not continue if attribute or event did not change
 		if (
-			name === "children" || name === "key" || name === "ref"
-			|| value === undefined
+			// Do not continue if value is undefined or null.
+			// 	Undefined is checked here as a value, so no need for typeof check
+			// 	It can happen when JSX source is pushing a props from an undefined value
+			// Keep going if falsy to allow empty attributes
+			value === undefined || value === null
+			// Do not continue for "internal" attributes
+			|| name === "children" || name === "key" || name === "ref"
+			// Do not continue if attribute or event did not change
 			|| ( oldNode && name in oldNode.props && oldNode.props[ name ] === value )
 		)
 			continue;
