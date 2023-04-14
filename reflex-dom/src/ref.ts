@@ -24,6 +24,7 @@ export function ref <GDom extends Element = Element> ():IRef<GDom> {
 
 export interface IRefs <GDom extends Element = Element> {
 	list 	: IRef<GDom>[]
+	doms	: GDom[]
 	atIndex	: (index:number) => any
 }
 
@@ -50,6 +51,7 @@ export function refs <GDom extends Element = Element> ():IRefs<GDom> {
 	}
 	const value:IInternalRefs<GDom> = {
 		get list () { return _list },
+		get doms () { return _list.map( d => d.dom ) },
 		_setFromVNode ( vNode:VNode<DefaultReflexProps, ComponentFunction> ) {
 			// Set vNode id from counter.
 			// Node ids starts from 1 to be able to compress a bit

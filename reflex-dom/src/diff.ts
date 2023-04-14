@@ -447,7 +447,8 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			const { dom } = oldChildNode
 			oldChildNode.dom = null;
 			_updateNodeRef( oldChildNode )
-			parentDom.removeChild( dom )
+			if (dom) // Sometimes it is not valid. Why ? HMR ?
+				parentDom.removeChild( dom )
 		}
 	}
 }
