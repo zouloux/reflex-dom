@@ -7,78 +7,8 @@
     "css": [
       "index-4e761b3d.css"
     ],
-    "dynamicImports": [
-      "stack/index.html?url",
-      "stack/index.tsx?url",
-      "stack/package-lock.json?url",
-      "stack/package.json?url",
-      "stack/steps/00.render.tsx?url",
-      "stack/steps/01.props.tsx?url",
-      "stack/steps/02.state.tsx?url",
-      "stack/tsconfig.json?url",
-      "stack/vite.config.js?url"
-    ],
-    "file": "index-08cb4d4b.js",
+    "file": "index-68f045dd.js",
     "isEntry": true,
     "src": "index.html"
-  },
-  "stack/index.html": {
-    "file": "index-90501d50.html",
-    "src": "stack/index.html"
-  },
-  "stack/index.html?url": {
-    "assets": [
-      "index-90501d50.html"
-    ],
-    "file": "index-2f9824cf.js",
-    "isDynamicEntry": true,
-    "src": "stack/index.html?url"
-  },
-  "stack/index.tsx?url": {
-    "file": "index-969a49bd.js",
-    "isDynamicEntry": true,
-    "src": "stack/index.tsx?url"
-  },
-  "stack/package-lock.json": {
-    "file": "package-lock-099fdbf4.json",
-    "src": "stack/package-lock.json"
-  },
-  "stack/package-lock.json?url": {
-    "assets": [
-      "package-lock-099fdbf4.json"
-    ],
-    "file": "package-lock-e8b23e2d.js",
-    "isDynamicEntry": true,
-    "src": "stack/package-lock.json?url"
-  },
-  "stack/package.json?url": {
-    "file": "package-fe382b8d.js",
-    "isDynamicEntry": true,
-    "src": "stack/package.json?url"
-  },
-  "stack/steps/00.render.tsx?url": {
-    "file": "00.render-6434276f.js",
-    "isDynamicEntry": true,
-    "src": "stack/steps/00.render.tsx?url"
-  },
-  "stack/steps/01.props.tsx?url": {
-    "file": "01.props-90150449.js",
-    "isDynamicEntry": true,
-    "src": "stack/steps/01.props.tsx?url"
-  },
-  "stack/steps/02.state.tsx?url": {
-    "file": "02.state-dbee1901.js",
-    "isDynamicEntry": true,
-    "src": "stack/steps/02.state.tsx?url"
-  },
-  "stack/tsconfig.json?url": {
-    "file": "tsconfig-8f9bf37e.js",
-    "isDynamicEntry": true,
-    "src": "stack/tsconfig.json?url"
-  },
-  "stack/vite.config.js?url": {
-    "file": "vite.config-52c76fd1.js",
-    "isDynamicEntry": true,
-    "src": "stack/vite.config.js?url"
   }
 }

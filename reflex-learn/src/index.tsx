@@ -4,6 +4,5 @@ import { App } from "./components/App";
 import "./index.less"
 
 onReady().then( () => {
-
 	render(<App />, $('#App'))
 })
