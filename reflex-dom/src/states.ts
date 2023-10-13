@@ -242,7 +242,7 @@ export function state <GType> (
 		// Set value with a set() method and update dependencies
 		// Asynchronous function
 		set: ( newValue:TInitialValue<GType>, forceUpdate = false ) =>
-			updateValue( _prepareInitialValue( newValue ), forceUpdate ),
+			updateValue( _prepareInitialValue( newValue, initialValue as GType ), forceUpdate ),
 		// Get value without registering effects
 		peek () { return initialValue as GType },
 		// Set value without calling effects
