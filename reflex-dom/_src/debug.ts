@@ -109,8 +109,6 @@ export function drawReflexDebug () {
 		// Get text node position with text selection because we cannot use getClientBoundingRect
 		const range = document.createRange();
 		range.selectNode(node.dom);
-		// FIXME : Warning ! Triggers an instant reflow / redraw, destroy performances !
-		// FIXME : Maybe microtask them
 		const rect = range.getBoundingClientRect();
 		range.detach();
 

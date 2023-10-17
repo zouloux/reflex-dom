@@ -45,7 +45,7 @@ export const _prepareInitialValue = <GType> ( initialValue:TInitialValue<GType>,
 
 // ----------------------------------------------------------------------------- STATE TYPES
 
-export type IState<GType = any> = {
+export type IState<GType> = {
 	value:GType
 	set ( newValue:TInitialValue<GType> ):Promise<void>
 
@@ -104,7 +104,7 @@ const _invalidateEffect = _createBatchedTask<TEffectHandler>( effect )
  * Will batch components in a microtask to avoid unnecessary renders.
  */
 export const invalidateComponent = _createBatchedTask<ComponentInstance>(
-	component => _diffAndMount( component.vnode, component.vnode, true )
+	component => _diffAndMount( component.vnode, component.vnode, undefined, true )
 );
 
 // ----------------------------------------------------------------------------- STATE
@@ -165,17 +165,15 @@ export function state <GType> (
 			// Skip this node if the whole component needs to be refreshed
 			if ( !_components.has( node.component ) ) {
 				// Do direct dom update
-				let propertyName:string
 				if ( node.type === 3 )
 					node.dom.nodeValue = initialValue as string
 				else {
 					// Reset attribute for "src", allow empty images when changing src
-					propertyName = node._propertyName
-					if ( node.dom instanceof HTMLImageElement && propertyName === "src" )
-						_setDomAttribute( node.dom as Element, propertyName, "" )
-					_setDomAttribute( node.dom as Element, propertyName, initialValue )
+					if ( node.dom instanceof HTMLImageElement && node.key === "src" )
+						_setDomAttribute( node.dom as Element, node.key, "" )
+					_setDomAttribute( node.dom as Element, node.key, initialValue )
 				}
-				_dispatch( _featureHooks, null, 3/* MUTATING NODE */, node, propertyName )
+				_dispatch( _featureHooks, null, 3/* MUTATING NODE */, node, node.key )
 			}
 		}
 

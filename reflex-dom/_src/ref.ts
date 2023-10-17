@@ -1,4 +1,4 @@
-import { VNode } from "./common";
+import { ComponentFunction, VNode, DefaultReflexProps } from "./common";
 
 // ----------------------------------------------------------------------------- REF
 
@@ -6,14 +6,14 @@ export interface IRef <GDom extends Element = Element> {
 	dom				:GDom
 }
 
-export interface IInternalRef <GDom extends Element = Element> extends IRef {
-	_setFromVNode	: ( vnode:VNode ) => void
+export interface IInternalRef extends IRef {
+	_setFromVNode	: ( vnode:VNode<DefaultReflexProps, ComponentFunction> ) => void
 }
 
 export function ref <GDom extends Element = Element> ():IRef<GDom> {
-	const value:IInternalRef<GDom> = {
+	const value:IInternalRef = {
 		dom: null,
-		_setFromVNode ( vNode:VNode ) {
+		_setFromVNode ( vNode:VNode<DefaultReflexProps, ComponentFunction, GDom> ) {
 			value.dom 		= vNode.dom as GDom;
 		}
 	}
@@ -28,8 +28,8 @@ export interface IRefs <GDom extends Element = Element> {
 	atIndex	: (index:number) => any
 }
 
-export interface IInternalRefs <GDom extends Element = Element> extends IRefs {
-	_setFromVNode	: ( vNode:VNode ) => void
+export interface IInternalRefs extends IRefs {
+	_setFromVNode	: ( vNode:VNode<DefaultReflexProps, ComponentFunction> ) => void
 }
 
 export function refs <GDom extends Element = Element> ():IRefs<GDom> {
@@ -49,10 +49,10 @@ export function refs <GDom extends Element = Element> ():IRefs<GDom> {
 			}
 		}
 	}
-	const value:IInternalRefs<GDom> = {
+	const value:IInternalRefs = {
 		get list () { return _list },
 		get doms () { return _list.map( d => d.dom ) },
-		_setFromVNode ( vNode:VNode ) {
+		_setFromVNode ( vNode:VNode<DefaultReflexProps, ComponentFunction> ) {
 			// Set vNode id from counter.
 			// Node ids starts from 1 to be able to compress a bit
 			if ( !vNode._id )
@@ -64,7 +64,7 @@ export function refs <GDom extends Element = Element> ():IRefs<GDom> {
 		atIndex ( index:number ) {
 			return {
 				// TODO : Check if terser uses same mangled name
-				_setFromVNode ( vNode:VNode ) {
+				_setFromVNode ( vNode:VNode<DefaultReflexProps, ComponentFunction> ) {
 					registerAtIndex( vNode, index )
 				}
 			}

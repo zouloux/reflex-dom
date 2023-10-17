@@ -1,5 +1,6 @@
 import { IAbstractDocument, IAbstractElement, VNode, _featureHooks, _dispatch } from "./common";
 import { _diffAndMount } from "./diff";
+import { createVNode } from "./jsx";
 
 // ----------------------------------------------------------------------------- CONSTANTS
 
@@ -11,18 +12,13 @@ export const _DOM_PRIVATE_VIRTUAL_NODE_KEY = "__v"
 export function render ( rootNode:VNode, parentElement:HTMLElement|IAbstractElement, documentInterface:Document|IAbstractDocument = document ) {
 	// When using render, we create a new root node to detect new renders
 	// This node is never rendered, we just attach it to the parentElement and render its children
-	const root:VNode = {
-		type: 5 /*ROOT*/,
-		value: null,
-		props: { children: [rootNode] },
-		env: {
-			isSVG: false,
-			document: documentInterface,
-		}
-	}
+	const root = createVNode( 5/*ROOT*/, null, { children: [rootNode] } )
 	root.dom = parentElement as HTMLElement
 	const oldNode = parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ]
-	_diffAndMount(root, oldNode)
+	_diffAndMount(root, oldNode, {
+		isSVG: false,
+		document: documentInterface
+	})
 	_dispatch( _featureHooks, null, 0/* NEW ROOT */, oldNode, root );
 	parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ] = root
 }

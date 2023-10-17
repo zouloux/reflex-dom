@@ -47,7 +47,8 @@
 			{
 				"input": "./reflex-dom/src/index.ts",
 				"formats": [
-					"es2017.min.js"
+					"es2017.min.js",
+					"es2020.min.js"
 				],
 				"outName": "reflex",
 				"exportBits": true
@@ -65,7 +66,8 @@
 					"es2017.min.js"
 				],
 				"input": "./reflex-dom/src/renderToString.ts",
-				"filterGlob": "renderToString.*"
+				"filterGlob": "renderToString.*",
+				"exportBits": false
 			},
 			{
 				"input": "./reflex-dom/src/hmr-plugin.ts",

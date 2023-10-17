@@ -11,10 +11,10 @@ export { recursivelyUpdateMountState, getCurrentComponent, diffNode } from "./di
 export { ref, refs } from "./ref"
 export { render } from "./render"
 export { featureHook } from "./common"
-export { mounted, unmounted, rendered, afterNextRender, defaultProps, shouldUpdate } from "./component"
+export { mounted, unmounted, rendered, afterNextRender, defaultProps, shouldUpdate, shallowPropsCompare } from "./component"
 
 // Also export createElement for JSX pragma React
-export { h, h as createElement } from "./jsx"
+export { h, h as createElement, createVNode, cloneVNode } from "./jsx"
 
 // Export types ( do not export too much to keep it simple )
 export type { IState, IComputeState, TInitialValue, TEffectHandler, TDisposeHandler, IStateOptions, TComputed } from "./states"
@@ -22,7 +22,7 @@ export type { IRef, IRefs, IRefOrRefs } from "./ref"
 export type { ComponentInstance } from "./component"
 export type {
 	VNode, IAbstractNode, IAbstractText, IAbstractElement, IAbstractDocument,
-	IAbstractComment, AbstractNodeTypes, DefaultReflexBaseProps,
+	IAbstractComment, INodeEnv, AbstractNodeTypes, DefaultReflexBaseProps,
 	DefaultReflexProps, HasClassProp, LifecycleHandler
 } from "./common"
 
