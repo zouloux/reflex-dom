@@ -10,8 +10,8 @@ export { state, effect, compute, changed, invalidateComponent, checkEffect, chec
 export { recursivelyUpdateMountState, getCurrentComponent, diffNode } from "./diff"
 export { ref, refs } from "./ref"
 export { render } from "./render"
-export { featureHook } from "./common"
-export { mounted, unmounted, rendered, afterNextRender, defaultProps, shouldUpdate } from "./component"
+export { featureHook, createBatch } from "./common"
+export { mounted, unmounted, rendered, defaultProps, shouldUpdate } from "./component"
 
 // Also export createElement for JSX pragma React
 export { h, h as createElement } from "./jsx"

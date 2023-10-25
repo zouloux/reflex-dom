@@ -1,5 +1,5 @@
 import { IRefOrRefs } from "./ref";
-import { ComponentInstance } from "./component";
+import { ComponentInstance, TShouldUpdate } from "./component";
 import { ClassNameItem } from "./jsx-types";
 import { IState } from "./states";
 
@@ -54,7 +54,8 @@ export interface IAbstractDocument
 // ----------------------------------------------------------------------------- INTERNAL - CREATE COMPONENT
 
 export type TComponentFunctionProperties = {
-	isFactory		?: boolean
+	isFactory		?:boolean
+	shouldUpdate	?:TShouldUpdate
 	renderFilter	?:( component:ComponentInstance, renderResult:VNode ) => VNode
 }
 
@@ -104,7 +105,12 @@ export type VNodeTypes =
 
 export type VNodeElementValue = keyof (HTMLElementTagNameMap|SVGElementTagNameMap)
 export type VNodeTextValue = string
-export type VNodeValue = ( VNodeElementValue | VNodeTextValue | ComponentFunction | IState<any> ) & TComponentFunctionProperties
+export type VNodeValue = ( VNodeElementValue | VNodeTextValue | ComponentFunction | IState ) & TComponentFunctionProperties
+
+export interface INodeEnv {
+	isSVG		: boolean,
+	document	: Document | IAbstractDocument,
+}
 
 export interface VNode {
 	// Type of virtual node, as const
@@ -133,10 +139,7 @@ export interface VNode {
 	//		created using createSVGElement
 	// Also to propagate current Document interface ( the page's document or a
 	//		fake document to render to string
-	env				?:{
-		isSVG			:boolean
-		document		:Document | IAbstractDocument,
-	}
+	env				?:INodeEnv
 	// Private members ( starts with _, will be mangled )
 	// Property name is used by Argument States to know which argument to mutate
 	_propertyName	?:string
@@ -171,6 +174,31 @@ export interface HasClassProp {
 export const _dispatch =
 	( handlers:Function[], scope?:any, ...rest:any[] ) =>
 		handlers.map( h => h?.apply(scope, rest) );
+
+// ----------------------------------------------------------------------------- BATCHED TASK
+
+// Micro task polyfill
+const _microtask = self.queueMicrotask ?? ( h => self.setTimeout( h, 0 ) )
+
+// type TTaskHandler <GType> = ( bucket:Set<GType> ) => void
+type TTaskHandler <GType> = ( element:GType ) => void
+
+// TODO : Doc
+export function createBatch <GType> ( task:TTaskHandler<GType> ) {
+	const bucket = new Set<GType>()
+	const resolves = []
+	return ( element:GType, resolve?:() => any ) => {
+		bucket.size || _microtask( () => {
+			// task( bucket )
+			for ( const element of bucket )
+				task( element )
+			bucket.clear()
+			_dispatch( resolves )
+		});
+		bucket.add( element )
+		resolve && resolves.push( resolve )
+	}
+}
 
 // ----------------------------------------------------------------------------- FEATURE HOOKS
 // FIXME : This should take the minimum size possible ->

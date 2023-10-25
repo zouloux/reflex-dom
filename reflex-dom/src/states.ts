@@ -5,33 +5,8 @@ import {
 	_setDomAttribute,
 	recursivelyUpdateMountState, _diffAndMount
 } from "./diff";
-import { _dispatch, _featureHooks, VNode, VNodeTypes } from "./common";
-import { afterNextRender, ComponentInstance, unmounted } from "./component";
-
-// ----------------------------------------------------------------------------- BATCHED TASK
-
-// Micro task polyfill
-const _microtask = self.queueMicrotask ?? ( h => self.setTimeout( h, 0 ) )
-
-// type TTaskHandler <GType> = ( bucket:Set<GType> ) => void
-type TTaskHandler <GType> = ( element:GType ) => void
-
-// TODO : Doc
-function _createBatchedTask <GType> ( task:TTaskHandler<GType> ) {
-	const bucket = new Set<GType>()
-	const resolves = []
-	return ( element:GType, resolve?:() => any ) => {
-		bucket.size || _microtask( () => {
-			// task( bucket )
-			for ( const element of bucket )
-				task( element )
-			bucket.clear()
-			_dispatch( resolves )
-		});
-		bucket.add( element )
-		resolve && resolves.push( resolve )
-	}
-}
+import { _dispatch, _featureHooks, VNode, VNodeTypes, createBatch } from "./common";
+import { ComponentInstance, unmounted } from "./component";
 
 // ----------------------------------------------------------------------------- PREPARE INITIAL VALUE
 
@@ -39,8 +14,8 @@ export type TInitialValue <GType> = GType | ((oldValue?:GType) => GType)
 
 export const _prepareInitialValue = <GType> ( initialValue:TInitialValue<GType>, oldValue?:GType ) => (
 	typeof initialValue == "function"
-		? ( initialValue as (oldValue?:GType) => GType )(oldValue)
-		: initialValue as GType
+	? ( initialValue as (oldValue?:GType) => GType )(oldValue)
+	: initialValue as GType
 )
 
 // ----------------------------------------------------------------------------- STATE TYPES
@@ -95,7 +70,7 @@ export interface IStateOptions<GType> {
 
 // ----------------------------------------------------------------------------- INVALIDATE EFFECT
 
-const _invalidateEffect = _createBatchedTask<TEffectHandler>( effect )
+const _invalidateEffect = createBatch<TEffectHandler>( effect )
 
 // ----------------------------------------------------------------------------- INVALIDATE COMPONENT
 
@@ -103,7 +78,7 @@ const _invalidateEffect = _createBatchedTask<TEffectHandler>( effect )
  * Invalidate a component instance.
  * Will batch components in a microtask to avoid unnecessary renders.
  */
-export const invalidateComponent = _createBatchedTask<ComponentInstance>(
+export const invalidateComponent = createBatch<ComponentInstance>(
 	component => _diffAndMount( component.vnode, component.vnode, true )
 );
 
@@ -118,11 +93,9 @@ let _currentStates = new Set<IState<any>>()
 /**
  * TODO : DOC
  * @param initialValue
- * @param stateOptions
  */
 export function state <GType> (
-	initialValue	?:TInitialValue<GType>,
-	stateOptions	:Partial<IStateOptions<GType>> = {}
+	initialValue	?:TInitialValue<GType>
 ):IState<GType> {
 
 	// Prepare initial value if it's a function
@@ -145,21 +118,17 @@ export function state <GType> (
 		// Halt update if not forced and if new value is same as previous
 		if ( newValue === initialValue && !forceUpdate )
 			return
-
 		// Call dispose on all associated effects.
 		// effect and changed
 		for ( const effect of _effects )
 			effect._dispose?.()
-
 		// Store new value in
 		// to the argument variable
 		initialValue = newValue
-
 		// Call all associated effect handlers ( not changed )
 		// Do not attach effects // FIXME
 		for ( const effect of _effects )
 			!effect._dom && _callEffect( effect )
-
 		// Then dispatch direct dom updates
 		for ( const node of _nodes ) {
 			// Skip this node if the whole component needs to be refreshed
@@ -178,25 +147,14 @@ export function state <GType> (
 				_dispatch( _featureHooks, null, 3/* MUTATING NODE */, node, propertyName )
 			}
 		}
-
 		// Dispatch all component refresh at the same time and wait for all to be updated
-		const promises = []
+		const _promises = []
+		// FIXME : Check performances
 		for ( const component of _components ) {
-			// Refresh component synchronously
-			if ( stateOptions.directInvalidation ) {
-				diffNode( component.vnode, component.vnode )
-				recursivelyUpdateMountState( component.vnode, true )
-			}
-			// Invalidate component asynchronously
-			// FIXME : Resolve counter way to avoid Promise constructor here ? #perfs
-			else
-				promises.push( new Promise<void>(
-					r => invalidateComponent( component, r )
-				))
+			_promises.push( new Promise<void>( r => invalidateComponent( component, r ) ))
 		}
 		_components.clear();
-		await Promise.all( promises )
-
+		await Promise.all( _promises )
 		// Call all associated changed handler ( not effect )
 		// Do not attach effects // FIXME
 		for ( const effect of _effects )
@@ -264,7 +222,7 @@ export function state <GType> (
 		},
 	}
 	// Call hook for new state created
-	_dispatch(_featureHooks, null, 4/* NEW STATE */, _localState, stateOptions)
+	_dispatch(_featureHooks, null, 4/* NEW STATE */, _localState)
 	return _localState;
 }
 
@@ -340,7 +298,7 @@ function _prepareEffect <GCheck extends any[]> ( handler:TEffectHandler<GCheck>,
 		// Clone associated states list to be able to detach later
 		_associatedStates = _captureAssociatedStates()
 	}
-	dom ? afterNextRender( _run ) : _run()
+	dom ? getCurrentComponent()._nextRenderHandlers.push( _run ) : _run()
 	return unmounted( () => _detachEffectFromStates(_associatedStates, _effect) )
 }
 

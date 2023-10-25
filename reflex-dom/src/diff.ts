@@ -1,6 +1,6 @@
 import {
 	_dispatch, _featureHooks, ComponentReturn,
-	RenderDom, RenderFunction, VNode
+	RenderDom, RenderFunction, VNode, INodeEnv
 } from "./common";
 import { IInternalRef } from "./ref";
 import { ComponentInstance, shallowPropsCompare } from "./component";
@@ -9,10 +9,10 @@ import { state } from "./states";
 // ----------------------------------------------------------------------------- CONSTANTS
 
 // Attached listeners to a dom element are stored in this array
-export const _DOM_PRIVATE_LISTENERS_KEY = "__l"
+export const _DOM_PRIVATE_LISTENERS_KEY = "_l"
 
 // Stolen from Preact, to check if a style props is non-dimensional (does not need to add a unit)
-const _IS_NON_DIMENSIONAL_REGEX = /acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|itera/i;
+//const _IS_NON_DIMENSIONAL_REGEX = /acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|itera/i;
 
 // Check if an event is a capture one
 const _CAPTURE_REGEX = /Capture$/
@@ -32,6 +32,8 @@ let _currentComponent:ComponentInstance = null
 export function getCurrentComponent
 	<GComponent extends ComponentInstance = ComponentInstance>
 ():GComponent {
+	// if ( !_currentComponent )
+	// 	throw new Error(`Reflex extension error`)
 	return _currentComponent as GComponent
 }
 
@@ -53,11 +55,13 @@ function _setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) 
 		style.setProperty(key, value);
 	else if ( value == null )
 		style[key] = '';
-	// FIXME : IS_NON_DIMENSIONAL_REGEX -> Is it really necessary ?
-	else if ( typeof value != "number" || _IS_NON_DIMENSIONAL_REGEX.test(key) )
-		style[key] = value;
 	else
-		style[key] = value + 'px';
+		style[key] = value;
+	// FIXME : IS_NON_DIMENSIONAL_REGEX -> Is it really necessary ?
+	// else if ( typeof value != "number" || _IS_NON_DIMENSIONAL_REGEX.test(key) )
+	// 	style[key] = value;
+	// else
+	// 	style[key] = value + 'px';
 }
 
 function _updateNodeRef ( node:VNode ) {
@@ -191,7 +195,6 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 		else if ( name.startsWith("on") ) {
 			const { eventName, eventKey, useCapture } = _getEventNameAndKey( name, dom as Element );
 			// Init a collection of handlers on the dom object as private property
-			//if ( !dom[ _DOM_PRIVATE_LISTENERS_KEY ] )
 			dom[ _DOM_PRIVATE_LISTENERS_KEY ] ??= new Map();
 			// Store original listener to be able to remove it later
 			dom[ _DOM_PRIVATE_LISTENERS_KEY ].set( eventKey, value);
@@ -504,7 +507,7 @@ function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode ) :GRetur
 
 // ----------------------------------------------------------------------------- DIFF NODE
 
-let _nodeEnv
+let _nodeEnv:INodeEnv
 
 // TODO : OPTIMIZE - 90%
 export function diffNode ( newNode:VNode, oldNode?:VNode, forceUpdate = false ) {
@@ -561,6 +564,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, forceUpdate = false ) 
 				_renderHandlers: [],
 				_nextRenderHandlers: [],
 				_unmountHandlers: [],
+				_shouldUpdate: componentFunction.shouldUpdate,
 			}
 			newNode.component = componentInstance
 			componentInstance._render = componentFunction as RenderFunction
@@ -588,7 +592,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, forceUpdate = false ) 
 				componentInstance._shouldUpdate
 				? componentInstance._shouldUpdate( newNode.props, oldNode.props )
 				// Otherwise shallow props compare with children check
-				: !shallowPropsCompare( newNode.props, oldNode.props, true )
+				: !shallowPropsCompare( newNode.props, oldNode.props )
 			)
 			// Otherwise, if we should update a factory component
 			if ( shouldUpdate && componentFunction.isFactory ) {

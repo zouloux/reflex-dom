@@ -1,24 +1,20 @@
 // import { h, render, state, DefaultReflexBaseProps, shouldUpdate } from "reflex-dom"
 import {
 	h,
-	render,
 	state,
-	DefaultReflexBaseProps,
 	shouldUpdate,
-	effect,
-	compute,
-	IState, VNode, ComponentInstance, ReflexIntrinsicElements
 } from "../../../reflex-dom/src"
+import { For } from "../../../reflex-dom/src/jsx-helpers"
 
 // ----------------------------------------------------------------------------- DEBUG
 
 // @ts-ignore
 let memoryDebugger
-// import { drawReflexDebug, MemoryUsage } from "reflex-dom/debug";
-// if ( process.env.NODE_ENV !== 'production' ) {
-// 	drawReflexDebug();
-// 	memoryDebugger = <MemoryUsage />
-// }
+import { drawReflexDebug, MemoryUsage } from "../../../reflex-dom/src/debug";
+if ( process.env.NODE_ENV !== 'production' ) {
+	drawReflexDebug();
+	memoryDebugger = <MemoryUsage />
+}
 
 // ----------------------------------------------------------------------------- DATA HELPERS
 
@@ -190,44 +186,12 @@ function Jumbotron () {
 
 // ----------------------------------------------------------------------------- APP
 
-
-// interface IForProps <GItem = any, GAs extends keyof ReflexIntrinsicElements = keyof ReflexIntrinsicElements, Ge = ReflexIntrinsicElements[ GAs ]> {
-// 	each		:IState<GItem[]> | GItem[]
-// 	children	?:(item:GItem) => VNode
-// 	as			?:string
-// }
-
-type IForProps<GItem = any, GAs extends keyof ReflexIntrinsicElements = keyof ReflexIntrinsicElements> = {
-	each: IState<GItem[]> | GItem[];
-	children?: (item: GItem) => VNode;
-	as?: GAs;
-} & ReflexIntrinsicElements[GAs];
-
-
-function For ( props:IForProps, component:ComponentInstance ) {
-	const children = compute( () => Array.isArray(props.each) ? props.each : (props.each as IState).value )
-	// effect(() => {
-	// 	console.log( children.value);
-	// 	console.log( children.value.map( props.children[0] ));
-	// })
-	const As = props.as ?? "div"
-	const otherProps = compute(() => {
-		// FIXME : How to get props list other than with that ?
-		const o = Object.assign({}, component._propState.value)
-		delete o.children
-		delete o.each
-		delete o.as
-		return o
-	})
-	return () => <As {...otherProps.value}>{ children.value.map( props.children[0] ) }</As>
-}
-
 export function App () {
 	return () => <div class="container">
 		{ memoryDebugger }
 		<Jumbotron />
 		<table class="table table-hover table-striped test-data">
-			<For each={ $data } as="div" class="MyClass">
+			<For each={ $data } as="tbody">
 				{item => <Row
 					key={ item.id }
 					id={ item.id }
@@ -235,17 +199,6 @@ export function App () {
 					selected={ $selected.value === item.id }
 				/>}
 			</For>
-			{/*<tbody>*/}
-				{/*{$data.value.map( item => <Row key={ item.id } /> )}*/}
-				{/*{$data.value.map( item =>*/}
-				{/*	<Row*/}
-				{/*		key={ item.id }*/}
-				{/*		id={ item.id }*/}
-				{/*		label={ item.label }*/}
-				{/*		selected={ $selected.value === item.id }*/}
-				{/*	/>*/}
-				{/*)}*/}
-			{/*</tbody>*/}
 		</table>
 		<span class="preloadicon glyphicon glyphicon-remove" aria-hidden="true" />
 	</div>

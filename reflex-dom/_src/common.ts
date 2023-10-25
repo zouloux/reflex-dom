@@ -51,8 +51,8 @@ export interface IAbstractDocument
 }
 
 export interface INodeEnv {
-	isSVG: boolean,
-	document: Document | IAbstractDocument,
+	isSVG		: boolean,
+	document	: Document | IAbstractDocument,
 }
 
 // ----------------------------------------------------------------------------- INTERNAL - CREATE COMPONENT

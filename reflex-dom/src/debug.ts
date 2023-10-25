@@ -1,7 +1,7 @@
 import { h } from "./jsx";
 import { mounted } from "./component";
 import { compute } from "./states";
-import { featureHook } from "./common";
+import { createBatch, featureHook, VNode } from "./common";
 
 // ----------------------------------------------------------------------------- TRACK PERFORMANCES
 
@@ -45,6 +45,33 @@ export function MemoryUsage ( props ) {
 }
 
 // ----------------------------------------------------------------------------- TRACK CHANGES
+
+let _debugBatch
+
+function initDebugBatch () {
+	if ( _debugBatch )
+		return
+	_debugBatch = createBatch(( node:VNode ) => {
+		// Get text node position with text selection because we cannot use getClientBoundingRect
+		const range = document.createRange();
+		range.selectNode(node.dom);
+		// FIXME : Warning ! Triggers reflow / redraw, destroy performances !
+		const rect = range.getBoundingClientRect();
+		range.detach();
+		// Draw a div at this position and size for some ms
+		const div = document.createElement("div")
+		div.classList.add("_reflexDebugMutation");
+		['top', 'left', 'width', 'height'].forEach(
+			p => div.style[p] = rect[p] + 'px'
+		)
+		// div.style.width = rect.width + 'px'
+		// div.style.height = rect.height + 'px'
+		// div.style.top = rect.top + 'px'
+		// div.style.left = rect.left + 'px'
+		document.body.append( div )
+		setTimeout(() => div.parentElement.removeChild( div ), 300)
+	})
+}
 
 export function drawReflexDebug () {
 
@@ -98,6 +125,7 @@ export function drawReflexDebug () {
 		return p
 	});
 
+
 	/**
 	 * Track and draw direct text mutations.
 	 * FIXME : How to track arguments, change color ?
@@ -106,26 +134,8 @@ export function drawReflexDebug () {
 		if ( type !== 3 ) return
 		// FIXME : Arguments debug
 		if ( argument ) return
-		// Get text node position with text selection because we cannot use getClientBoundingRect
-		const range = document.createRange();
-		range.selectNode(node.dom);
-		// FIXME : Warning ! Triggers an instant reflow / redraw, destroy performances !
-		// FIXME : Maybe microtask them
-		const rect = range.getBoundingClientRect();
-		range.detach();
-
-		// Draw a div at this position and size for some ms
-		const div = document.createElement("div")
-		div.classList.add("_reflexDebugMutation");
-		['top', 'left', 'width', 'height'].forEach(
-			p => div.style[p] = rect[p] + 'px'
-		)
-		// div.style.width = rect.width + 'px'
-		// div.style.height = rect.height + 'px'
-		// div.style.top = rect.top + 'px'
-		// div.style.left = rect.left + 'px'
-		document.body.append( div )
-		setTimeout(() => div.parentElement.removeChild( div ), 300)
+		initDebugBatch();
+		_debugBatch( node )
 	})
 
 	return () => {
