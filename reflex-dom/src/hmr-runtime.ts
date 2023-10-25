@@ -103,10 +103,8 @@ function initHooks () {
 
 	})
 	// Hook every state created
-	_reflexLib.featureHook( (hookType, state, stateOptions) => {
+	_reflexLib.featureHook( (hookType, state) => {
 		if ( hookType !== 4 ) return
-		// If this is a state for props, do not manage it
-		if ( stateOptions._p ) return
 		// Get associated component, we keep states only for swapped component.
 		const component = _reflexLib.getCurrentComponent();
 		if ( !component ) {

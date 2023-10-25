@@ -223,7 +223,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 // ----------------------------------------------------------------------------- RECURSIVELY MOUNT / UNMOUNT
 
 export function _diffAndMount ( newNode:VNode, oldNode:VNode, forceUpdate = false ) {
-	const finishHandlers = _dispatch(_featureHooks, null, 2/* DIFFING NODE */, newNode)
+	const finishHandlers = _dispatch(_featureHooks, 2/* DIFFING NODE */, newNode)
 	if ( newNode ) {
 		diffNode( newNode, oldNode, forceUpdate )
 		recursivelyUpdateMountState( newNode, true )
@@ -257,16 +257,16 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 					}
 					// Reset mount handlers, no need to keep them
 					component._mountHandlers = []
-					_dispatch( component._renderHandlers, component )
-					_dispatch( component._nextRenderHandlers, component )
+					_dispatch( component._renderHandlers)
+					_dispatch( component._nextRenderHandlers)
 					component._nextRenderHandlers = []
 				}
-				_dispatch(_featureHooks, null, 1/* MOUNT / UNMOUNT */, component, true )
+				_dispatch(_featureHooks, 1/* MOUNT / UNMOUNT */, component, true )
 			}
 			// --- UNMOUNT
 			else if ( !doMount && component.isMounted ) {
-				_dispatch(_featureHooks, null, 1/* MOUNT / UNMOUNT */, component, false )
-				_dispatch(component._unmountHandlers, component)
+				_dispatch(_featureHooks, 1/* MOUNT / UNMOUNT */, false )
+				_dispatch(component._unmountHandlers)
 				component.isMounted = false;
 				// Cut component branch from virtual node to allow GC to destroy component
 				delete node.component

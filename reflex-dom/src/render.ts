@@ -23,7 +23,7 @@ export function render ( rootNode:VNode, parentElement:HTMLElement|IAbstractElem
 	root.dom = parentElement as HTMLElement
 	const oldNode = parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ]
 	_diffAndMount(root, oldNode)
-	_dispatch( _featureHooks, null, 0/* NEW ROOT */, oldNode, root );
+	_dispatch( _featureHooks, 0/* NEW ROOT */, oldNode, root );
 	parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ] = root
 }
 

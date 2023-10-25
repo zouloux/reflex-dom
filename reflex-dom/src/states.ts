@@ -144,7 +144,7 @@ export function state <GType> (
 						_setDomAttribute( node.dom as Element, propertyName, "" )
 					_setDomAttribute( node.dom as Element, propertyName, initialValue )
 				}
-				_dispatch( _featureHooks, null, 3/* MUTATING NODE */, node, propertyName )
+				_dispatch( _featureHooks, 3/* MUTATING NODE */, node, propertyName )
 			}
 		}
 		// Dispatch all component refresh at the same time and wait for all to be updated
@@ -222,7 +222,7 @@ export function state <GType> (
 		},
 	}
 	// Call hook for new state created
-	_dispatch(_featureHooks, null, 4/* NEW STATE */, _localState)
+	_dispatch(_featureHooks, 4/* NEW STATE */, _localState)
 	return _localState;
 }
 

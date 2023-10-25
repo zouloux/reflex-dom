@@ -171,32 +171,45 @@ export interface HasClassProp {
 
 // Can we minimize it ?
 // TODO : OPTIMIZE - Optimize this loop
-export const _dispatch =
-	( handlers:Function[], scope?:any, ...rest:any[] ) =>
-		handlers.map( h => h?.apply(scope, rest) );
+export const _dispatch = ( handlers:Function[], ...rest:any[] ) => handlers.map( h => h?.(...rest) );
 
 // ----------------------------------------------------------------------------- BATCHED TASK
 
 // Micro task polyfill
 const _microtask = self.queueMicrotask ?? ( h => self.setTimeout( h, 0 ) )
 
-// type TTaskHandler <GType> = ( bucket:Set<GType> ) => void
 type TTaskHandler <GType> = ( element:GType ) => void
 
-// TODO : Doc
+/**
+ * TODO : DOC
+ * @param task
+ */
 export function createBatch <GType> ( task:TTaskHandler<GType> ) {
-	const bucket = new Set<GType>()
-	const resolves = []
+	// Bucket is a set here because we need to filter out components instances
+	// that are the same
+	const _bucket = new Set<GType>()
+	// We do not need this behavior here so _resolves is an array
+	let _resolves = []
+
+	function execute () {
+		// When microtask is called, batch may have grown into multiple elements
+		// Call the task with each of the elements of the bucket
+		// esbench : https://esbench.com/bench/6539700c7ff73700a4debba8
+		for ( const element of _bucket )
+			task( element )
+		// Clear the bucket, call the resolves and clear the resolves handlers
+		_bucket.clear()
+		for ( const element of _resolves )
+			element()
+		_resolves = []
+	}
 	return ( element:GType, resolve?:() => any ) => {
-		bucket.size || _microtask( () => {
-			// task( bucket )
-			for ( const element of bucket )
-				task( element )
-			bucket.clear()
-			_dispatch( resolves )
-		});
-		bucket.add( element )
-		resolve && resolves.push( resolve )
+		// Create a new microtask to execute all pending elements in the bucket
+		// This new microtask is attached once by batch, only when the size is 0
+		_bucket.size || _microtask( execute );
+		// Add element into the bucket and keep the optional resolve handler
+		_bucket.add( element )
+		resolve && _resolves.push( resolve )
 	}
 }
 

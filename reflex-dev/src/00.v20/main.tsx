@@ -12,7 +12,7 @@ import { For } from "../../../reflex-dom/src/jsx-helpers"
 let memoryDebugger
 import { drawReflexDebug, MemoryUsage } from "../../../reflex-dom/src/debug";
 if ( process.env.NODE_ENV !== 'production' ) {
-	drawReflexDebug();
+	// drawReflexDebug();
 	memoryDebugger = <MemoryUsage />
 }
 
