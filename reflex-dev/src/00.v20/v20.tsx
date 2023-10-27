@@ -3,7 +3,7 @@ import { App } from "./main"
 import { drawReflexDebug } from "../../../reflex-dom/src/debug";
 
 
-// drawReflexDebug();
+drawReflexDebug();
 
 export function startV20 () {
 	render( <V20App />, document.getElementById("App") );

@@ -6,8 +6,8 @@
 // ----------------------------------------------------------------------------- IMPORT / EXPORT
 
 // Export public API
-export { state, effect, compute, changed, invalidateComponent, checkEffect, checkChanged } from "./states"
-export { recursivelyUpdateMountState, getCurrentComponent, diffNode } from "./diff"
+export { state, effect, compute, changed, invalidateComponent, checkEffect, checkChanged, updateDomFromState } from "./states"
+export { recursivelyUpdateMountState, getCurrentComponent, diffNode, getCurrentDiffingNode } from "./diff"
 export { ref, refs } from "./ref"
 export { render } from "./render"
 export { featureHook, createBatch } from "./common"

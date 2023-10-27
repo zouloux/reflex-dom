@@ -198,18 +198,18 @@ export function createBatch <GType> ( task:TTaskHandler<GType> ) {
 		for ( const element of _bucket )
 			task( element )
 		// Clear the bucket, call the resolves and clear the resolves handlers
+		_dispatch( _resolves )
 		_bucket.clear()
-		for ( const element of _resolves )
-			element()
 		_resolves = []
 	}
+
 	return ( element:GType, resolve?:() => any ) => {
 		// Create a new microtask to execute all pending elements in the bucket
 		// This new microtask is attached once by batch, only when the size is 0
 		_bucket.size || _microtask( execute );
 		// Add element into the bucket and keep the optional resolve handler
 		_bucket.add( element )
-		resolve && _resolves.push( resolve )
+		_resolves.push( resolve )
 	}
 }
 

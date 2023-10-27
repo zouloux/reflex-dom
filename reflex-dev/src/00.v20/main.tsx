@@ -1,8 +1,8 @@
 // import { h, render, state, DefaultReflexBaseProps, shouldUpdate } from "reflex-dom"
 import {
-	h,
-	state,
-	shouldUpdate,
+	h, state,
+	shouldUpdate, IState, createBatch,
+	getCurrentDiffingNode, updateDomFromState
 } from "../../../reflex-dom/src"
 import { For } from "../../../reflex-dom/src/jsx-helpers"
 
@@ -44,19 +44,67 @@ interface IDataItem
 }
 
 const $data = state<IDataItem[]>([])
-const $selected = state<number>( null )
+let _selectedId = null
+
+// ----------------------------------------------------------------------------- DOM SELECTOR
+
+function createDomSelector ( getter:( path:string|number ) => any ) {
+	let _domNodes = {}
+	return {
+		connect ( path:string|number ) {
+			return {
+				type: 3,
+				get value () {
+					_domNodes[ path ] = getCurrentDiffingNode()
+					return getter( path )
+				},
+				toString () { return this.value + '' },
+			} as IState
+		},
+		update ( path:string|number ) {
+			const node = _domNodes[ path ]
+			node && updateDomFromState( node, getter( path ) )
+		},
+		remove ( path:string|number ) {
+			delete _domNodes[ path as any ]
+		},
+		clear () {
+			_domNodes = {}
+		},
+		dispose () {
+			_domNodes = null
+		}
+	}
+}
+
+const isSelectedClassNameDomSelector = createDomSelector( path => {
+	return _selectedId === path ? "danger" : ""
+})
+
+const labelDomSelector = createDomSelector( path => {
+	const item = $data.peek().find( item => item.id === path )
+	return item.label
+})
 
 // ----------------------------------------------------------------------------- DATA ACTIONS
 
 const run = () => $data.set( buildData(1000) )
 const runLots = () => $data.set( buildData(10000) )
 const add = () => $data.set( d => [...d, ...buildData(1000)] )
-const update = () => $data.set( d => {
-	for ( let i = 0, len = d.length; i < len; i += 10 )
-		d[i].label += ' !!!';
-	return [...d]
-})
-const clear = () => $data.set([])
+const update = () => {
+	const data = $data.peek()
+	const length = data.length
+	for ( let i = 0; i < length; i += 10 ) {
+		const item = data[i]
+		item.label += ' !!!';
+		labelDomSelector.update( item.id )
+	}
+}
+const clear = () => {
+	$data.set([])
+	labelDomSelector.clear()
+	isSelectedClassNameDomSelector.clear()
+}
 const swapRows = () => $data.set( d => {
 	if ( d.length > 998 ) {
 		let tmp = d[1];
@@ -67,11 +115,16 @@ const swapRows = () => $data.set( d => {
 	return d
 })
 const remove = id => $data.set(d => {
-	const idx = d.findIndex( d => d.id === id );
-	return [ ...d.slice(0, idx), ...d.slice(idx + 1) ];
+	labelDomSelector.remove( id )
+	isSelectedClassNameDomSelector.remove( id )
+	const index = d.findIndex( d => d.id === id );
+	return [ ...d.slice(0, index), ...d.slice(index + 1) ];
 })
 const toggleSelection = ( id:number ) => {
-	$selected.set( $selected.value === id ? null : id )
+	let previousId = _selectedId
+	_selectedId = _selectedId === id ? null : id
+	previousId && isSelectedClassNameDomSelector.update( previousId )
+	_selectedId && isSelectedClassNameDomSelector.update( _selectedId )
 }
 
 // ----------------------------------------------------------------------------- BUILD DATA
@@ -88,8 +141,6 @@ const buildData = (count:number) => {
 	return data;
 };
 
-const getItemByID = ( id ) => $data.value.find( item => item.id === id )
-
 // ----------------------------------------------------------------------------- BUTTON
 
 function Button ({ id, onClick, title }) {
@@ -105,51 +156,14 @@ function Button ({ id, onClick, title }) {
 
 // ----------------------------------------------------------------------------- ROW
 
-// interface IRowProps extends DefaultReflexBaseProps, IDataItem
-// {
-//
-// }
-
-// const rowShouldUpdate = (newProps:IRowProps, oldProps:IRowProps) => (
-// 	// oldProps.isSelected !== newProps.isSelected
-// 	oldProps.class !== newProps.class
-// 	|| oldProps.label !== newProps.label
-// )
-
-// function Row2 ( props ) {
-// 	// shouldUpdate( rowShouldUpdate )
-// 	shouldUpdate( false )
-// 	const selectedClass = compute( () => $selected.value === props.key ? "danger" : "" )
-// 	const label = compute( () => {
-// 		const item = getItemByID( props.key )
-// 		return item ? item.label : null
-// 	} )
-// 	return () => <tr class={ selectedClass }>
-// 		<td class="col-md-1">{ props.key }</td>
-// 		<td class="col-md-4">
-// 			<a onClick={ () => toggleSelection( props.key ) }>
-// 				{ label }
-// 			</a>
-// 		</td>
-// 		<td class="col-md-1">
-// 			<a onClick={ () => remove( props.key ) }>
-// 				<span class="glyphicon glyphicon-remove" aria-hidden="true" />
-// 			</a>
-// 		</td>
-// 		<td class="col-md-6" />
-// 	</tr>
-// }
-
+Row.isFactory = false
+Row.shouldUpdate = () => false
 function Row ( props ) {
-	shouldUpdate((newProps, oldProps) => (
-		oldProps.selected !== newProps.selected
-		|| oldProps.label !== newProps.label
-	))
-	return () => <tr class={ props.selected ? "danger" : "" }>
+	return <tr class={ isSelectedClassNameDomSelector.connect( props.id ) }>
 		<td class="col-md-1">{ props.id }</td>
 		<td class="col-md-4">
 			<a onClick={ () => toggleSelection( props.id ) }>
-				{ props.label }
+				{ labelDomSelector.connect( props.id ) }
 			</a>
 		</td>
 		<td class="col-md-1">
@@ -160,7 +174,6 @@ function Row ( props ) {
 		<td class="col-md-6" />
 	</tr>
 }
-
 
 // ----------------------------------------------------------------------------- JUMBOTRON
 
@@ -192,12 +205,7 @@ export function App () {
 		<Jumbotron />
 		<table class="table table-hover table-striped test-data">
 			<For each={ $data } as="tbody">
-				{item => <Row
-					key={ item.id }
-					id={ item.id }
-					label={ item.label }
-					selected={ $selected.value === item.id }
-				/>}
+				{ item => <Row key={ item.id } id={ item.id } /> }
 			</For>
 		</table>
 		<span class="preloadicon glyphicon glyphicon-remove" aria-hidden="true" />

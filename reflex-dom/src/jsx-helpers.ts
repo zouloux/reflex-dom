@@ -9,9 +9,9 @@ export type IForProps<GItem = any, GAs extends keyof ReflexIntrinsicElements = k
 } & ReflexIntrinsicElements[GAs];
 
 export function For ( props:IForProps ) {
-	const _eachState = compute( () => (
-		Array.isArray(props.each) ? props.each : (props.each as IState).value
-	))
+	const _eachState = compute( () => {
+		return Array.isArray(props.each) ? props.each : (props.each as IState).value
+	})
 	return () => {
 		const children = _eachState.value.map( props.children[0] )
 		return {

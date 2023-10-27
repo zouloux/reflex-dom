@@ -43,7 +43,8 @@ function _getEventNameAndKey ( name:string, dom:Element ) {
 	// Note : Capture management stolen from Preact, thanks
 	const useCapture = name !== ( name = name.replace(_CAPTURE_REGEX, '') );
 	// Infer correct casing for DOM built-in events:
-	const eventName = ( name.toLowerCase() in dom ? name.toLowerCase() : name ).slice(2)
+	const lowerName = name.toLowerCase()
+	const eventName = ( lowerName in dom ? lowerName : name ).slice(2)
 	// Create unique key for this event
 	const eventKey = eventName + (useCapture ? 'C' : '')
 	return { eventName, eventKey, useCapture }
@@ -78,7 +79,7 @@ function _updateNodeRef ( node:VNode ) {
 
 // FIXME : Doc
 let _currentDiffingNode:VNode
-export const _getCurrentDiffingNode = () => _currentDiffingNode
+export const getCurrentDiffingNode = () => _currentDiffingNode
 
 // FIXME : Doc
 export function _setDomAttribute ( dom:Element, name:string, value:any ) {
@@ -197,7 +198,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 			// Init a collection of handlers on the dom object as private property
 			dom[ _DOM_PRIVATE_LISTENERS_KEY ] ??= new Map();
 			// Store original listener to be able to remove it later
-			dom[ _DOM_PRIVATE_LISTENERS_KEY ].set( eventKey, value);
+			dom[ _DOM_PRIVATE_LISTENERS_KEY ].set( eventKey, value );
 			// And attach listener
 			dom.addEventListener( eventName, value, useCapture )
 		}
@@ -232,7 +233,21 @@ export function _diffAndMount ( newNode:VNode, oldNode:VNode, forceUpdate = fals
 }
 
 export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
-	if ( node?.type === 7/*COMPONENTS*/ ) {
+	// FIXME : This seems useless, no memory leak without it in examples
+	// if ( node.dom && !doMount ) {
+	// 	const { dom } = node
+	// 	const events:Map<any, () => void> = dom[ _DOM_PRIVATE_LISTENERS_KEY ]
+	// 	if ( events ) {
+	// 		for ( const entry of events.entries() ) {
+	// 			const [ key, value ] = entry;
+	// 			// FIXME: ESBENCH [0] vs charAt
+	// 			const useCapture = key[0] == "C"
+	// 			// FIXME: ESBENCH slice vs substring
+	// 			dom.removeEventListener( key.slice(1), value, useCapture )
+	// 		}
+	// 	}
+	// }
+	if ( node.type === 7/*COMPONENTS*/ ) {
 		// FIXME : Can optimize and code-golf this
 		const { component } = node
 		if ( component ) { // FIXME : Is this check usefull ?
@@ -245,10 +260,12 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 				if ( node.value.isFactory !== false ) {
 					// Call every mount handler and store returned unmount handlers
 					// FIXME : Can we use _dispatch here ?
+					// TODO : ESBENCH
 					const total = component._mountHandlers.length
 					for ( let i = 0; i < total; ++i ) {
 						const mountedReturn = component._mountHandlers[ i ].apply( component );
 						// Allow mounted handler to return a single unmount
+						// TODO : ESBENCH for === ( already done in jsx.ts ? )
 						if ( typeof mountedReturn === "function" )
 							component._unmountHandlers.push( mountedReturn )
 						// Allow mounted handler to return an array of unmount
@@ -283,7 +300,8 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 			}
 		}
 	}
-	else if ( node?.type > 4/*CONTAINERS*/ ) {
+	else if ( node.type > 4/*CONTAINERS*/ ) {
+		// TODO : ESBENCH ?
 		const total = node.props.children.length
 		for ( let i = 0; i < total; ++i )
 			recursivelyUpdateMountState( node.props.children[ i ], doMount )

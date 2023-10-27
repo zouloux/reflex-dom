@@ -1,7 +1,7 @@
 import {
 	diffNode,
 	getCurrentComponent,
-	_getCurrentDiffingNode,
+	getCurrentDiffingNode,
 	_setDomAttribute,
 	recursivelyUpdateMountState, _diffAndMount
 } from "./diff";
@@ -82,6 +82,23 @@ export const invalidateComponent = createBatch<ComponentInstance>(
 	component => _diffAndMount( component.vnode, component.vnode, true )
 );
 
+// ----------------------------------------------------------------------------- DOM
+
+export function updateDomFromState ( node:VNode, value ) {
+	// Do direct dom update
+	let propertyName:string
+	if ( node.type === 3 )
+		node.dom.nodeValue = value as string
+	else {
+		// Reset attribute for "src", allow empty images when changing src
+		propertyName = node._propertyName
+		if ( node.dom instanceof HTMLImageElement && propertyName === "src" )
+			_setDomAttribute( node.dom as Element, propertyName, "" )
+		_setDomAttribute( node.dom as Element, propertyName, value )
+	}
+	_dispatch( _featureHooks, 3/* MUTATING NODE */, node, propertyName )
+}
+
 // ----------------------------------------------------------------------------- STATE
 
 // TODO : DOC
@@ -90,13 +107,15 @@ let _currentEffect:TEffect
 // TODO : DOC
 let _currentStates = new Set<IState<any>>()
 
+// FIXME : We may have a memory leak !
+// 			What happens to Node added to state without parent component attached to the state
+//			It seems they will be kept for ever into the _nodes Set ...
+
 /**
  * TODO : DOC
  * @param initialValue
  */
-export function state <GType> (
-	initialValue	?:TInitialValue<GType>
-):IState<GType> {
+export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GType> {
 
 	// Prepare initial value if it's a function
 	initialValue = _prepareInitialValue( initialValue )
@@ -133,18 +152,7 @@ export function state <GType> (
 		for ( const node of _nodes ) {
 			// Skip this node if the whole component needs to be refreshed
 			if ( !_components.has( node.component ) ) {
-				// Do direct dom update
-				let propertyName:string
-				if ( node.type === 3 )
-					node.dom.nodeValue = initialValue as string
-				else {
-					// Reset attribute for "src", allow empty images when changing src
-					propertyName = node._propertyName
-					if ( node.dom instanceof HTMLImageElement && propertyName === "src" )
-						_setDomAttribute( node.dom as Element, propertyName, "" )
-					_setDomAttribute( node.dom as Element, propertyName, initialValue )
-				}
-				_dispatch( _featureHooks, 3/* MUTATING NODE */, node, propertyName )
+				updateDomFromState( node, initialValue )
 			}
 		}
 		// Dispatch all component refresh at the same time and wait for all to be updated
@@ -179,7 +187,7 @@ export function state <GType> (
 			if ( !_effects )
 				return
 			// Get current node and component
-			const currentNode = _getCurrentDiffingNode()
+			const currentNode = getCurrentDiffingNode()
 			const currentComponent = getCurrentComponent()
 			// Register current before effect handler
 			if ( _currentEffect ) {
