@@ -2,9 +2,9 @@
 import {
 	h, state,
 	shouldUpdate, IState, createBatch,
-	getCurrentDiffingNode, updateDomFromState
+	getCurrentDiffingNode, updateDomFromState, VNode,
 } from "../../../reflex-dom/src"
-import { For } from "../../../reflex-dom/src/jsx-helpers"
+import { For, createDomSelector } from "../../../reflex-dom/src/performance-helpers"
 
 // ----------------------------------------------------------------------------- DEBUG
 
@@ -48,40 +48,13 @@ let _selectedId = null
 
 // ----------------------------------------------------------------------------- DOM SELECTOR
 
-function createDomSelector ( getter:( path:string|number ) => any ) {
-	let _domNodes = {}
-	return {
-		connect ( path:string|number ) {
-			return {
-				type: 3,
-				get value () {
-					_domNodes[ path ] = getCurrentDiffingNode()
-					return getter( path )
-				},
-				toString () { return this.value + '' },
-			} as IState
-		},
-		update ( path:string|number ) {
-			const node = _domNodes[ path ]
-			node && updateDomFromState( node, getter( path ) )
-		},
-		remove ( path:string|number ) {
-			delete _domNodes[ path as any ]
-		},
-		clear () {
-			_domNodes = {}
-		},
-		dispose () {
-			_domNodes = null
-		}
-	}
-}
+// TODO : To include into reflex
 
-const isSelectedClassNameDomSelector = createDomSelector( path => {
+const isSelectedClassNameDomSelector = createDomSelector<string>( path => {
 	return _selectedId === path ? "danger" : ""
 })
 
-const labelDomSelector = createDomSelector( path => {
+const labelDomSelector = createDomSelector<number>( path => {
 	const item = $data.peek().find( item => item.id === path )
 	return item.label
 })

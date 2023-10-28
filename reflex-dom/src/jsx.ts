@@ -15,6 +15,7 @@ export function h ( value:any, props:any, ...children:any[] ):VNode {
 	// Browse children to patch types
 	// esbench : Faster than naming it value and dropping it in object like { value } instead of { value: child }
 	// esbench : faster than for const of
+	// esbench : Faster than i++
 	const total = c.length
 	for ( let i = 0; i < total; ++i ) {
 		const child = c[ i ]
@@ -37,8 +38,6 @@ export function h ( value:any, props:any, ...children:any[] ):VNode {
 		// Using == and not === to catch undefined here
 		else if ( typeof child === "boolean" || child == null )
 			c[ i ] = { type: 0/*NULL*/ }
-		// esbench : Faster than i++
-		++i
 	}
 	// Virtual node type here can be only component or element
 	// Other types are created elsewhere

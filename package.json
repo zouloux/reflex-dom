@@ -81,9 +81,9 @@
 				"filterGlob": "hmr-runtime.*"
 			},
 			{
-				"input": "./reflex-dom/src/jsx-helpers.ts",
-				"outName": "jsx-helpers",
-				"filterGlob": "jsx-helpers.*",
+				"input": "./reflex-dom/src/performance-helpers.ts",
+				"outName": "performance-helpers",
+				"filterGlob": "performance-helpers.*",
 				"exportBits": true
 			}
 		]

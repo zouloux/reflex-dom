@@ -1,4 +1,4 @@
-import { h, render } from "../../../reflex-dom/src";
+import { changed, effect, h, render, state } from "../../../reflex-dom/src";
 import { App } from "./main"
 import { drawReflexDebug } from "../../../reflex-dom/src/debug";
 
@@ -11,18 +11,42 @@ export function startV20 () {
 
 function V20App () {
 	return () => <div>
-		{/*<h1>Hello Reflex</h1>*/}
-		{/*<StatefulComponent />*/}
+		<h1>Hello Reflex</h1>
+		<StatefulComponent />
 		{/*<StatelessComponent />*/}
 		{/*<SVGComponent />*/}
-		<App />
+		{/*<App />*/}
 	</div>
 }
 
 
 function StatefulComponent () {
+	const $s1 = state(0)
+	const $s2 = state(0)
+	effect(() => {
+		console.log("Effect 1", $s1.value)
+	})
+	changed(() => {
+		console.log("Changed 1", $s1.value)
+	})
+	changed(() => {
+		console.log("Changed both", $s1.value, $s2.value)
+	})
+	function incrementBoth () {
+		$s1.value ++
+		$s2.value ++
+	}
 	return () => <div>
-		Stateful
+		<h2>Stateful</h2>
+		<button onClick={ e => $s1.value ++ }>Increment 1</button>
+		<button onClick={ e => $s2.value ++ }>Increment 2</button>
+		<button onClick={ incrementBoth }>Increment both</button>
+		<div>
+			<h4>Values</h4>
+			<div>Seed : {Math.random()}</div>
+			<div>S1 : { $s1 }</div>
+			<div>S2 : { $s2 }</div>
+		</div>
 	</div>
 }
 
