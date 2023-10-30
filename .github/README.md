@@ -2,10 +2,11 @@
 
 __Reflex__ is a tiny and fast reactive UI library.
 
-- 🦋 Super lightweight and __0 dependency__, about ![~4kb](../bits/reflex.es2017.min.js.svg) min-zipped
+- 🦋 Super lightweight and __0 dependency__, about ![~4kb](../bits/reflex.es2020.min.js.svg) min-zipped
 - 🏎 Highly performant diffing algorithm ( [Proof](#performances) )
 - 🔋 Batteries included with [factory extensions](#factory-extensions)
-- ⚛️ Really reactive, states are Signal by design
+- ⚛️ Truly reactive, states are Signals by design
+- 🔍 Fine grained DOM updates for even better performances, components are rendered only when needed
 - 🤓 Typed JSX
 - 🍰 Easy to learn
 - 🤘️ HMR Support for Vite
@@ -16,8 +17,8 @@ __Reflex__ is a tiny and fast reactive UI library.
 ![](https://img.shields.io/badge/Build-passing-success)
 ![](https://img.shields.io/badge/0-dependency-success)
 <br>
-[![gzip size](http://img.badgesize.io/https://unpkg.com/reflex-dom/reflex-dom/dist/reflex.es2017.min.js?compression=gzip&label=gzip)](https://unpkg.com/reflex-dom/reflex-dom/dist/reflex.es2017.min.js)
-[![brotli size](http://img.badgesize.io/https://esm.sh/v89/reflex-dom/es2022/reflex-dom.js?compression=brotli&label=brotli)](https://esm.sh/v89/reflex-dom/es2022/reflex-dom.js)
+[![gzip size](http://img.badgesize.io/https://unpkg.com/reflex-dom/reflex-dom/dist/reflex.es2020.min.js?compression=gzip&label=gzip)](https://unpkg.com/reflex-dom/reflex-dom/dist/reflex.es2020.min.js)
+[![brotli size](http://img.badgesize.io/https://unpkg.com/reflex-dom/reflex-dom/dist/reflex.es2020.min.js?compression=brotli&label=brotli)](https://unpkg.com/reflex-dom/reflex-dom/dist/reflex.es2020.min.js)
 
 ---
 
