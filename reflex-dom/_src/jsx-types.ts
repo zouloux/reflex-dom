@@ -25,7 +25,7 @@ import { IComputeState, IState } from "./states";
 // ----------------------------------------------------------------------------- CHILDREN
 
 export type ComponentChild =
-	| VNode
+	| VNode<any>
 	| string
 	| number
 	| null
@@ -33,9 +33,10 @@ export type ComponentChild =
 	| boolean
 	| object
 	| bigint
-	| (() => VNode)
 
-export interface DefaultReflexAttributes {
+export interface DefaultReflexAttributes
+	<GDom extends Element = Element> extends DefaultReflexBaseProps<GDom>
+{
 	// Children here can be string or number
 	children	?:ComponentChild|ComponentChild[]
 }
@@ -350,7 +351,7 @@ type AttributeState <G> = ( G | IState<G> | IComputeState<G> )
 
 export interface HTMLAttributes
 	<GDom extends Element = Element>
-	extends DefaultReflexAttributes, DOMAttributes<GDom>
+	extends DefaultReflexAttributes<GDom>, DOMAttributes<GDom>
 {
 	// Standard HTML Attributes
 	accept?: 				AttributeState<string>

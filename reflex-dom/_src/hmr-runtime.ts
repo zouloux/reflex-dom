@@ -103,8 +103,10 @@ function initHooks () {
 
 	})
 	// Hook every state created
-	_reflexLib.featureHook( (hookType, state) => {
+	_reflexLib.featureHook( (hookType, state, stateOptions) => {
 		if ( hookType !== 4 ) return
+		// If this is a state for props, do not manage it
+		if ( stateOptions._p ) return
 		// Get associated component, we keep states only for swapped component.
 		const component = _reflexLib.getCurrentComponent();
 		if ( !component ) {
@@ -147,8 +149,7 @@ function initHooks () {
 
 function swapComponent ( node, newFunction ) {
 	// Clone old node to keep props and stuff
-	const newNode = Object.assign({}, node)
-	newNode.props = Object.assign({}, node.props)
+	const newNode = _reflexLib.cloneVNode(node);
 	// Do not replace unmounted components
 	if ( !node.component.isMounted ) {
 		// FIXME
@@ -167,7 +168,7 @@ function swapComponent ( node, newFunction ) {
 	try {
 		// Mount new node and replace old node dom
 		parent = node.dom.parentElement;
-		_reflexLib.diffNode( newNode, null, true );
+		_reflexLib.diffNode( newNode, null, node._nodeEnv, true );
 		parent.insertBefore( newNode.dom, node.dom );
 		// FIXME : This is also where children states can't be kept.
 		//			Because we update a children which may be overridden by parent swap later

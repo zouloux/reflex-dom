@@ -1,8 +1,8 @@
 # About code golfing
 
 Main rules are to create the lightest bundle possible BUT to keep the code as 
-much as performant possible AND readable. Optimization which will ruin readability
-to slim 2 bytes from the bundle will be prohibited.
+much as performant possible AND readable. Code golf optimization which will ruin
+readability to slim 2 bytes from the bundle will be prohibited.
 
 ### Underscore and terser
 
@@ -66,6 +66,8 @@ assignment manually.
 
 To check if some property is undefined :
 - ✅ `typeof self < 'u' ? isNotUndefined : isUndefined`
+
+> Be aware that it destroy performances and should only be used outside loops and critical code
 
 ### Casting
 

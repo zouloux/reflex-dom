@@ -14,7 +14,8 @@
 		"./hmr-plugin": "./reflex-dom/dist/hmr-plugin.es2020.mjs",
 		"./hmr-runtime": "./reflex-dom/dist/hmr-runtime.es2020.mjs",
 		"./debug": "./reflex-dom/dist/debug.es2020.mjs",
-		"./render-to-string": "./reflex-dom/dist/renderToString.es2020.mjs"
+		"./render-to-string": "./reflex-dom/dist/renderToString.es2020.mjs",
+		"./jsx-helpers": "./reflex-dom/dist/jsx-helpers.es2020.mjs"
 	},
 	"scripts": {
 		"reset": "rm -rf node_modules && npm i",
@@ -47,7 +48,8 @@
 			{
 				"input": "./reflex-dom/src/index.ts",
 				"formats": [
-					"es2017.min.js"
+					"es2017.min.js",
+					"es2020.min.js"
 				],
 				"outName": "reflex",
 				"exportBits": true
@@ -65,7 +67,8 @@
 					"es2017.min.js"
 				],
 				"input": "./reflex-dom/src/renderToString.ts",
-				"filterGlob": "renderToString.*"
+				"filterGlob": "renderToString.*",
+				"exportBits": true
 			},
 			{
 				"input": "./reflex-dom/src/hmr-plugin.ts",
@@ -76,6 +79,12 @@
 				"input": "./reflex-dom/src/hmr-runtime.ts",
 				"outName": "hmr-runtime",
 				"filterGlob": "hmr-runtime.*"
+			},
+			{
+				"input": "./reflex-dom/src/performance-helpers.ts",
+				"outName": "performance-helpers",
+				"filterGlob": "performance-helpers.*",
+				"exportBits": true
 			}
 		]
 	}

@@ -1,6 +1,37 @@
-import { getCurrentComponent, getCurrentDiffingNode, _setDomAttribute, _diffAndMount } from "./diff";
-import { _dispatch, _featureHooks, VNode, VNodeTypes, createBatch } from "./common";
-import { ComponentInstance, unmounted } from "./component";
+import {
+	diffNode,
+	getCurrentComponent,
+	_getCurrentDiffingNode,
+	_setDomAttribute,
+	recursivelyUpdateMountState, _diffAndMount
+} from "./diff";
+import { _dispatch, _featureHooks, VNode, VNodeTypes } from "./common";
+import { afterNextRender, ComponentInstance, unmounted } from "./component";
+
+// ----------------------------------------------------------------------------- BATCHED TASK
+
+// Micro task polyfill
+const _microtask = self.queueMicrotask ?? ( h => self.setTimeout( h, 0 ) )
+
+// type TTaskHandler <GType> = ( bucket:Set<GType> ) => void
+type TTaskHandler <GType> = ( element:GType ) => void
+
+// TODO : Doc
+function _createBatchedTask <GType> ( task:TTaskHandler<GType> ) {
+	const bucket = new Set<GType>()
+	const resolves = []
+	return ( element:GType, resolve?:() => any ) => {
+		bucket.size || _microtask( () => {
+			// task( bucket )
+			for ( const element of bucket )
+				task( element )
+			bucket.clear()
+			_dispatch( resolves )
+		});
+		bucket.add( element )
+		resolve && resolves.push( resolve )
+	}
+}
 
 // ----------------------------------------------------------------------------- PREPARE INITIAL VALUE
 
@@ -8,13 +39,13 @@ export type TInitialValue <GType> = GType | ((oldValue?:GType) => GType)
 
 export const _prepareInitialValue = <GType> ( initialValue:TInitialValue<GType>, oldValue?:GType ) => (
 	typeof initialValue == "function"
-	? ( initialValue as (oldValue?:GType) => GType )(oldValue)
-	: initialValue as GType
+		? ( initialValue as (oldValue?:GType) => GType )(oldValue)
+		: initialValue as GType
 )
 
 // ----------------------------------------------------------------------------- STATE TYPES
 
-export type IState<GType = any> = {
+export type IState<GType> = {
 	value:GType
 	set ( newValue:TInitialValue<GType> ):Promise<void>
 
@@ -56,9 +87,15 @@ type TEffect<GCheck extends any[] = any[]> = {
 	_dispose	:TDisposeHandler
 }
 
+
+export interface IStateOptions<GType> {
+	// filter				?:(newValue:GType, oldValue:GType) => GType,
+	directInvalidation	?:boolean
+}
+
 // ----------------------------------------------------------------------------- INVALIDATE EFFECT
 
-const _invalidateEffect = createBatch( _callEffect )
+const _invalidateEffect = _createBatchedTask<TEffectHandler>( effect )
 
 // ----------------------------------------------------------------------------- INVALIDATE COMPONENT
 
@@ -66,26 +103,9 @@ const _invalidateEffect = createBatch( _callEffect )
  * Invalidate a component instance.
  * Will batch components in a microtask to avoid unnecessary renders.
  */
-export const invalidateComponent = createBatch<ComponentInstance>(
-	component => _diffAndMount( component.vnode, component.vnode, true )
+export const invalidateComponent = _createBatchedTask<ComponentInstance>(
+	component => _diffAndMount( component.vnode, component.vnode, undefined, true )
 );
-
-// ----------------------------------------------------------------------------- DOM
-
-export function updateDomFromState ( node:VNode, value ) {
-	// Do direct dom update
-	let propertyName:string
-	if ( node.type === 3 )
-		node.dom.nodeValue = value as string
-	else {
-		// Reset attribute for "src", allow empty images when changing src
-		propertyName = node._propertyName
-		if ( node.dom instanceof HTMLImageElement && propertyName === "src" )
-			_setDomAttribute( node.dom as Element, propertyName, "" )
-		_setDomAttribute( node.dom as Element, propertyName, value )
-	}
-	_dispatch( _featureHooks, 3/* MUTATING NODE */, node, propertyName )
-}
 
 // ----------------------------------------------------------------------------- STATE
 
@@ -93,25 +113,25 @@ export function updateDomFromState ( node:VNode, value ) {
 let _currentEffect:TEffect
 
 // TODO : DOC
-let _currentStates = new Set<IState>()
-
-// FIXME : We may have a memory leak !
-// 			What happens to Node added to state without parent component attached to the state
-//			It seems they will be kept for ever into the _nodes Set ...
+let _currentStates = new Set<IState<any>>()
 
 /**
  * TODO : DOC
  * @param initialValue
+ * @param stateOptions
  */
-export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GType> {
+export function state <GType> (
+	initialValue	?:TInitialValue<GType>,
+	stateOptions	:Partial<IStateOptions<GType>> = {}
+):IState<GType> {
 
 	// Prepare initial value if it's a function
 	initialValue = _prepareInitialValue( initialValue )
 
 	// List of side effects / node / components to update
-	let _effects = new Set<TEffect>()
-	let _nodes = new Set<VNode>()
-	let _components = new Set<ComponentInstance>()
+	const _effects = new Set<TEffect>()
+	const _nodes = new Set<VNode>()
+	const _components = new Set<ComponentInstance>()
 
 	// Listen effects that create states
 	if ( _currentEffect )
@@ -120,38 +140,65 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 	// Update the state value and dispatch changes
 	async function updateValue ( newValue:GType, forceUpdate = false ) {
 		// FIXME : Throw error in dev mode
+		if ( !_effects )
+			return
 		// Halt update if not forced and if new value is same as previous
 		if ( newValue === initialValue && !forceUpdate )
 			return
+
 		// Call dispose on all associated effects.
 		// effect and changed
 		for ( const effect of _effects )
 			effect._dispose?.()
+
 		// Store new value in
 		// to the argument variable
 		initialValue = newValue
-		// Call all associated effect handlers ( not "changed()" handlers )
-		// Do not attach effects ( false by default as second argument of _callEffect )
+
+		// Call all associated effect handlers ( not changed )
+		// Do not attach effects // FIXME
 		for ( const effect of _effects )
 			!effect._dom && _callEffect( effect )
+
 		// Then dispatch direct dom updates
-		for ( const node of _nodes )
+		for ( const node of _nodes ) {
 			// Skip this node if the whole component needs to be refreshed
-			if ( !_components.has( node.component ) )
-				updateDomFromState( node, initialValue )
+			if ( !_components.has( node.component ) ) {
+				// Do direct dom update
+				if ( node.type === 3 )
+					node.dom.nodeValue = initialValue as string
+				else {
+					// Reset attribute for "src", allow empty images when changing src
+					if ( node.dom instanceof HTMLImageElement && node.key === "src" )
+						_setDomAttribute( node.dom as Element, node.key, "" )
+					_setDomAttribute( node.dom as Element, node.key, initialValue )
+				}
+				_dispatch( _featureHooks, null, 3/* MUTATING NODE */, node, node.key )
+			}
+		}
+
 		// Dispatch all component refresh at the same time and wait for all to be updated
-		const _promises = []
-		for ( const component of _components )
-			_promises.push(
-				new Promise<void>( r => invalidateComponent( component, r ) )
-			)
+		const promises = []
+		for ( const component of _components ) {
+			// Refresh component synchronously
+			if ( stateOptions.directInvalidation ) {
+				diffNode( component.vnode, component.vnode )
+				recursivelyUpdateMountState( component.vnode, true )
+			}
+			// Invalidate component asynchronously
+			// FIXME : Resolve counter way to avoid Promise constructor here ? #perfs
+			else
+				promises.push( new Promise<void>(
+					r => invalidateComponent( component, r )
+				))
+		}
 		_components.clear();
-		await Promise.all( _promises )
-		// Call all associated "changed()" handlers ( effects associated to a component render )
-		// Do not attach effects ( false by default as second argument of _callEffect as task of _invalidateEffect )
+		await Promise.all( promises )
+
+		// Call all associated changed handler ( not effect )
+		// Do not attach effects // FIXME
 		for ( const effect of _effects )
-			if ( effect._dom )
-				_invalidateEffect( effect )
+			effect._dom && _invalidateEffect( () => _callEffect( effect ) )
 	}
 
 	// if this state is created into a factory phase of a component,
@@ -162,17 +209,17 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 		_effects.clear()
 		_nodes.clear()
 		_components.clear()
-		_effects = null
-		_nodes = null
-		_components = null
 	})
 
-	const _localState:IState<GType> = {
+	const _localState = {
 		// --- PUBLIC API ---
 		// Get current value and register effects
 		get value () {
+			// FIXME : Throw error in dev mode
+			if ( !_effects )
+				return
 			// Get current node and component
-			const currentNode = getCurrentDiffingNode()
+			const currentNode = _getCurrentDiffingNode()
 			const currentComponent = getCurrentComponent()
 			// Register current before effect handler
 			if ( _currentEffect ) {
@@ -180,11 +227,7 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 				_currentStates.add( this )
 			}
 			// Register current text node
-			else if (
-				currentNode
-				&& (currentNode.type === 3/* TEXT */ || currentNode.type === 2 /* ARGUMENT */)
-				&& currentNode.value === this // <- FIXME Explain
-			) {
+			else if ( currentNode && (currentNode.type === 3/* TEXT */ || currentNode.type === 2 /* ARGUMENT */) && currentNode.value === this ) {
 				// Save component to current text node to optimize later
 				currentNode.component = currentComponent
 				_nodes.add( currentNode )
@@ -219,7 +262,7 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 		},
 	}
 	// Call hook for new state created
-	_dispatch(_featureHooks, 4/* NEW STATE */, _localState)
+	_dispatch(_featureHooks, null, 4/* NEW STATE */, _localState, stateOptions)
 	return _localState;
 }
 
@@ -273,10 +316,9 @@ function _callEffect ( effect:TEffect, attach = false ) {
 	}
 }
 
-// TODO : DOC
-function _prepareEffect <GCheck extends any[]> ( _handler:TEffectHandler<GCheck>, _dom:boolean, _check?:TCheckEffect<GCheck> ) {
+function _createEffect <GCheck extends any[]> ( _handler:TEffectHandler<GCheck>, _check:TCheckEffect<GCheck>, _dom:boolean ):TEffect<GCheck> {
 	// Register this effect as running so all states can catch the handler
-	const _effect = {
+	return {
 		_handler,
 		_check,
 		_dom,
@@ -284,14 +326,19 @@ function _prepareEffect <GCheck extends any[]> ( _handler:TEffectHandler<GCheck>
 		_values: _check ? [] : [true],
 		_dispose: null,
 	}
-	let _associatedStates:IState[]
+}
+
+// TODO : DOC
+function _prepareEffect <GCheck extends any[]> ( handler:TEffectHandler<GCheck>, dom:boolean, check?:TCheckEffect<GCheck> ) {
+	const _effect = _createEffect( handler, check, false )
+	let _associatedStates:IState<any>[]
 	function _run () {
 		// Call effect now and attach to states
 		_callEffect( _effect, true )
 		// Clone associated states list to be able to detach later
 		_associatedStates = _captureAssociatedStates()
 	}
-	_dom ? getCurrentComponent()._nextRenderHandlers.push( _run ) : _run()
+	dom ? afterNextRender( _run ) : _run()
 	return unmounted( () => _detachEffectFromStates(_associatedStates, _effect) )
 }
 

@@ -1,4 +1,4 @@
-import { LifecycleHandler, MountHandler, RenderFunction, VNode } from "./common";
+import { ComponentFunction, LifecycleHandler, MountHandler, RenderFunction, VNode } from "./common";
 import { IState } from "./states";
 import { getCurrentComponent } from "./diff";
 
@@ -6,13 +6,14 @@ import { getCurrentComponent } from "./diff";
 
 export type TShouldUpdate <GProps extends object = object> = (newProps:GProps, oldProps:GProps) => boolean
 
-export interface ComponentInstance <GProps extends object = object> {
+export interface ComponentInstance <GProps extends object = object> { // FIXME : Other generics ?
 	// --- Public members, not mangled
-	vnode					:VNode
+	vnode					:VNode<GProps, ComponentFunction>
+	name					:string
 	isMounted				:boolean;
 	children				?:VNode
 	// --- Private members, will be mangled
-	_shouldUpdate			?:TShouldUpdate
+	_shouldUpdate			?:TShouldUpdate<GProps>
 	_proxy					?:object
 	_propState				?:IState<GProps>
 	_render					:RenderFunction
@@ -21,6 +22,27 @@ export interface ComponentInstance <GProps extends object = object> {
 	_nextRenderHandlers		:(() => any)[] 		// Called after next render only, then removed
 	_unmountHandlers		:LifecycleHandler[]
 	_defaultProps			?:Partial<GProps>
+}
+
+// ----------------------------------------------------------------------------- CREATE COMPONENT INSTANCE
+
+// Optimize it in a function @see jsx.ts/createVNode()
+export function _createComponentInstance
+	<GProps extends object = object>
+	( vnode:VNode<GProps, ComponentFunction> )
+	:ComponentInstance
+{
+	return {
+		vnode,
+		name: (vnode.value as RenderFunction).name,
+		isMounted: false,
+		// Private members, will be mangled
+		_render: vnode.value as RenderFunction,
+		_mountHandlers: [],
+		_renderHandlers: [],
+		_nextRenderHandlers: [],
+		_unmountHandlers: [],
+	}
 }
 
 // ----------------------------------------------------------------------------- EXTENSIONS
@@ -55,11 +77,19 @@ export function rendered ( handler:LifecycleHandler ) {
 	getCurrentComponent()?._renderHandlers.push( handler )
 }
 
+/**
+ * FACTORY COMPONENTS ONLY
+ * Handler is called once, at next render.
+ * Can be asynchronous.
+ */
+export function afterNextRender ( handler:LifecycleHandler ) {
+	getCurrentComponent()?._nextRenderHandlers.push( handler )
+}
+
 // ----------------------------------------------------------------------------- DEFAULT PROPS
 
 /**
  * Set default props
- * TODO : OPTIMIZE - 0%
  * @param props Props object from first argument.
  * @param defaults Defaults to inject into props.
  */
@@ -68,7 +98,6 @@ export function defaultProps <
 	GDefaults extends Partial<GProps>,
 > ( props:GProps, defaults:GDefaults ) {
 	const component = getCurrentComponent()
-	//component.vnode.value.defaultProps = defaults
 	component._defaultProps = defaults
 	if ( component._propState )
 		props = component._propState.peek() as GProps
@@ -86,34 +115,14 @@ export function defaultProps <
  * Set handler to false as a shorthand to never update this component again when props changes.
  * @param handler
  */
-export function shouldUpdate
-	<GProps extends object = any>
-	( handler:TShouldUpdate<GProps>|boolean )
-{
-	// Assign the shouldUpdate to the function, and not the component
-	// Can assign it only once
-	return getCurrentComponent()._shouldUpdate ??= (
-		typeof handler === "boolean"
-		? () => handler
-		: handler as TShouldUpdate
-	)
-}
+export const shouldUpdate = ( handler:TShouldUpdate|boolean ) =>
+	getCurrentComponent()._shouldUpdate = handler === false ? () => false : handler as TShouldUpdate
 
-
-export const shallowPropsCompare = ( a:object, b:object ) => (
-	// Same amount of properties ?
-	Object.keys( a ).length === Object.keys( b ).length
-	// Every property exists in other object ?
-	&& Object.keys( a ).every( key => b.hasOwnProperty(key) && a[key] === b[key] )
-)
 
 // Shallow compare two objects, applied only for props between new and old virtual nodes.
 // Will not compare "children" which is always different
 // https://esbench.com/bench/62a138846c89f600a5701904
 // TODO : re-bench against with for i in loop (test small and huge props)
-// TODO : Keep in lib ? Delete ? Keep as optional but remove as default behavior ?
-/*
-
 export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) => (
 	// Same amount of properties ?
 	Object.keys( a ).length === Object.keys( b ).length
@@ -141,7 +150,7 @@ export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) 
 					return !(
 						c.type === d.type
 						&& (
-							c.type !== 6/!*ELEMENT*!/
+							c.type !== 6/*ELEMENT*/
 							|| c.value === d.value
 						)
 					)
@@ -152,4 +161,3 @@ export const shallowPropsCompare = ( a:object, b:object, childrenCheck = true ) 
 		: b.hasOwnProperty(key) && a[key] === b[key]
 	)
 )
-*/
