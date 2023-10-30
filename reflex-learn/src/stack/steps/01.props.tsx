@@ -1,11 +1,12 @@
-import { h } from 'reflex-dom';
+import { h, render } from 'reflex-dom';
 
-export function App(props) {
+function App (props) {
+	// TODO
 	return (
 		<div>
-
+			<h2>Hello PROPS { props.name }</h2>
 		</div>
 	);
 }
 
-// NOTE : render() is now called outside this file for convenience
+export default () => render( <App name="world" />, document.body );

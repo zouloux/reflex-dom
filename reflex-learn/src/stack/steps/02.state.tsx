@@ -1,6 +1,6 @@
-import { h, state } from 'reflex-dom';
+import { h, render, state } from 'reflex-dom';
 
-export function App(props) {
+function App (props) {
 	const counter = state( 0 )
 	const decrement = () => counter.value --
 	const increment = () => counter.value ++
@@ -13,4 +13,4 @@ export function App(props) {
 	);
 }
 
-// NOTE : render() is now called outside this file for convenience
+export default () => render( <App name="world" />, document.body );

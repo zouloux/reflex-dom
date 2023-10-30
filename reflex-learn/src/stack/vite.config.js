@@ -12,7 +12,7 @@ export default defineConfig( viteConfig => {
 			},
 		},
 		plugins: [
-			reflexRefresh()
+			//reflexRefresh()
 		]
 	}
 })
