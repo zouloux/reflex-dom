@@ -93,3 +93,44 @@ export function createDomSelector <GPath extends string|number> ( getter:( path:
 		}
 	}
 }
+
+// ----------------------------------------------------------------------------- ADVANCED SHALLOW PROPS COMPARE
+
+export const advancedPropsCompare = ( a:object, b:object ) => (
+	// Same amount of properties ?
+	Object.keys( a ).length === Object.keys( b ).length
+	// Every property exists in other object ?
+	&& Object.keys( a ).every( key =>
+		( key === "children" ) ? (
+			// Same array instances -> we validate directly without browsing children
+			a[ key ] === b[ key ]
+			// Two empty arrays -> we validate directly without browsing children
+			|| ( (a as any[]).length === 0 && (b as any[]).length === 0 )
+			// We need to check deeper
+			|| (
+				// check if children props exists on props b
+				b[ key ]
+				// Both children array must have the same length
+				&& a[ key ].length === b[ key ].length
+				// Browse children and check types on every child
+				// If any child does not have the same type
+				// We halt the search
+				&& !a[ key ].find( (c, i) => {
+					const d = b[ key ][ i ]
+					// Here we inverted condition to match diff.ts checks
+					// Condition is -> check if same nodes types
+					// Find is -> halt when any node type differs (so, the inverse)
+					return !(
+						c.type === d.type
+						&& (
+							c.type !== 6/*ELEMENT*/
+							|| c.value === d.value
+						)
+					)
+				})
+			)
+		)
+		// Prop check between a and b objects
+		: b.hasOwnProperty(key) && a[key] === b[key]
+	)
+)

@@ -67,7 +67,7 @@ const _invalidateEffect = createBatch( _callEffect )
  * Will batch components in a microtask to avoid unnecessary renders.
  */
 export const invalidateComponent = createBatch<ComponentInstance>(
-	component => _diffAndMount( component.vnode, component.vnode, true )
+	component => _diffAndMount( component.vnode, component.vnode, null, true )
 );
 
 // ----------------------------------------------------------------------------- DOM

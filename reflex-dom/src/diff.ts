@@ -18,6 +18,7 @@ export const _DOM_PRIVATE_LISTENERS_KEY = "_l"
 const _CAPTURE_REGEX = /Capture$/
 
 // Namespace for SVG elements
+// FIXME : Inline ?
 const _svgNS = "http://www.w3.org/2000/svg"
 
 // ----------------------------------------------------------------------------- CURRENT SCOPED COMPONENT
@@ -107,51 +108,50 @@ export function _setDomAttribute ( dom:Element, name:string, value:any ) {
 
 /**
  * TODO DOC
- * @param newNode
- * @param oldNode
  */
 // TODO : OPTIMIZE : 0%
-export function _diffElement ( newNode:VNode, oldNode:VNode ) {
+export function _diffElement ( newNode:VNode, oldNode:VNode, element?:Element ) {
+	//console.log("_diffElement", newNode.value, newNode.props?.children, element)
 	// TODO : DOC
-	let dom:RenderDom
+	let dom:RenderDom// todo : move into arguments only for code golf
+	const { type, value } = newNode // todo : check if better perfs
 	if ( oldNode ) {
 		dom = oldNode.dom
 		if ((
-			newNode.type === 1/*TEXT*/ && oldNode.value !== newNode.value
+			type === 1/*TEXT*/ && oldNode.value !== value
 			// If the whole component is re-rendered by any state change that is not a signal
 			// We need to update all signal based text values
-			|| newNode.type === 3/*STATE*/
+			|| type === 3/*STATE*/
 		))
-			dom.nodeValue = newNode.value as string
+			dom.nodeValue = value as string
 	}
 	else {
+		if ( value as string === "svg" )
+			newNode.env.isSVG = true
 		const document = newNode.env.document as Document
-		if ( newNode.type === 0/*NULL*/ )
+		if ( type === 0/*NULL*/ )
 			dom = document.createComment('')
-		else if ( newNode.type === 1/*TEXT*/ || newNode.type === 3/*STATE*/ ) {
+		else if ( type === 1/*TEXT*/ || type === 3/*STATE*/ ) {
 			_currentDiffingNode = newNode
 			// If newNode is a state, createTextNode will call .toString() on the state
 			// which will track the dependency
-			dom = document.createTextNode( newNode.value as string )
+			dom = document.createTextNode( value as string )
 		}
-		else if ( newNode.type === 6/*ELEMENTS*/ ) {
-			if ( newNode.value as string === "svg" )
-				newNode.env.isSVG = true
+		else if ( type === 6/*ELEMENTS*/ ) {
 			dom = (
 				newNode.env.isSVG
-				? document.createElementNS( _svgNS, newNode.value as string )
-				: document.createElement( newNode.value as string )
+				? document.createElementNS( _svgNS, value as string )
+				: document.createElement( value as string )
 			)
 		}
 	}
-	if ( newNode.type === 0/*NULL*/ || newNode.type === 1/*TEXT*/ || newNode.type === 3/*STATE*/ )
+	if ( type === 0/*NULL*/ || type === 1/*TEXT*/ || type === 3/*STATE*/ )
 		return dom
-	else if ( newNode.type === 8/*LIST*/ ) {
-		_diffChildren( newNode, oldNode )
+	else if ( type === 8/*LIST*/ ) {
+		_diffChildren( newNode, oldNode, element )
 		return dom
 	}
 	// Remove attributes which are removed from old node
-	// TODO : OPTIMIZE - For loop performances
 	// https://esbench.com/bench/652e2ce67ff73700a4debb26
 	oldNode && Object.keys( oldNode.props )
 		.filter( name => (
@@ -162,7 +162,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 			// Insert HTML directly without warning
 			if ( name == "innerHTML" )
 				(dom as Element).innerHTML = "" // FIXME : Maybe use delete or null ?
-				// Events starts with "on". On preact this is optimized with [0] == "o"
+			// Events starts with "on". On preact this is optimized with [0] == "o"
 			// But recent benchmarks are pointing to startsWith usage as faster
 			else if ( name.startsWith("on") ) {
 				const { eventName, eventKey, useCapture } = _getEventNameAndKey( name, dom as Element );
@@ -223,10 +223,10 @@ export function _diffElement ( newNode:VNode, oldNode:VNode ) {
 
 // ----------------------------------------------------------------------------- RECURSIVELY MOUNT / UNMOUNT
 
-export function _diffAndMount ( newNode:VNode, oldNode:VNode, forceUpdate = false ) {
-	const finishHandlers = _dispatch(_featureHooks, 2/* DIFFING NODE */, newNode)
+export function _diffAndMount ( newNode:VNode, oldNode:VNode, element?:Element, forceUpdate = false ) {
+	const finishHandlers = _dispatch(_featureHooks, 2/* DIFFING NODE */, newNode, oldNode, element, forceUpdate)
 	if ( newNode ) {
-		diffNode( newNode, oldNode, forceUpdate )
+		diffNode( newNode, oldNode, element, forceUpdate )
 		recursivelyUpdateMountState( newNode, true )
 		_dispatch( finishHandlers );
 	}
@@ -336,8 +336,8 @@ function _registerKeyAndEnv ( parentNode:VNode, childNode:VNode ) {
 let _previousParentNode:VNode
 
 // TODO : OPTIMIZE - 20%
-export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
-	// console.log( "_diffChildren", newParentNode, oldParentNode );
+export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, element:Element ) {
+	//console.log( "_diffChildren", newParentNode, oldParentNode, element );
 	// TODO : DOC
 	const parentDom = (newParentNode.dom ?? _previousParentNode.dom) as Element
 	_previousParentNode = newParentNode
@@ -348,9 +348,13 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 	const total = newChildren.length
 	let i:number
 	if ( !oldParentNode || oldParentNode.props.children.length === 0 ) {
+		const elementChildNodes = element?.childNodes
 		for ( i = 0; i < total; ++i ) {
 			const child = newChildren[ i ]
-			diffNode( child, null )
+			const c = elementChildNodes?.item(i) as Element
+			// const c = [...element?.childNodes][i]
+			// console.log("->", i, element, c)
+			diffNode( child, null, c )
 			_registerKeyAndEnv( newParentNode, child )
 			child.dom && parentDom.appendChild( child.dom )
 		}
@@ -432,7 +436,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 			&& !(newChildNodeKey in oldParentKeys )
 		) {
 			// console.log("create from key", newChildNode)
-			diffNode( newChildNode, null )
+			diffNode( newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			--collapseCount
 		}
@@ -462,7 +466,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode ) {
 		/** CREATE **/
 		else {
 			// console.log("create no key", newChildNode)
-			diffNode( newChildNode, null )
+			diffNode( newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			--collapseCount
 		}
@@ -528,7 +532,7 @@ function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode ) :GRetur
 let _nodeEnv:INodeEnv
 
 // TODO : OPTIMIZE - 90%
-export function diffNode ( newNode:VNode, oldNode?:VNode, forceUpdate = false ) {
+export function diffNode ( newNode:VNode, oldNode?:VNode, element?:Element, forceUpdate = false ) {
 	// IMPORTANT : Here we clone node if we got the same instance
 	// 			   Otherwise, altering props.children after render will fuck everything up
 	// Clone identical nodes to be able to diff them
@@ -554,8 +558,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, forceUpdate = false ) 
 	const type = newNode.type
 	/* NULL | TEXT | STATE | ELEMENTS */
 	if ( ( type >= 0 && type <= 3 ) || type === 6 ) {
-		// TODO : NODE ENV
-		newNode.dom = _diffElement( newNode, oldNode )
+		newNode.dom = _diffElement( newNode, oldNode, element )
 		_currentDiffingNode = null
 	}
 	// Diff component node
@@ -634,7 +637,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, forceUpdate = false ) 
 			renderResult = _renderComponentNode<VNode>( newNode as VNode )
 		// We rendered something (not reusing old component)
 		if ( renderResult ) {
-			diffNode( renderResult, componentInstance.children )
+			diffNode( renderResult, componentInstance.children, element )
 			componentInstance.children = renderResult
 			newNode.dom = renderResult.dom
 		}
@@ -646,5 +649,5 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, forceUpdate = false ) 
 	// https://esbench.com/bench/652d0d307ff73700a4debaea
 	// More bytes but better perfs
 	if ( newNode.type >= 5/*CONTAINERS*/ )
-		_diffChildren( newNode, oldNode )
+		_diffChildren( newNode, oldNode, element )
 }

@@ -20,6 +20,7 @@ function renderAbstractNodeToString ( node:IAbstractNode ) {
 		Object.keys( nodeElement.attributes ).forEach( key => {
 			// FIXME : Replace all ?
 			const value = nodeElement.attributes[key]
+			// TODO : Check key with capital-case and dash here !
 			if ( value )
 				buffer += ` ${key}="${(value+'').replace(/"/g, '&quot;')}"`
 		})

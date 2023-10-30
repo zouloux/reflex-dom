@@ -76,23 +76,23 @@ function initDebugBatch () {
 export function drawReflexDebug () {
 
 	const style = document.createElement("style")
-	style.innerHTML = `
-        @keyframes _ReflexDebugFadeOut {
-          50% { outline-color: var(--color) }
-          100% { outline-color: rgba(0, 0, 0, 0) }
-        }
-        ._reflexDebugRendering {
-          --color: pink;
-          outline: 2px dotted var(--color);
-          animation: _ReflexDebugFadeOut .6s;
-        }
-		._reflexDebugMutation {
-		  --color: green;
-		  position: fixed;
-		  outline: 2px dotted var(--color);
-          animation: _ReflexDebugFadeOut .3s;
-		}
-	`
+	style.innerHTML =  [
+		"@keyframes _ReflexDebugFadeOut {",
+		"50% { outline-color: var(--color) }",
+		"100% { outline-color: rgba(0, 0, 0, 0) }",
+		"}",
+		"._reflexDebugRendering {",
+		"--color: pink;",
+		"outline: 2px dotted var(--color);",
+		"animation: _ReflexDebugFadeOut .6s;",
+		"}",
+		"._reflexDebugMutation {",
+		"--color: green;",
+		"position: fixed;",
+		"outline: 2px dotted var(--color);",
+		"animation: _ReflexDebugFadeOut .3s;",
+		"}",
+	].join("\n")
 	document.head.append( style )
 
 	/**
@@ -116,11 +116,13 @@ export function drawReflexDebug () {
 
 		if ( dom ) {
 			const { classList } = (dom as HTMLElement)
-			// @ts-ignore
-			clearTimeout( dom._renderingTimeout )
-			classList.add("_reflexDebugRendering")
-			// @ts-ignore
-			dom._renderingTimeout = setTimeout(() => classList.remove("_reflexDebugRendering"), 600)
+			if ( classList ) {
+				// @ts-ignore
+				clearTimeout( dom._renderingTimeout )
+				classList.add("_reflexDebugRendering")
+				// @ts-ignore
+				dom._renderingTimeout = setTimeout(() => classList.remove("_reflexDebugRendering"), 600)
+			}
 		}
 		return p
 	});

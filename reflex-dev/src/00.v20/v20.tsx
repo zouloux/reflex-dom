@@ -1,19 +1,24 @@
 import { changed, effect, h, render, state } from "../../../reflex-dom/src";
 import { App } from "./main"
 import { drawReflexDebug } from "../../../reflex-dom/src/debug";
+import { hydrate } from "../../../reflex-dom/src/render";
+import { renderToString } from "../../../reflex-dom/src/renderToString";
 
 
 drawReflexDebug();
 
 export function startV20 () {
 	render( <V20App />, document.getElementById("App") );
+	// hydrate( <V20App />, document.getElementById("App") );
+	// const html = renderToString( <V20App /> )
+	// console.log( html )
 }
 
 function V20App () {
 	return () => <div>
 		<h1>Hello Reflex</h1>
 		<StatefulComponent />
-		{/*<StatelessComponent />*/}
+		<StatelessComponent />
 		{/*<SVGComponent />*/}
 		{/*<App />*/}
 	</div>
@@ -57,7 +62,7 @@ function StatelessComponent () {
 }
 
 function SVGComponent () {
-	return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+	return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="50px">
 		<g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
 			<path d="M5 12h14M12 5l7 7-7 7" />
 		</g>
