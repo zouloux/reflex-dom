@@ -22,7 +22,8 @@
 		"clean": "rm -rf ./reflex-dom/dist/*",
 		"build": "npm run clean --silent && tsbundle build",
 		"docs": "static-http docs/api/",
-		"dev": "cd reflex-dev && npm run dev --silven",
+		"dev": "cd reflex-dev && npm run dev --silent",
+		"dev-build": "cd reflex-dev && npm run build",
 		"learn": "cd reflex-learn && npm run build --silent",
 		"learn-dev": "cd reflex-learn && npm run dev --silent",
 		"publish": "npm run clean --silent && npm run learn --silent && tsbundle publish"

@@ -8,7 +8,7 @@ export const _DOM_PRIVATE_VIRTUAL_NODE_KEY = "__v"
 
 // ----------------------------------------------------------------------------- RENDER
 
-export function render ( rootNode:VNode, parentElement:HTMLElement|IAbstractElement, documentInterface:Document|IAbstractDocument = document ) {
+function _render ( rootNode:VNode, parentElement:HTMLElement|IAbstractElement, documentInterface:Document|IAbstractDocument = document, hydrateRoot:Element = null ) {
 	// When using render, we create a new root node to detect new renders
 	// This node is never rendered, we just attach it to the parentElement and render its children
 	const root:VNode = {
@@ -22,9 +22,17 @@ export function render ( rootNode:VNode, parentElement:HTMLElement|IAbstractElem
 	}
 	root.dom = parentElement as HTMLElement
 	const oldNode = parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ]
-	_diffAndMount(root, oldNode)
+	_diffAndMount(root, oldNode, hydrateRoot)
 	_dispatch( _featureHooks, 0/* NEW ROOT */, oldNode, root );
 	parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ] = root
+}
+
+export function render ( rootNode:VNode, parentElement:HTMLElement|IAbstractElement, documentInterface:Document|IAbstractDocument = document ) {
+	_render( rootNode, parentElement, documentInterface )
+}
+
+export function hydrate ( rootNode:VNode, parentElement:HTMLElement ) {
+	_render( rootNode, parentElement, document, parentElement as Element )
 }
 
 // ----------------------------------------------------------------------------- REGISTER WEB-COMPONENTS
