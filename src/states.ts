@@ -104,7 +104,6 @@ let _currentStates = new Set<IState>()
  * @param initialValue
  */
 export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GType> {
-
 	// Prepare initial value if it's a function
 	initialValue = _prepareInitialValue( initialValue )
 
@@ -276,7 +275,7 @@ function _callEffect ( effect:TEffect, attach = false ) {
 // TODO : DOC
 function _prepareEffect <GCheck extends any[]> ( _handler:TEffectHandler<GCheck>, _dom:boolean, _check?:TCheckEffect<GCheck> ) {
 	// Register this effect as running so all states can catch the handler
-	const _effect = {
+	const _effect:TEffect = {
 		_handler,
 		_check,
 		_dom,
@@ -296,23 +295,23 @@ function _prepareEffect <GCheck extends any[]> ( _handler:TEffectHandler<GCheck>
 }
 
 // TODO : DOC
-export function effect <GCheck extends any[]> ( handler:TEffectHandler<[boolean]> ):TDisposeHandler {
+export function effect ( handler:TEffectHandler<[boolean]> ):TDisposeHandler {
 	return _prepareEffect( handler, false )
 }
 
 // TODO : DOC
-export function changed <GCheck extends any[]> ( handler?:TEffectHandler<[boolean]> ):TDisposeHandler {
+export function changed ( handler?:TEffectHandler<[boolean]> ):TDisposeHandler {
 	return _prepareEffect( handler, true )
 }
 
 // TODO : DOC
 export function checkEffect <GCheck extends any[]> ( check:TCheckEffect<GCheck>, handler:TEffectHandler<GCheck>, ):TDisposeHandler {
-	return _prepareEffect( handler, false, check)
+	return _prepareEffect( handler, false, check )
 }
 
 // TODO : DOC
 export function checkChanged <GCheck extends any[]> ( check:TCheckEffect<GCheck>, handler:TEffectHandler<GCheck>, ):TDisposeHandler {
-	return _prepareEffect( handler, true, check)
+	return _prepareEffect( handler, true, check )
 }
 
 // ----------------------------------------------------------------------------- COMPUTE

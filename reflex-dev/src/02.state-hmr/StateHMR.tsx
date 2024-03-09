@@ -1,4 +1,4 @@
-import { afterNextRender, changed, effect, h, mounted, state } from "../../../reflex-dom/src";
+import { afterNextRender, changed, effect, h, mounted, state } from "../../../src";
 import { OtherComponent } from "./OtherComponent";
 
 const getRandom = () => 0//~~(Math.random() * 10 )

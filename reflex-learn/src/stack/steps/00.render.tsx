@@ -8,4 +8,4 @@ function App (props) {
 	);
 }
 
-export default () => render( <App name="world" />, document.body );
+render( <App name="world" />, document.body );

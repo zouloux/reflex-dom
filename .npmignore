@@ -6,9 +6,11 @@
 /bits/
 /docs
 /reflex-dev
-/reflex-dom/src
+/src
 /reflex-learn
 /.gitignore
 /CODEGOLF.md
 /LICENSE
 /tsconfig.json
+/v8-deopt-viewer
+/reflex-deopt

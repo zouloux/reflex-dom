@@ -3,8 +3,8 @@ import { reflexRefresh } from "reflex-dom/hmr-plugin";
 import { resolve } from "path";
 
 export default defineConfig( c => {
-	console.log();
 	return {
+		assetsInclude: ["src/stack/**/*.*"],
 		root: resolve("./src"),
 		base: c.mode === "production" ? '/reflex/learn' : '',
 		build: {

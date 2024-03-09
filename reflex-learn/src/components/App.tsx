@@ -1,4 +1,4 @@
-import { changed, ComponentInstance, h, mounted, state } from "reflex-dom";
+import { changed, h, mounted, state } from "reflex-dom";
 import sdk from '@stackblitz/sdk';
 import { VM } from "@stackblitz/sdk/types/vm";
 import { limitRange } from "@zouloux/ecma-core";
@@ -17,7 +17,6 @@ function loadStackFiles () {
 		fileName = fileName.substring(9, fileName.length)
 		stackFiles[ fileName ] = value
 	})
-	console.log( stackFiles );
 	return stackFiles
 }
 
@@ -39,10 +38,13 @@ export function App ( props ) {
 			}, {
 				clickToLoad: false,
 				openFile: 'loading',
-				terminalHeight: 0,
+				terminalHeight: 6,
 				hideExplorer: true,
 				hideNavigation: true,
-				theme: "dark"
+				theme: "dark",
+				showSidebar: false,
+				devToolsHeight: 0,
+				hideDevTools: true,
 			},
 		);
 	})
@@ -66,7 +68,7 @@ export function App ( props ) {
 
 	let isFirst = true
 	changed( async () => {
-		const filePath = _stepFiles[ step.value ]
+		let filePath = _stepFiles[ step.value ]
 		if ( !_editor )
 			return
 		await _editor.editor.openFile( filePath )
@@ -74,10 +76,10 @@ export function App ( props ) {
 			isFirst = false
 			return
 		}
-		// Replace first line of index.tsx
+		// Replace import in index.tsx
 		const indexLines = stackFiles["index.tsx"].split("\n")
-		indexLines.shift();
-		indexLines.unshift(`import * as CurrentStep from './${filePath}'`)
+		filePath = filePath.split(".tsx")[0]
+		indexLines[1] = `import('./${filePath}');`
 		const indexRaw = indexLines.join("\n")
 		await _editor.applyFsDiff({
 			destroy: [],

@@ -3,14 +3,14 @@ import {
 	h, state,
 	shouldUpdate, IState, createBatch,
 	getCurrentDiffingNode, updateDomFromState, VNode,
-} from "../../../reflex-dom/src"
-import { For, createDomSelector } from "../../../reflex-dom/src/performance-helpers"
+} from "../../../src"
+import { For, createDomSelector } from "../../../src/performance-helpers"
 
 // ----------------------------------------------------------------------------- DEBUG
 
 // @ts-ignore
 let memoryDebugger
-import { drawReflexDebug, MemoryUsage } from "../../../reflex-dom/src/debug";
+import { drawReflexDebug, MemoryUsage } from "../../../src/debug";
 if ( process.env.NODE_ENV !== 'production' ) {
 	// drawReflexDebug();
 	memoryDebugger = <MemoryUsage />

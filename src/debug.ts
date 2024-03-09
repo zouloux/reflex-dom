@@ -29,6 +29,7 @@ export function trackPerformances ( subject:string ) {
 
 /**
  * Memory usage Reflex Component.
+ * TODO : Should not trigger drawReflexDebug
  */
 export function MemoryUsage ( props ) {
 	const memory = compute(() => {
@@ -58,6 +59,9 @@ function initDebugBatch () {
 		// FIXME : Warning ! Triggers reflow / redraw, destroy performances !
 		const rect = range.getBoundingClientRect();
 		range.detach();
+		// Invisible node
+		if ( rect.width === 0 && rect.height === 0 )
+			return
 		// Draw a div at this position and size for some ms
 		const div = document.createElement("div")
 		div.classList.add("_reflexDebugMutation");

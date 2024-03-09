@@ -7,5 +7,6 @@
 		"target": "ESNext",
 		"moduleResolution": "node",
 		"lib": ["DOM", "ESNext"],
+		"noImplicitUseStrict": false,
 	},
 }

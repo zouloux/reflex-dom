@@ -8,7 +8,7 @@ import {
 	h,
 	mounted,
 	state
-} from "../../../reflex-dom/src";
+} from "../../../src";
 
 export function Effects () {
 

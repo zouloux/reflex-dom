@@ -1,5 +1,5 @@
-import { h, render } from "../../../reflex-dom/src";
-import { drawReflexDebug, MemoryUsage } from "../../../reflex-dom/src/debug";
+import { h, render } from "../../../src";
+import { drawReflexDebug, MemoryUsage } from "../../../src/debug";
 import { StateHMR } from "./StateHMR";
 
 // -----------------------------------------------------------------------------

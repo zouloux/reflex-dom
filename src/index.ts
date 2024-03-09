@@ -6,23 +6,23 @@
 // ----------------------------------------------------------------------------- IMPORT / EXPORT
 
 // Export public API
-export { state, effect, compute, changed, invalidateComponent, checkEffect, checkChanged } from "./states"
-export { recursivelyUpdateMountState, getCurrentComponent, diffNode } from "./diff"
+export { state, effect, compute, changed, invalidateComponent, checkEffect, checkChanged, updateDomFromState } from "./states"
+export { recursivelyUpdateMountState, getCurrentComponent, diffNode, getCurrentDiffingNode } from "./diff"
 export { ref, refs } from "./ref"
 export { render } from "./render"
-export { featureHook } from "./common"
-export { mounted, unmounted, rendered, afterNextRender, defaultProps, shouldUpdate, shallowPropsCompare } from "./component"
+export { featureHook, createBatch } from "./common"
+export { mounted, unmounted, rendered, defaultProps, shouldUpdate, shallowPropsCompare } from "./component"
 
 // Also export createElement for JSX pragma React
-export { h, h as createElement, createVNode, cloneVNode } from "./jsx"
+export { h, h as createElement } from "./jsx"
 
 // Export types ( do not export too much to keep it simple )
-export type { IState, IComputeState, TInitialValue, TEffectHandler, TDisposeHandler, IStateOptions, TComputed } from "./states"
+export type { IState, IComputeState, TInitialValue, TEffectHandler, TDisposeHandler, TComputed } from "./states"
 export type { IRef, IRefs, IRefOrRefs } from "./ref"
 export type { ComponentInstance } from "./component"
 export type {
-	VNode, IAbstractNode, IAbstractText, IAbstractElement, IAbstractDocument,
-	IAbstractComment, INodeEnv, AbstractNodeTypes, DefaultReflexBaseProps,
+	VNode, IVirtualNode, IVirtualText, IVirtualElement, IVirtualDocument,
+	IVirtualComment, VirtualNodeTypes, DefaultReflexBaseProps,
 	DefaultReflexProps, HasClassProp, LifecycleHandler
 } from "./common"
 

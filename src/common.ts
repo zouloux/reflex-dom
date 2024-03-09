@@ -4,51 +4,53 @@ import { ClassNameItem } from "./jsx-types";
 import { IState } from "./states";
 
 // ----------------------------------------------------------------------------- DOCUMENT INTERFACE
-// Abstract document interface which replicate Document interface
+// Virtual document interface which replicate Document interface
 // For faster and easier renderToString implementation
 
-export type AbstractNodeTypes = "comment"|"text"|"element"
+export type VirtualNodeTypes = "comment"|"text"|"element"
 
-export interface IAbstractNode
+export interface IVirtualNode
 {
-	abstractType:AbstractNodeTypes
+	virtualType:VirtualNodeTypes
 }
 
-export interface IAbstractComment extends IAbstractNode
+export interface IVirtualComment extends IVirtualNode
 {
-	abstractType:"comment"
+	virtualType:"comment"
 	data:string
 }
-export interface IAbstractText extends IAbstractNode
+export interface IVirtualText extends IVirtualNode
 {
-	abstractType:"text"
+	virtualType:"text"
 	nodeValue:string
 }
-export interface IAbstractElement extends IAbstractNode
+export interface IVirtualElement extends IVirtualNode
 {
-	abstractType:"element"
+	virtualType:"element"
 	namespace:string
 	type:string
 	readonly attributes:object
-	readonly children:IAbstractNode[]
+	readonly children:IVirtualNode[]
 	addEventListener (...rest):any
 	removeEventListener (...rest):any
 	setAttribute ( name:string, value:any )
 	getAttribute ( name:string )
 	removeAttribute ( name:string )
-	removeChild ( child:IAbstractNode )
-	appendChild ( child:IAbstractNode )
-	insertBefore ( child:IAbstractNode, before:IAbstractNode ),
+	removeChild ( child:IVirtualNode )
+	appendChild ( child:IVirtualNode )
+	insertBefore ( child:IVirtualNode, before:IVirtualNode ),
 	innerHTML:string
 	toString():string
+	style:object
 }
 
-export interface IAbstractDocument
+export interface IVirtualDocument
 {
-	createComment 	(data:string):IAbstractComment
-	createTextNode 	(data:string):IAbstractText
-	createElement 	(type:string):IAbstractElement
-	createElementNS (namespace:string, type:string):IAbstractElement
+	createComment 	(data:string):IVirtualComment
+	createTextNode 	(data:string):IVirtualText
+	createElement 	(type:string):IVirtualElement
+	createElementNS (namespace:string, type:string):IVirtualElement
+	isVirtual:true
 }
 
 // ----------------------------------------------------------------------------- INTERNAL - CREATE COMPONENT
@@ -108,8 +110,8 @@ export type VNodeTextValue = string
 export type VNodeValue = ( VNodeElementValue | VNodeTextValue | ComponentFunction | IState ) & TComponentFunctionProperties
 
 export interface INodeEnv {
-	isSVG		: boolean,
-	document	: Document | IAbstractDocument,
+	isSVG		: boolean
+	document	: Document | IVirtualDocument
 }
 
 export interface VNode {
@@ -176,7 +178,7 @@ export const _dispatch = ( handlers:Function[], ...rest:any[] ) => handlers.map(
 // ----------------------------------------------------------------------------- BATCHED TASK
 
 // Micro task polyfill
-const _microtask = self.queueMicrotask ?? ( h => self.setTimeout( h, 0 ) )
+const _microtask = queueMicrotask ?? ( h => setTimeout( h, 0 ) )
 
 type TTaskHandler <GType> = ( element:GType ) => void
 

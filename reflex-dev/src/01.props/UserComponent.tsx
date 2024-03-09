@@ -1,4 +1,4 @@
-import { changed, compute, defaultProps, effect, h, IState, ref, rendered } from "../../../reflex-dom/src";
+import { changed, compute, defaultProps, effect, h, IState, ref, rendered } from "../../../src";
 
 export interface IUser {
 	firstname	:string

@@ -1,4 +1,4 @@
-import { h, mounted, state } from "../../../reflex-dom/src";
+import { h, mounted, state } from "../../../src";
 
 
 export function OtherComponent ( props ) {

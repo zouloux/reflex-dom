@@ -1,16 +1,15 @@
 import {
-	_dispatch, _featureHooks, ComponentFunction, ComponentReturn, INodeEnv,
+	_dispatch, _featureHooks, ComponentReturn, IVirtualDocument,
 	RenderDom, RenderFunction, VNode
 } from "./common";
-import { cloneVNode, createVNode } from "./jsx";
 import { IInternalRef } from "./ref";
-import { _createComponentInstance, ComponentInstance, shallowPropsCompare } from "./component";
+import { ComponentInstance, shallowPropsCompare } from "./component";
 import { state } from "./states";
 
 // ----------------------------------------------------------------------------- CONSTANTS
 
 // Attached listeners to a dom element are stored in this array
-export const _DOM_PRIVATE_LISTENERS_KEY = "__l"
+export const _DOM_PRIVATE_LISTENERS_KEY = "_l"
 
 // Stolen from Preact, to check if a style props is non-dimensional (does not need to add a unit)
 const _IS_NON_DIMENSIONAL_REGEX = /acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|itera/i;
@@ -19,6 +18,7 @@ const _IS_NON_DIMENSIONAL_REGEX = /acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine
 const _CAPTURE_REGEX = /Capture$/
 
 // Namespace for SVG elements
+// FIXME : Inline ?
 const _svgNS = "http://www.w3.org/2000/svg"
 
 // ----------------------------------------------------------------------------- CURRENT SCOPED COMPONENT
@@ -32,9 +32,9 @@ let _currentComponent:ComponentInstance = null
  */
 export function getCurrentComponent
 	<GComponent extends ComponentInstance = ComponentInstance>
-	():GComponent {
-	// if ( !_currentComponent && process.env.NODE_ENV !== "production" )
-	// 	throw new Error(`Reflex - getHookedComponent // Cannot use a factory hook outside of a factory component.`)
+():GComponent {
+	// if ( !_currentComponent )
+	// 	throw new Error(`Reflex extension error`)
 	return _currentComponent as GComponent
 }
 
@@ -44,7 +44,8 @@ function _getEventNameAndKey ( name:string, dom:Element ) {
 	// Note : Capture management stolen from Preact, thanks
 	const useCapture = name !== ( name = name.replace(_CAPTURE_REGEX, '') );
 	// Infer correct casing for DOM built-in events:
-	const eventName = ( name.toLowerCase() in dom ? name.toLowerCase() : name ).slice(2)
+	const lowerName = name.toLowerCase()
+	const eventName = ( lowerName in dom ? lowerName : name ).slice(2)
 	// Create unique key for this event
 	const eventKey = eventName + (useCapture ? 'C' : '')
 	return { eventName, eventKey, useCapture }
@@ -56,7 +57,6 @@ function _setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) 
 		style.setProperty(key, value);
 	else if ( value == null )
 		style[key] = '';
-	// FIXME : IS_NON_DIMENSIONAL_REGEX -> Is it really necessary ?
 	else if ( typeof value != "number" || _IS_NON_DIMENSIONAL_REGEX.test(key) )
 		style[key] = value;
 	else
@@ -64,14 +64,22 @@ function _setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) 
 }
 
 function _updateNodeRef ( node:VNode ) {
-	node._ref && ( node._ref as IInternalRef )._setFromVNode( node as any )
+	/*
+	if ( node?.props ) {
+		// TODO : OPTIMIZE - Isn't const { ref } = node.props faster ?
+		const ref = node.props.ref
+		// TODO : OPTIMIZE - Isn't ref && ref._setFromVNode faster ?
+		if ( ref )
+			( ref as IInternalRef )?._setFromVNode( node as any )
+	}*/
+	(node?.props.ref as IInternalRef)?._setFromVNode( node as any )
 }
 
 // ----------------------------------------------------------------------------- DIFF ELEMENT
 
 // FIXME : Doc
 let _currentDiffingNode:VNode
-export const _getCurrentDiffingNode = () => _currentDiffingNode
+export const getCurrentDiffingNode = () => _currentDiffingNode
 
 // FIXME : Doc
 export function _setDomAttribute ( dom:Element, name:string, value:any ) {
@@ -99,75 +107,85 @@ export function _setDomAttribute ( dom:Element, name:string, value:any ) {
 
 /**
  * TODO DOC
- * @param newNode
- * @param oldNode
- * @param nodeEnv
  */
-export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) {
+// TODO : OPTIMIZE : 0%
+export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom ) {
+	// console.log("_diffElement", newNode.value, newNode.props?.children, element)
 	// TODO : DOC
+	const { type, value } = newNode // todo : check if better perfs
+	// If the whole component is re-rendered by any state change that is not a signal
+	// We need to update all state based text values
+	const isText = ( type === 1 || type === 3 )
 	let dom:RenderDom
-	if ( oldNode ) {
-		dom = oldNode.dom
-		if ( (
-			newNode.type === 1/*TEXT*/ && oldNode.value !== newNode.value
-			// If the whole component is re-rendered by any state change that is not a signal
-			// We need to update all signal based text values
-			|| newNode.type === 3/*STATE*/
-		))
-			dom.nodeValue = newNode.value as string
+	// Hydrating
+	if ( element ) {
+		// Use hydrated node
+		dom = element
+		// Update value if it changed after client render
+		if ( isText ) {
+			_currentDiffingNode = newNode
+			if ( element.nodeValue != value )
+				element.nodeValue = value as string
+		}
 	}
+	// Update a node
+	else if ( oldNode ) {
+		// Reuse old dom node
+		dom = oldNode.dom
+		// Update text or state value
+		if ( isText && oldNode.value !== value )
+			dom.nodeValue = value as string
+	}
+	// Create a node
 	else {
-		const { document } = nodeEnv as { document: Document }
-		if ( newNode.type === 0/*NULL*/ )
+		if ( value as string === "svg" )
+			newNode.env.isSVG = true
+		const document = newNode.env.document as Document
+		if ( type === 0/*NULL*/ )
 			dom = document.createComment('')
-		else if ( newNode.type === 1/*TEXT*/ || newNode.type === 3/*STATE*/ ) {
+		else if ( isText ) {
 			_currentDiffingNode = newNode
 			// If newNode is a state, createTextNode will call .toString() on the state
 			// which will track the dependency
-			dom = document.createTextNode( newNode.value as string )
+			dom = document.createTextNode( value as string )
 		}
-		else if ( newNode.type === 6/*ELEMENTS*/ ) {
-			if ( newNode.value as string === "svg" )
-				nodeEnv.isSVG = true
+		else if ( type === 6/*ELEMENTS*/ ) {
 			dom = (
-				nodeEnv.isSVG
-				? document.createElementNS( _svgNS, newNode.value as string )
-				: document.createElement( newNode.value as string )
+				newNode.env.isSVG
+				? document.createElementNS( _svgNS, value as string )
+				: document.createElement( value as string )
 			)
 		}
 	}
-	if ( newNode.type === 0/*NULL*/ || newNode.type === 1/*TEXT*/ || newNode.type === 3/*STATE*/ )
+	// todo : opt cond ?
+	if ( type === 0/*NULL*/ || type === 1/*TEXT*/ || type === 3/*STATE*/ )
 		return dom
-	else if ( newNode.type === 8/*LIST*/ ) {
-		// FIXME : Check ?
-		_diffChildren( newNode, oldNode, nodeEnv )
+	else if ( type === 8/*LIST*/ ) {
+		_diffChildren( newNode, oldNode, dom )
 		return dom
 	}
-	// For typescript only, (FIXME : Check if removed from build)
-	dom = dom as Element
 	// Remove attributes which are removed from old node
-	if ( oldNode ) for ( let name in oldNode.props ) {
-		// Do not process children and remove only if not in new node
-		if (
-			["children", "key", "ref"].includes( name ) // FIXME : Check perfs vs code golfing here
-			// name === "children" || name === "key" || name === "ref"
-			|| (name in newNode.props && newNode.props[ name ] === oldNode.props[ name ])
-		)
-			continue;
-		// Insert HTML directly without warning
-		if ( name == "innerHTML" )
-			dom.innerHTML = "" // FIXME : Maybe use delete or null ?
-		// Events starts with "on". On preact this is optimized with [0] == "o"
-		// But recent benchmarks are pointing to startsWith usage as faster
-		else if ( name.startsWith("on") ) {
-			const { eventName, eventKey, useCapture } = _getEventNameAndKey( name, dom );
-			dom.removeEventListener( eventName, dom[ _DOM_PRIVATE_LISTENERS_KEY ][ eventKey ], useCapture )
-		}
-		// Other attributes
-		else {
-			dom.removeAttribute( name )
-		}
-	}
+	// https://esbench.com/bench/652e2ce67ff73700a4debb26
+	oldNode && Object.keys( oldNode.props )
+		.filter( name => (
+			name !== 'children' && name !== 'key' && name !== 'ref'
+			&& !( name in newNode.props && newNode.props[name] === oldNode.props[name] )
+		))
+		.forEach( name => {
+			// Insert HTML directly without warning
+			if ( name == "innerHTML" )
+				(dom as Element).innerHTML = "" // FIXME : Maybe use delete or null ?
+			// Events starts with "on". On preact this is optimized with [0] == "o"
+			// But recent benchmarks are pointing to startsWith usage as faster
+			else if ( name.startsWith("on") ) {
+				const { eventName, eventKey, useCapture } = _getEventNameAndKey( name, dom as Element );
+				(dom as Element).removeEventListener( eventName, dom[ _DOM_PRIVATE_LISTENERS_KEY ].get( eventKey ), useCapture )
+			}
+			// Other attributes
+			else {
+				(dom as Element).removeAttribute( name )
+			}
+		});
 	// Update props
 	for ( let name in newNode.props ) {
 		let value = newNode.props[ name ];
@@ -185,16 +203,15 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 			continue;
 		// Insert HTML directly without warning
 		if ( name === "innerHTML" )
-			dom.innerHTML = value
+			(dom as Element).innerHTML = value
 		// Events starts with "on". On preact this is optimized with [0] == "o"
 		// But recent benchmarks are pointing to startsWith usage as faster
 		else if ( name.startsWith("on") ) {
-			const { eventName, eventKey, useCapture } = _getEventNameAndKey( name, dom );
+			const { eventName, eventKey, useCapture } = _getEventNameAndKey( name, dom as Element );
 			// Init a collection of handlers on the dom object as private property
-			if ( !dom[ _DOM_PRIVATE_LISTENERS_KEY ] )
-				dom[ _DOM_PRIVATE_LISTENERS_KEY ] = new Map();
+			dom[ _DOM_PRIVATE_LISTENERS_KEY ] ??= new Map();
 			// Store original listener to be able to remove it later
-			dom[ _DOM_PRIVATE_LISTENERS_KEY ][ eventKey ] = value;
+			dom[ _DOM_PRIVATE_LISTENERS_KEY ].set( eventKey, value );
 			// And attach listener
 			dom.addEventListener( eventName, value, useCapture )
 		}
@@ -202,12 +219,18 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 		else {
 			// If value is a state, track its changes by creating an "argument state" type of node
 			if ( value !== null && typeof value === "object" && value.type === 3 ) {
-				_currentDiffingNode = createVNode( 2/*ARGUMENT*/, value, null, name )
-				_currentDiffingNode.dom = dom;
+				_currentDiffingNode = {
+					type: 2/* ARGUMENT STATE */,
+					value,
+					_propertyName: name,
+					dom
+				}
 				value = value.value
 			}
 			// Set dom attribute on element
-			_setDomAttribute( dom, name, value )
+			// Skip this when hydrating !
+			if ( !element )
+				_setDomAttribute( dom as Element, name, value )
 		}
 	}
 	return dom;
@@ -215,17 +238,31 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, nodeEnv:INodeEnv ) 
 
 // ----------------------------------------------------------------------------- RECURSIVELY MOUNT / UNMOUNT
 
-export function _diffAndMount ( newNode:VNode, oldNode:VNode, nodeEnv?:INodeEnv, forceUpdate = false ) {
-	const finishHandlers = _dispatch(_featureHooks, null, 2/* DIFFING NODE */, newNode)
+export function _diffAndMount ( newNode:VNode, oldNode:VNode, element?:Element, forceUpdate = false ) {
+	const finishHandlers = _dispatch(_featureHooks, 2/* DIFFING NODE */, newNode, oldNode, element, forceUpdate)
 	if ( newNode ) {
-		diffNode( newNode, oldNode, nodeEnv, forceUpdate )
+		diffNode( newNode, oldNode, element, forceUpdate )
 		recursivelyUpdateMountState( newNode, true )
 		_dispatch( finishHandlers );
 	}
 }
 
 export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
-	if ( node?.type === 7/*COMPONENTS*/ ) {
+	// FIXME : This seems useless, no memory leak without it in examples
+	// if ( node.dom && !doMount ) {
+	// 	const { dom } = node
+	// 	const events:Map<any, () => void> = dom[ _DOM_PRIVATE_LISTENERS_KEY ]
+	// 	if ( events ) {
+	// 		for ( const entry of events.entries() ) {
+	// 			const [ key, value ] = entry;
+	// 			// FIXME: ESBENCH [0] vs charAt
+	// 			const useCapture = key[0] == "C"
+	// 			// FIXME: ESBENCH slice vs substring
+	// 			dom.removeEventListener( key.slice(1), value, useCapture )
+	// 		}
+	// 	}
+	// }
+	if ( node.type === 7/*COMPONENTS*/ ) {
 		// FIXME : Can optimize and code-golf this
 		const { component } = node
 		if ( component ) { // FIXME : Is this check usefull ?
@@ -238,10 +275,12 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 				if ( node.value.isFactory !== false ) {
 					// Call every mount handler and store returned unmount handlers
 					// FIXME : Can we use _dispatch here ?
+					// TODO : ESBENCH
 					const total = component._mountHandlers.length
 					for ( let i = 0; i < total; ++i ) {
 						const mountedReturn = component._mountHandlers[ i ].apply( component );
 						// Allow mounted handler to return a single unmount
+						// TODO : ESBENCH for === ( already done in jsx.ts ? )
 						if ( typeof mountedReturn === "function" )
 							component._unmountHandlers.push( mountedReturn )
 						// Allow mounted handler to return an array of unmount
@@ -250,16 +289,16 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 					}
 					// Reset mount handlers, no need to keep them
 					component._mountHandlers = []
-					_dispatch( component._renderHandlers, component )
-					_dispatch( component._nextRenderHandlers, component )
+					_dispatch( component._renderHandlers)
+					_dispatch( component._nextRenderHandlers)
 					component._nextRenderHandlers = []
 				}
-				_dispatch(_featureHooks, null, 1/* MOUNT / UNMOUNT */, component, true )
+				_dispatch(_featureHooks, 1/* MOUNT / UNMOUNT */, component, true )
 			}
 			// --- UNMOUNT
 			else if ( !doMount && component.isMounted ) {
-				_dispatch(_featureHooks, null, 1/* MOUNT / UNMOUNT */, component, false )
-				_dispatch(component._unmountHandlers, component)
+				_dispatch(_featureHooks, 1/* MOUNT / UNMOUNT */, false )
+				_dispatch(component._unmountHandlers)
 				component.isMounted = false;
 				// Cut component branch from virtual node to allow GC to destroy component
 				delete node.component
@@ -276,7 +315,8 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 			}
 		}
 	}
-	else if ( node?.type > 4/*CONTAINERS*/ ) {
+	else if ( node.type > 4/*CONTAINERS*/ ) {
+		// TODO : ESBENCH ?
 		const total = node.props.children.length
 		for ( let i = 0; i < total; ++i )
 			recursivelyUpdateMountState( node.props.children[ i ], doMount )
@@ -290,47 +330,65 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
  * @param parentNode
  * @param childNode
  */
-function _registerKey ( parentNode:VNode, childNode:VNode ) {
-	if ( childNode.key ) {
-		if ( !parentNode._keys )
-			parentNode._keys = new Map<string, VNode>()
-		parentNode._keys.set( childNode.key, childNode )
+// esbench : Object faster than Map with number
+// https://esbench.com/bench/652d49867ff73700a4debb1a
+function _registerKeyAndEnv ( parentNode:VNode, childNode:VNode ) {
+	if ( !childNode.env )
+		childNode.env = { ...parentNode.env }
+	if ( childNode.props ) {
+		const childNodeKey = childNode.props.key
+		if ( childNodeKey ) {
+			if ( !parentNode.keys )
+				parentNode.keys = {}
+			parentNode.keys[ childNodeKey ] = childNode
+		}
 	}
 }
 
 
 
 // TODO : DOC
-let _previousParentContainer:VNode
-let _previousParentContainerDom:Element
+let _previousParentNode:VNode
 
-/**
- * TODO DOC
- * @param newParentNode
- * @param oldParentNode
- * @param nodeEnv
- */
-export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeEnv?:INodeEnv ) {
-	// console.log( "_diffChildren", newParentNode, oldParentNode );
+// TODO : OPTIMIZE - 20%
+export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, element:RenderDom ) {
+	//console.log( "_diffChildren", newParentNode, oldParentNode, element );
 	// TODO : DOC
-	let parentDom = (newParentNode.dom ?? _previousParentContainerDom) as Element
-	// TODO : DOC
-	// FIXME : Why do we have to keep both node and dom ?
-	_previousParentContainer = newParentNode
-	_previousParentContainerDom = _previousParentContainer.dom as Element
-	// TODO : DOC
+	const parentDom = (newParentNode.dom ?? _previousParentNode.dom) as Element
+	_previousParentNode = newParentNode
 	// No old parent node, or empty old parent node, we inject directly without checks.
-	// FIXME : This optim may not work if list not only child
-	// if ( !oldParentNode )
 	// Target children lists
+	// https://esbench.com/bench/652d43c97ff73700a4debaee
 	const newChildren = newParentNode.props.children
 	const total = newChildren.length
+	let i:number
 	if ( !oldParentNode || oldParentNode.props.children.length === 0 ) {
-		for ( let i = 0; i < total; ++i ) {
+		let previousIsText = false
+		for ( i = 0; i < total; ++i ) {
 			const child = newChildren[ i ]
-			diffNode( child, null, nodeEnv )
-			_registerKey( newParentNode, child )
-			child.dom && parentDom.appendChild( child.dom )
+			_registerKeyAndEnv( newParentNode, child )
+			// Hydration only
+			// Text nodes are merged when rendering to string
+			// Ex : <div>Hello { name }</div> becomes <div>Hello Jean-Mi</div>
+			// Which collapse two nodes into one. We need to create new text nodes and
+			// inject them in between. DiffNode will set the correct value of the node later.
+			let childElement
+			if ( element ) {
+				const currentIsText = ( child.type === 1 || child.type === 3 )
+				if ( currentIsText && previousIsText ) {
+					// Create a zero width space otherwise the browser will collapse it again.
+					childElement = document.createTextNode('\u200B')
+					element.insertBefore( childElement, element.childNodes[i] )
+				}
+				else {
+					childElement = element.childNodes[ i ]
+				}
+				previousIsText = currentIsText
+			}
+			diffNode( child, null, childElement as Element )
+			// Append child only on render mode, not in hydration mode
+			if ( !element && child.dom )
+				parentDom.appendChild( child.dom )
 		}
 		return
 	}
@@ -338,27 +396,28 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 	// If we are on a list which has been cleared
 	// And this list is the only child of its parent node
 	// We can take a shortcut and clear dom with innerHTML
+	// TODO : OPTIMIZE
 	if (
 		newParentNode.type === 8/*LIST*/
 		&& oldParentNode
-		&& _previousParentContainer.props.children.length === 0
+		&& _previousParentNode.props.children.length === 0
 		&& newChildren.length === 0
 		&& oldChildren.length > 0
 	) {
-		// FIXME : Check if unmount is correct ? Order ? Events ?
 		recursivelyUpdateMountState( oldParentNode, false )
 		parentDom.innerHTML = ''
 		return;
 	}
 	// Register keys of new children to detect changes without having to search
-	if ( !total ) return;
-	let i:number
+	if ( !total )
+		return;
 	for ( i = 0; i < total; ++i )
-		_registerKey( newParentNode, newChildren[ i ] )
+		_registerKeyAndEnv( newParentNode, newChildren[ i ] )
 	// Browse all new nodes
-	const oldParentKeys = oldParentNode._keys
+	const oldParentKeys = oldParentNode.keys
 	let collapseCount = 0
 	for ( i = 0; i < total; ++i ) {
+		// _registerKeyAndEnv( newParentNode, newChildren[ i ] )
 		// Collapsed corresponding index between old and new nodes
 		// To be able to detect moves or if just collapsing because a top sibling
 		// has been removed
@@ -366,20 +425,24 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 		if ( !newChildNode )
 			continue;
 		let oldChildNode:VNode = oldChildren[ i ]
-		if (
-			oldChildNode
-			&& oldChildNode.key
-			&& newParentNode._keys
-			&& !newParentNode._keys.has( oldChildNode.key )
-		) {
-			++collapseCount
+		if ( oldChildNode?.props ) {
+			const oldChildNodeKey = oldChildNode.props.key
+			if (
+				oldChildNodeKey
+				&& newParentNode.keys
+				// FIXME : We have a O(n) here ?
+				&& !(oldChildNodeKey in newParentNode.keys)
+			) {
+				++collapseCount
+			}
 		}
 		// Has key, same key found in old, same type on both
 		/** MOVE & UPDATE KEYED CHILD **/
+		const newChildNodeKey = newChildNode.props?.key
 		if (
-			newChildNode.key
-			// FIXME : OPTIM - Maybe do a has before the get ?
-			&& ( oldChildNode = oldParentKeys?.get( newChildNode.key ) )
+			newChildNodeKey
+			// FIXME : OPTIMIZE - Maybe do a has before the get ?
+			&& ( oldChildNode = oldParentKeys?.[ newChildNodeKey ] )
 			&& oldChildNode.type === newChildNode.type
 			&& (
 				newChildNode.type !== 6/*ELEMENTS*/
@@ -387,7 +450,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			)
 		) {
 			// console.log("move keyed", newChildNode, oldChildNode)
-			diffNode( newChildNode, oldChildNode, nodeEnv )
+			diffNode( newChildNode, oldChildNode )
 			oldChildNode._keep = true;
 			// Check if index changed, compare with collapsed index to detect moves
 			const collapsedIndex = i + collapseCount
@@ -398,10 +461,14 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 		}
 		// Has key, but not found in old
 		/** CREATE HAS KEY**/
-		// FIXME : OPTIM - Maybe do a has before the get ?
-		else if ( newChildNode.key && oldParentKeys && !oldParentKeys.get( newChildNode.key ) ) {
+		// FIXME : OPTIMIZE - Maybe do a has before the get ?
+		else if (
+			newChildNodeKey
+			&& oldParentKeys
+			&& !(newChildNodeKey in oldParentKeys )
+		) {
 			// console.log("create from key", newChildNode)
-			diffNode( newChildNode, null, nodeEnv )
+			diffNode( newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			--collapseCount
 		}
@@ -424,14 +491,14 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			)
 		) {
 			// console.log("update in place", newChildNode, oldChildNode)
-			diffNode( newChildNode, oldChildNode, nodeEnv )
+			diffNode( newChildNode, oldChildNode )
 			oldChildNode._keep = true;
 		}
 		// Not found
 		/** CREATE **/
 		else {
 			// console.log("create no key", newChildNode)
-			diffNode( newChildNode, null, nodeEnv )
+			diffNode( newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			--collapseCount
 		}
@@ -447,19 +514,22 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode?:VNode, nodeE
 			const { dom } = oldChildNode
 			oldChildNode.dom = null;
 			_updateNodeRef( oldChildNode )
-			if (dom) // Sometimes it is not valid. Why ? HMR ?
+			// TODO : OPTIMIZE - What about dom && parentDome.removeChild( dom ) ?
+			if ( dom ) // Sometimes it is not valid. Why ? HMR ?
 				parentDom.removeChild( dom )
 		}
 	}
 }
 
-// ----------------------------------------------------------------------------- DIFF NODE
+// ----------------------------------------------------------------------------- RENDER COMPONENT
 
-function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any, ComponentFunction> ) :GReturn {
+// TODO : OPTIMIZE - 50%
+function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode ) :GReturn {
 	// Select current component before rendering
 	_currentComponent = node.component;
 	// Only on factory components
 	// we create a proxy for props which will update a state for dependency tracking
+	// TODO : Optimize this
 	if ( node.value.isFactory !== false ) {
 		// Create the props proxy with its state
 		if ( !_currentComponent._proxy ) {
@@ -471,6 +541,7 @@ function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any, Comp
 			_currentComponent._propState = s
 			// Create proxy and map getter to the state to track effects
 			// FIXME : Proxy is not browsable :(
+			// TODO : Optimize this
 			const proxy = Proxy.revocable( {}, {
 				get : ( target, prop ) => Reflect.get( s.value, prop )
 			})
@@ -483,112 +554,130 @@ function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode<any, Comp
 		// 	_currentComponent._propState.set( node.props )
 	}
 	// Render component with props instance and component API instance
-	let result = _currentComponent._render.apply(
-		_currentComponent, [ _currentComponent._proxy ?? node.props, _currentComponent ] // FIXME : Add component or ref as second argument
+	return _currentComponent._render.apply(
+		_currentComponent, [ _currentComponent._proxy ?? node.props, _currentComponent ]
 	)
-	// Keep _currentComponent, we'll unselect it later on purpose.
-	return result as GReturn
 }
 
-export function diffNode ( newNode:VNode, oldNode?:VNode, nodeEnv:INodeEnv = newNode._nodeEnv, forceUpdate = false ) {
-	// console.log('diffNode', newNode, oldNode)
+// ----------------------------------------------------------------------------- DIFF NODE
+
+// TODO : OPTIMIZE - 90%
+export function diffNode ( newNode:VNode, oldNode?:VNode, element?:Element, forceUpdate = false ) {
 	// IMPORTANT : Here we clone node if we got the same instance
 	// 			   Otherwise, altering props.children after render will fuck everything up
 	// Clone identical nodes to be able to diff them
-	if ( oldNode && oldNode === newNode )
-		newNode = cloneVNode( oldNode )
-	// Transfer id for refs
-	if ( oldNode && oldNode._id )
+	if ( oldNode && oldNode === newNode ) {
+		// IMPORTANT : Do not deep clone to avoid changing nature of props
+		// IMPORTANT : Props properties can be the same instance between shouldUpdate here
+		newNode = Object.assign({}, oldNode)
+		// IMPORTANT : also clone props object
+		// newNode.props = Object.assign({}, oldNode.props)
+		// https://esbench.com/bench/65eb3c3c7ff73700a4dec08e
+		newNode.props = { ...oldNode.props }
+	}
+	// Transfer id for refs and env
+	if ( oldNode ) {
+		newNode.env = oldNode.env
 		newNode._id = oldNode._id
+	}
+	// https://esbench.com/bench/652a84367ff73700a4debaad
 	// Create / update DOM element for those node types
-	if (
-		newNode.type === 0/*NULL*/
-		|| newNode.type === 1/*TEXT*/
-		|| newNode.type === 3/*STATE*/
-		|| newNode.type === 6/*ELEMENTS*/
-	) {
-		// Clone node env for children, to avoid env to propagate on siblings
-		nodeEnv = Object.assign({}, nodeEnv)
-		// Compute dom element for this node
-		newNode.dom = _diffElement( newNode, oldNode, nodeEnv )
+	const type = newNode.type
+	/* NULL | TEXT | STATE | ELEMENTS */
+	if ( ( type >= 0 && type <= 3 ) || type === 6 ) {
+		newNode.dom = _diffElement( newNode, oldNode, element )
 		_currentDiffingNode = null
 	}
 	// Diff component node
-	else if ( newNode.type === 7/*COMPONENTS*/ ) {
-		// Transfer component instance from old node to new node
-		let component:ComponentInstance = oldNode?.component
-		// Check if we need to instantiate component
+	else if ( type === 7/*COMPONENTS*/ ) {
+		const componentFunction = newNode.value
+		// Check if we need to instantiate component or keep from old node
+		let componentInstance:ComponentInstance = oldNode?.component
 		let renderResult:VNode
-		if ( !component ) {
-			// Create component instance (without new keyword for better performances)
-			component = _createComponentInstance( newNode as VNode<object, ComponentFunction> )
-			newNode.component = component
-			component._render = newNode.value as RenderFunction
-			// Execute component's function and check what is returned
-			const result = _renderComponentNode( newNode as VNode<object, ComponentFunction> )
-			// This is a factory component which return a render function
-			if ( typeof result === "function" ) {
-				newNode.value.isFactory = true
-				component._render = result as RenderFunction
-			}
-			// This is pure functional component which returns a virtual node
-			else if ( typeof result === "object" && "type" in result ) {
-				newNode.value.isFactory = false
-				component._render = newNode.value as RenderFunction
-				renderResult = result
-			}
+		// Transfer component instance from old node to new node
+		if ( componentInstance ) {
+			newNode.component = componentInstance
+			componentInstance.vnode = newNode
 		}
-		// Keep old component instance
+		// No instance, create one and try to render
 		else {
-			newNode.component = component
-			component.vnode = newNode as VNode<object, ComponentFunction>
+			// Create component instance (without new keyword for better performances)
+			// Object creation is inlined for better perfs and smaller footprint
+			componentInstance = {
+				vnode: newNode,
+				isMounted: false,
+				// Private members, will be mangled
+				_render: componentFunction as RenderFunction,
+				_mountHandlers: [],
+				_renderHandlers: [],
+				_nextRenderHandlers: [],
+				_unmountHandlers: [],
+				_shouldUpdate: componentFunction.shouldUpdate,
+			}
+			newNode.component = componentInstance
+			componentInstance._render = componentFunction as RenderFunction
+			// Execute component's function and check what is returned
+			const result = _renderComponentNode( newNode )
+			// Check if this component returns a function or a dom node
+			// Check if this component returns a function or a dom node
+			const isFactory = typeof result === "function"
+			componentFunction.isFactory = isFactory
+			componentInstance._render = (isFactory ? result : componentFunction) as RenderFunction
+			if ( !isFactory )
+				renderResult = result
 		}
 		// Here we check if this component should update
 		// By default, we always update component on refreshes
 		let shouldUpdate = true
 		if ( !forceUpdate && !renderResult && oldNode ) {
 			// We check should update on functional and factory components
+			// FIXME : Do we keep shouldUpdate for factory components ?)
+			// https://esbench.com/bench/652be1807ff73700a4debadb
+			// shouldUpdate = componentInstance._shouldUpdate?.( newNode.props, oldNode.props ) ?? true
+			// We check should update on functional and factory components
 			shouldUpdate = (
 				// Use shouldUpdate function on component API
-				component._shouldUpdate
-				? component._shouldUpdate( newNode.props, oldNode.props )
+				componentInstance._shouldUpdate
+				? componentInstance._shouldUpdate( newNode.props, oldNode.props )
 				// Otherwise shallow props compare with children check
-				: !shallowPropsCompare( newNode.props, oldNode.props, true )
+				: !shallowPropsCompare( newNode.props, oldNode.props )
 			)
 			// Otherwise, if we should update a factory component
-			if ( shouldUpdate && component.vnode.value.isFactory === true ) {
+			if ( shouldUpdate && componentFunction.isFactory ) {
 				// Do not continue regular update, update props on state
 				// and let the state update its dependencies
-				component._propState.set({
-					...component._defaultProps,
+				// TODO : Check perfs of this vs Object.assign
+				componentInstance._propState.set({
+					...componentInstance._defaultProps,
 					...newNode.props
 				})
 				// We rendered with a state change
 				// do not continue regular update with a render
 				shouldUpdate = false
 			}
-			// Keep dom reference from old node if we should not update
+			// Transfer dom reference from old node if we should not update
 			if ( !shouldUpdate )
 				newNode.dom = oldNode.dom
 		}
 		// If this component needs a render (factory function), render it
 		if ( !renderResult && shouldUpdate )
-			renderResult = _renderComponentNode<VNode>( newNode as VNode<object, ComponentFunction> )
+			renderResult = _renderComponentNode<VNode>( newNode as VNode )
 		// We rendered something (not reusing old component)
 		if ( renderResult ) {
-			diffNode( renderResult, component.children, nodeEnv )
-			component.children = renderResult
+			// console.log('R', newNode)
+			// Transfer env from component to rendered node
+			renderResult.env = { ...newNode.env }
+			diffNode( renderResult, componentInstance.children, element )
+			componentInstance.children = renderResult
 			newNode.dom = renderResult.dom
 		}
 		// We can clear component now
 		_currentComponent = null
 	}
-	// Inject node env into node, now that it has been diffed and rendered
-	if ( !newNode._nodeEnv )
-		newNode._nodeEnv = nodeEnv
 	// Update ref on node
 	_updateNodeRef( newNode )
-	// Diff children for node that are containers and not components
-	if ( newNode.type > 4/*CONTAINERS*/ )
-		_diffChildren( newNode, oldNode, nodeEnv )
+	// https://esbench.com/bench/652d0d307ff73700a4debaea
+	// More bytes but better perfs
+	if ( newNode.type >= 5/*CONTAINERS*/ )
+		_diffChildren( newNode, oldNode, element )
 }

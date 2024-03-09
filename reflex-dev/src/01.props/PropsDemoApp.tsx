@@ -1,4 +1,4 @@
-import { h, state } from "../../../reflex-dom/src";
+import { h, state } from "../../../src";
 import { createUID, firstnameList, lastnameList, pickRandom, randBoolean } from "../demoHelpers";
 import { IUser, UserComponent } from "./UserComponent";
 

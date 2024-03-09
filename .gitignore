@@ -4,3 +4,4 @@ _
 
 node_modules
 dist/
+/v8-deopt-viewer

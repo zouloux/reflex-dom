@@ -46,8 +46,8 @@ export function reflexRefresh ( pluginOptions ) {
 			let reflexRefreshLibImport;
 			// In dev mode, load from ts files in src
 			if ( pluginOptions.enabledHMRDevMode ) {
-				reflexLibImport = await this.resolve('/../../reflex-dom/src/index')
-				reflexRefreshLibImport = await this.resolve('/../../reflex-dom/src/hmr-runtime')
+				reflexLibImport = await this.resolve('/../../src/index')
+				reflexRefreshLibImport = await this.resolve('/../../src/hmr-runtime')
 			}
 			// In regular mode, load from installed lib
 			else {
