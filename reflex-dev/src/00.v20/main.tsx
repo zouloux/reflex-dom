@@ -174,6 +174,17 @@ function Jumbotron () {
 
 export function App () {
 	return () => <div class="container">
+		<style innerHTML={`
+			.danger {
+				background: red
+			}
+			.glyphicon-remove {
+				display: block;
+				background: green;
+				width: 20px;
+				height: 20px;
+			}
+		`} />
 		{ memoryDebugger }
 		<Jumbotron />
 		<table class="table table-hover table-striped test-data">
@@ -181,7 +192,7 @@ export function App () {
 				{ item => <Row key={ item.id } id={ item.id } /> }
 			</For>
 		</table>
-		<span class="preloadicon glyphicon glyphicon-remove" aria-hidden="true" />
+		{/*<span class="preloadicon glyphicon glyphicon-remove" aria-hidden="true" />*/}
 	</div>
 }
 

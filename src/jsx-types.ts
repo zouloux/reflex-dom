@@ -99,6 +99,8 @@ type WheelEventHandler<Target extends Element> = EventHandler<TargetedWheelEvent
 
 export interface DOMAttributes <Target extends Element>
 {
+	innerHTML?:string
+
 	//extends ReflexDefaultDOMAttributes {
 	// Image Events
 	onLoad?:GenericEventHandler<Target>;

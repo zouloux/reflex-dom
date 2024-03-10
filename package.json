@@ -1,7 +1,7 @@
 {
-	"name": "src",
+	"name": "reflex-dom",
 	"type": "module",
-	"version": "0.18.0",
+	"version": "0.20.0",
 	"description": "Reflex is a tiny and fast reactive UI library.",
 	"author": "Alexis Bouhet (ZoulouX)",
 	"license": "MIT",
@@ -30,7 +30,6 @@
 		"deopt": "rm -rf ./reflex-deopt/dist ./v8-deopt-viewer && esbuild reflex-deopt/src/index.tsx --bundle --outfile=reflex-deopt/dist/index.js && v8-deopt-viewer reflex-deopt/dist/index.js && npx @zouloux/static-http ./v8-deopt-viewer"
 	},
 	"devDependencies": {
-		"@types/node": "^18.19.22",
 		"@zouloux/static-http": "^1.0.1",
 		"@zouloux/store": "^0.1.2",
 		"@zouloux/tsbundle": "^1.4.0",
@@ -53,7 +52,8 @@
 				"input": "./src/index.ts",
 				"formats": [
 					"es2017.min.js",
-					"es2020.min.js"
+					"es2020.min.js",
+					"es2022.min.js"
 				],
 				"outName": "reflex",
 				"exportBits": true

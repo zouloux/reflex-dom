@@ -1,5 +1,5 @@
 import {
-	_dispatch, _featureHooks, ComponentReturn, IVirtualDocument,
+	_dispatch, _featureHooks, ComponentReturn,
 	RenderDom, RenderFunction, VNode
 } from "./common";
 import { IInternalRef } from "./ref";
@@ -72,7 +72,7 @@ function _updateNodeRef ( node:VNode ) {
 		if ( ref )
 			( ref as IInternalRef )?._setFromVNode( node as any )
 	}*/
-	(node?.props.ref as IInternalRef)?._setFromVNode( node as any )
+	(node?.props?.ref as IInternalRef)?._setFromVNode( node as any )
 }
 
 // ----------------------------------------------------------------------------- DIFF ELEMENT
@@ -351,28 +351,37 @@ function _registerKeyAndEnv ( parentNode:VNode, childNode:VNode ) {
 let _previousParentNode:VNode
 
 // TODO : OPTIMIZE - 20%
+
 export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, element:RenderDom ) {
-	//console.log( "_diffChildren", newParentNode, oldParentNode, element );
+	// console.log( "_diffChildren", newParentNode, oldParentNode, element );
+	// console.log( "_diffChildren", newParentNode.dom, _previousParentNode );
 	// TODO : DOC
-	const parentDom = (newParentNode.dom ?? _previousParentNode.dom) as Element
+	// const parentDom = (newParentNode.dom ?? _previousParentNode.dom) as Element
+	const isList = newParentNode.type === 8/* LIST */
+	const parentDom = ( isList ? _previousParentNode.dom : newParentNode.dom ) as Element
+	// Keep node ref for lists, that does not have dom
 	_previousParentNode = newParentNode
 	// No old parent node, or empty old parent node, we inject directly without checks.
 	// Target children lists
 	// https://esbench.com/bench/652d43c97ff73700a4debaee
 	const newChildren = newParentNode.props.children
-	const total = newChildren.length
+	const totalNew = newChildren.length
+	const oldChildren = oldParentNode?.props.children
+	const totalOld = oldChildren ? oldChildren.length : 0
 	let i:number
-	if ( !oldParentNode || oldParentNode.props.children.length === 0 ) {
+	if ( totalOld === 0 ) {
 		let previousIsText = false
-		for ( i = 0; i < total; ++i ) {
+		for ( i = 0; i < totalNew; ++i ) {
 			const child = newChildren[ i ]
 			_registerKeyAndEnv( newParentNode, child )
-			// Hydration only
+			// HYDRATION ONLY
 			// Text nodes are merged when rendering to string
 			// Ex : <div>Hello { name }</div> becomes <div>Hello Jean-Mi</div>
 			// Which collapse two nodes into one. We need to create new text nodes and
 			// inject them in between. DiffNode will set the correct value of the node later.
-			let childElement
+			// NOTE : Here, DOM is mutated while hydrating, which can cause reflow / redraw
+			//			I don't know if we can improve this to avoid or delay those computations
+			let childElement:Text|Element
 			if ( element ) {
 				const currentIsText = ( child.type === 1 || child.type === 3 )
 				if ( currentIsText && previousIsText ) {
@@ -381,7 +390,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 					element.insertBefore( childElement, element.childNodes[i] )
 				}
 				else {
-					childElement = element.childNodes[ i ]
+					childElement = element.childNodes[ i ] as Element
 				}
 				previousIsText = currentIsText
 			}
@@ -392,31 +401,23 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 		}
 		return
 	}
-	const oldChildren = oldParentNode.props.children
 	// If we are on a list which has been cleared
 	// And this list is the only child of its parent node
 	// We can take a shortcut and clear dom with innerHTML
-	// TODO : OPTIMIZE
-	if (
-		newParentNode.type === 8/*LIST*/
-		&& oldParentNode
-		&& _previousParentNode.props.children.length === 0
-		&& newChildren.length === 0
-		&& oldChildren.length > 0
-	) {
+	if ( isList && totalNew === 0 && totalOld > 0 ) {
 		recursivelyUpdateMountState( oldParentNode, false )
 		parentDom.innerHTML = ''
 		return;
 	}
 	// Register keys of new children to detect changes without having to search
-	if ( !total )
+	if ( totalNew === 0 )
 		return;
-	for ( i = 0; i < total; ++i )
+	for ( i = 0; i < totalNew; ++i )
 		_registerKeyAndEnv( newParentNode, newChildren[ i ] )
 	// Browse all new nodes
 	const oldParentKeys = oldParentNode.keys
 	let collapseCount = 0
-	for ( i = 0; i < total; ++i ) {
+	for ( i = 0; i < totalNew; ++i ) {
 		// _registerKeyAndEnv( newParentNode, newChildren[ i ] )
 		// Collapsed corresponding index between old and new nodes
 		// To be able to detect moves or if just collapsing because a top sibling
@@ -465,7 +466,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 		else if (
 			newChildNodeKey
 			&& oldParentKeys
-			&& !(newChildNodeKey in oldParentKeys )
+			&& !( newChildNodeKey in oldParentKeys )
 		) {
 			// console.log("create from key", newChildNode)
 			diffNode( newChildNode )
@@ -476,7 +477,8 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 		// Old node does not have a key.
 		/** UPDATE IN PLACE **/
 		else if (
-			i in oldChildren
+			// i in oldChildren
+			i < totalOld
 			&& ( oldChildNode = oldChildren[ i ] )
 			&& oldChildNode.type === newChildNode.type
 			&& (
@@ -504,22 +506,32 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 		}
 	}
 	// Remove old children which are not reused
-	const totalOld = oldChildren.length
 	for ( i = 0; i < totalOld; ++i ) {
 		const oldChildNode = oldChildren[ i ]
 		if ( oldChildNode && !oldChildNode._keep ) {
 			// Call unmount handlers
 			recursivelyUpdateMountState( oldChildNode, false );
-			// Remove ref
-			const { dom } = oldChildNode
-			oldChildNode.dom = null;
+			oldChildNode.dom.remove()
+			oldChildNode.dom = null
 			_updateNodeRef( oldChildNode )
-			// TODO : OPTIMIZE - What about dom && parentDome.removeChild( dom ) ?
-			if ( dom ) // Sometimes it is not valid. Why ? HMR ?
-				parentDom.removeChild( dom )
 		}
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ----------------------------------------------------------------------------- RENDER COMPONENT
 

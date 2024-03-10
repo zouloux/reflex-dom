@@ -34,20 +34,3 @@ export function render ( rootNode:VNode, parentElement:HTMLElement|IVirtualEleme
 export function hydrate ( rootNode:VNode, parentElement:HTMLElement ) {
 	_render( rootNode, parentElement, document, parentElement as Element )
 }
-
-// ----------------------------------------------------------------------------- REGISTER WEB-COMPONENTS
-
-// TODO : Web components ! Check how lit and preact webcomponents works
-//			- Register web-components with ComponentName to <component-name />
-//  		- Update properties when changed in DOM
-//  			- Need translation (detect numbers, maybe json for array and objects ?)
-//				- Maybe an API to set props with JS and with advanced type (like functions)
-//			- Children
-//			- DOM Find
-//			- Mount / Unmount
-
-// ----------------------------------------------------------------------------- HYDRATE
-
-// TODO : Hydrate
-// TODO : Render to string or render to web components to avoid expensive hydratation ?
-

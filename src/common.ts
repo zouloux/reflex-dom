@@ -4,7 +4,7 @@ import { ClassNameItem } from "./jsx-types";
 import { IState } from "./states";
 
 // ----------------------------------------------------------------------------- DOCUMENT INTERFACE
-// Virtual document interface which replicate Document interface
+// Virtual document interface which replicate browser's Document object
 // For faster and easier renderToString implementation
 
 export type VirtualNodeTypes = "comment"|"text"|"element"

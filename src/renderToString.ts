@@ -11,6 +11,13 @@ const _attributesSpecialCases = {
 
 const _kebabRegex = /([a-z0-9])([A-Z])/g
 
+const _compressCSS = (css:string) => css
+	.replace(/\/\*[\s\S]*?\*\//g, '') 	// Remove comments
+	.replace(/\s+/g, ' ') 				// Collapse whitespace
+	.replace(/\s*([{:;,}])\s*/g, '$1') 	// Remove space around { } : ; ,
+	.replace(/;}/g, '}'); 				// Remove unnecessary semicolons before }
+
+
 function toKebabCase ( string:string ) {
 	if ( _attributesSpecialCases[string] )
 		return _attributesSpecialCases[string]
@@ -41,10 +48,11 @@ function renderAbstractNodeToString ( node:IVirtualNode ) {
 			)
 			buffer += ` style="${styleRules.join(";")}"`
 		}
-		if ( nodeElement.children.length === 0 )
+		if ( nodeElement.children.length === 0 && nodeElement.innerHTML === "" )
 			return buffer + "/>"
 		buffer += ">"
-		buffer += nodeElement.innerHTML
+		const { innerHTML } = nodeElement
+		buffer += type === "style" ? _compressCSS( innerHTML ) : innerHTML
 		return `${buffer}</${type}>`
 	}
 }
