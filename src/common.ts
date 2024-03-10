@@ -109,10 +109,10 @@ export type VNodeElementValue = keyof (HTMLElementTagNameMap|SVGElementTagNameMa
 export type VNodeTextValue = string
 export type VNodeValue = ( VNodeElementValue | VNodeTextValue | ComponentFunction | IState ) & TComponentFunctionProperties
 
-export interface INodeEnv {
-	isSVG		: boolean
-	document	: Document | IVirtualDocument
-}
+// export interface INodeEnv {
+// 	isSVG		: boolean
+// 	document	: Document | IVirtualDocument
+// }
 
 export interface VNode {
 	// Type of virtual node, as const
@@ -141,14 +141,17 @@ export interface VNode {
 	//		created using createSVGElement
 	// Also to propagate current Document interface ( the page's document or a
 	//		fake document to render to string
-	env				?:INodeEnv
+	// env				?:INodeEnv
 	// Private members ( starts with _, will be mangled )
 	// Property name is used by Argument States to know which argument to mutate
 	_propertyName	?:string
 	// Used by diff algorithm
-	_keep			?:boolean
+	// _keep			?:boolean
 	// Used by refs, to keep track of ref index in ref lists
 	_id				?:number
+
+	_isSVG			?: boolean
+	_document		?: Document | IVirtualDocument
 }
 
 export interface DefaultReflexBaseProps {

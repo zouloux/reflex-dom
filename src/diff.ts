@@ -64,14 +64,6 @@ function _setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) 
 }
 
 function _updateNodeRef ( node:VNode ) {
-	/*
-	if ( node?.props ) {
-		// TODO : OPTIMIZE - Isn't const { ref } = node.props faster ?
-		const ref = node.props.ref
-		// TODO : OPTIMIZE - Isn't ref && ref._setFromVNode faster ?
-		if ( ref )
-			( ref as IInternalRef )?._setFromVNode( node as any )
-	}*/
 	(node?.props?.ref as IInternalRef)?._setFromVNode( node as any )
 }
 
@@ -139,8 +131,9 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom 
 	// Create a node
 	else {
 		if ( value as string === "svg" )
-			newNode.env.isSVG = true
-		const document = newNode.env.document as Document
+			newNode._isSVG = true
+			// newNode.env.isSVG = true
+		const document = newNode._document as Document
 		if ( type === 0/*NULL*/ )
 			dom = document.createComment('')
 		else if ( isText ) {
@@ -151,7 +144,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom 
 		}
 		else if ( type === 6/*ELEMENTS*/ ) {
 			dom = (
-				newNode.env.isSVG
+				newNode._isSVG
 				? document.createElementNS( _svgNS, value as string )
 				: document.createElement( value as string )
 			)
@@ -228,7 +221,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom 
 				value = value.value
 			}
 			// Set dom attribute on element
-			// Skip this when hydrating !
+			// Skip this when hydrating
 			if ( !element )
 				_setDomAttribute( dom as Element, name, value )
 		}
@@ -333,8 +326,8 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 // esbench : Object faster than Map with number
 // https://esbench.com/bench/652d49867ff73700a4debb1a
 function _registerKeyAndEnv ( parentNode:VNode, childNode:VNode ) {
-	if ( !childNode.env )
-		childNode.env = { ...parentNode.env }
+	childNode._isSVG = parentNode._isSVG
+	childNode._document = parentNode._document
 	if ( childNode.props ) {
 		const childNodeKey = childNode.props.key
 		if ( childNodeKey ) {
@@ -347,29 +340,37 @@ function _registerKeyAndEnv ( parentNode:VNode, childNode:VNode ) {
 
 
 
-// TODO : DOC
+// Previous parent node that was in diffChildren for lists that does not have their own dom
 let _previousParentNode:VNode
 
-// TODO : OPTIMIZE - 20%
 
 export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, element:RenderDom ) {
-	// console.log( "_diffChildren", newParentNode, oldParentNode, element );
-	// console.log( "_diffChildren", newParentNode.dom, _previousParentNode );
-	// TODO : DOC
-	// const parentDom = (newParentNode.dom ?? _previousParentNode.dom) as Element
+	// Keep node ref for lists, that does not have their own dom
 	const isList = newParentNode.type === 8/* LIST */
 	const parentDom = ( isList ? _previousParentNode.dom : newParentNode.dom ) as Element
-	// Keep node ref for lists, that does not have dom
 	_previousParentNode = newParentNode
-	// No old parent node, or empty old parent node, we inject directly without checks.
-	// Target children lists
-	// https://esbench.com/bench/652d43c97ff73700a4debaee
+	// Target new and old children
 	const newChildren = newParentNode.props.children
 	const totalNew = newChildren.length
 	const oldChildren = oldParentNode?.props.children
 	const totalOld = oldChildren ? oldChildren.length : 0
+	// If we are on a list which has been cleared
+	// And this list is the only child of its parent node
+	// We can take a shortcut and clear dom with innerHTML
+	if ( isList && totalNew === 0 && totalOld > 0 ) {
+		recursivelyUpdateMountState( oldParentNode, false )
+		parentDom.innerHTML = ''
+		return;
+	}
+	// Nothing to add
+	if ( totalNew === 0 )
+		return;
+	// No old parent node, or empty old parent node, we inject directly without checks.
+	// Also for hydration which will patch merged text nodes
+	// Target children lists
+	// https://esbench.com/bench/652d43c97ff73700a4debaee
 	let i:number
-	if ( totalOld === 0 ) {
+	if ( !oldParentNode || totalOld === 0 ) {
 		let previousIsText = false
 		for ( i = 0; i < totalNew; ++i ) {
 			const child = newChildren[ i ]
@@ -381,92 +382,70 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 			// inject them in between. DiffNode will set the correct value of the node later.
 			// NOTE : Here, DOM is mutated while hydrating, which can cause reflow / redraw
 			//			I don't know if we can improve this to avoid or delay those computations
-			let childElement:Text|Element
+			let childElement:RenderDom
 			if ( element ) {
-				const currentIsText = ( child.type === 1 || child.type === 3 )
+				const currentIsText = ( child.type === 1/* TEXT */ || child.type === 3/* STATE */ )
 				if ( currentIsText && previousIsText ) {
 					// Create a zero width space otherwise the browser will collapse it again.
 					childElement = document.createTextNode('\u200B')
 					element.insertBefore( childElement, element.childNodes[i] )
 				}
 				else {
-					childElement = element.childNodes[ i ] as Element
+					childElement = element.childNodes[ i ] as RenderDom
 				}
 				previousIsText = currentIsText
 			}
-			diffNode( child, null, childElement as Element )
+			diffNode( child, null, childElement )
 			// Append child only on render mode, not in hydration mode
 			if ( !element && child.dom )
 				parentDom.appendChild( child.dom )
 		}
 		return
 	}
-	// If we are on a list which has been cleared
-	// And this list is the only child of its parent node
-	// We can take a shortcut and clear dom with innerHTML
-	if ( isList && totalNew === 0 && totalOld > 0 ) {
-		recursivelyUpdateMountState( oldParentNode, false )
-		parentDom.innerHTML = ''
-		return;
-	}
-	// Register keys of new children to detect changes without having to search
-	if ( totalNew === 0 )
-		return;
 	for ( i = 0; i < totalNew; ++i )
 		_registerKeyAndEnv( newParentNode, newChildren[ i ] )
 	// Browse all new nodes
 	const oldParentKeys = oldParentNode.keys
+	const oldNodesToKeep = new Set<VNode>()
 	let collapseCount = 0
 	for ( i = 0; i < totalNew; ++i ) {
-		// _registerKeyAndEnv( newParentNode, newChildren[ i ] )
 		// Collapsed corresponding index between old and new nodes
 		// To be able to detect moves or if just collapsing because a top sibling
 		// has been removed
-		const newChildNode = newChildren[ i ]
-		if ( !newChildNode )
-			continue;
-		let oldChildNode:VNode = oldChildren[ i ]
-		if ( oldChildNode?.props ) {
-			const oldChildNodeKey = oldChildNode.props.key
-			if (
-				oldChildNodeKey
-				&& newParentNode.keys
-				// FIXME : We have a O(n) here ?
-				&& !(oldChildNodeKey in newParentNode.keys)
-			) {
-				++collapseCount
-			}
+		const newChildNode:VNode = newChildren[ i ]
+		const oldChildNode:VNode = oldChildren[ i ]
+		const oldChildNodeKey = oldChildNode?.props?.key
+		const newChildNodeKey = newChildNode.props?.key
+		const oldChildFromKey = oldParentKeys ? oldParentKeys[ newChildNodeKey ] : null
+		if (
+			oldChildNodeKey != null
+			&& newParentNode.keys
+			&& !(oldChildNodeKey in newParentNode.keys)
+		) {
+			++collapseCount
 		}
 		// Has key, same key found in old, same type on both
 		/** MOVE & UPDATE KEYED CHILD **/
-		const newChildNodeKey = newChildNode.props?.key
 		if (
-			newChildNodeKey
-			// FIXME : OPTIMIZE - Maybe do a has before the get ?
-			&& ( oldChildNode = oldParentKeys?.[ newChildNodeKey ] )
-			&& oldChildNode.type === newChildNode.type
-			&& (
-				newChildNode.type !== 6/*ELEMENTS*/
-				|| oldChildNode.value === newChildNode.value
-			)
+			newChildNodeKey != null
+			&& oldChildFromKey
+			&& oldChildFromKey.type === newChildNode.type
 		) {
-			// console.log("move keyed", newChildNode, oldChildNode)
-			diffNode( newChildNode, oldChildNode )
-			oldChildNode._keep = true;
+			diffNode( newChildNode, oldChildFromKey )
+			oldNodesToKeep.add( oldChildFromKey )
 			// Check if index changed, compare with collapsed index to detect moves
 			const collapsedIndex = i + collapseCount
 			// FIXME : Should do 1 operation when swapping positions, not 2
 			// FIXME : Perf, is indexOf quick ? Maybe store every indexes in an array ?
-			if ( oldChildren.indexOf( oldChildNode ) !== collapsedIndex )
+			if ( oldChildren.indexOf( oldChildFromKey ) !== collapsedIndex )
 				parentDom.insertBefore( newChildNode.dom, parentDom.children[ collapsedIndex + 1 ] )
 		}
 		// Has key, but not found in old
 		/** CREATE HAS KEY**/
-		// FIXME : OPTIMIZE - Maybe do a has before the get ?
 		else if (
-			newChildNodeKey
+			newChildNodeKey != null
 			&& oldParentKeys
-			&& !( newChildNodeKey in oldParentKeys )
+			&& !oldChildFromKey
 		) {
 			// console.log("create from key", newChildNode)
 			diffNode( newChildNode )
@@ -477,9 +456,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 		// Old node does not have a key.
 		/** UPDATE IN PLACE **/
 		else if (
-			// i in oldChildren
-			i < totalOld
-			&& ( oldChildNode = oldChildren[ i ] )
+			oldChildNode
 			&& oldChildNode.type === newChildNode.type
 			&& (
 				// If element tag name changes,
@@ -492,14 +469,12 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 				|| oldChildNode.value === newChildNode.value
 			)
 		) {
-			// console.log("update in place", newChildNode, oldChildNode)
 			diffNode( newChildNode, oldChildNode )
-			oldChildNode._keep = true;
+			oldNodesToKeep.add( oldChildNode )
 		}
 		// Not found
 		/** CREATE **/
 		else {
-			// console.log("create no key", newChildNode)
 			diffNode( newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			--collapseCount
@@ -508,8 +483,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 	// Remove old children which are not reused
 	for ( i = 0; i < totalOld; ++i ) {
 		const oldChildNode = oldChildren[ i ]
-		if ( oldChildNode && !oldChildNode._keep ) {
-			// Call unmount handlers
+		if ( !oldNodesToKeep.has( oldChildNode ) ) {
 			recursivelyUpdateMountState( oldChildNode, false );
 			oldChildNode.dom.remove()
 			oldChildNode.dom = null
@@ -517,20 +491,6 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // ----------------------------------------------------------------------------- RENDER COMPONENT
@@ -574,14 +534,15 @@ function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode ) :GRetur
 // ----------------------------------------------------------------------------- DIFF NODE
 
 // TODO : OPTIMIZE - 90%
-export function diffNode ( newNode:VNode, oldNode?:VNode, element?:Element, forceUpdate = false ) {
+export function diffNode ( newNode:VNode, oldNode?:VNode, element?:RenderDom, forceUpdate = false ) {
 	// IMPORTANT : Here we clone node if we got the same instance
 	// 			   Otherwise, altering props.children after render will fuck everything up
 	// Clone identical nodes to be able to diff them
 	if ( oldNode && oldNode === newNode ) {
 		// IMPORTANT : Do not deep clone to avoid changing nature of props
 		// IMPORTANT : Props properties can be the same instance between shouldUpdate here
-		newNode = Object.assign({}, oldNode)
+		// newNode = Object.assign({}, oldNode)
+		newNode = { ...oldNode }
 		// IMPORTANT : also clone props object
 		// newNode.props = Object.assign({}, oldNode.props)
 		// https://esbench.com/bench/65eb3c3c7ff73700a4dec08e
@@ -589,7 +550,8 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, element?:Element, forc
 	}
 	// Transfer id for refs and env
 	if ( oldNode ) {
-		newNode.env = oldNode.env
+		newNode._isSVG = oldNode._isSVG
+		newNode._document = oldNode._document
 		newNode._id = oldNode._id
 	}
 	// https://esbench.com/bench/652a84367ff73700a4debaad
@@ -678,7 +640,9 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, element?:Element, forc
 		if ( renderResult ) {
 			// console.log('R', newNode)
 			// Transfer env from component to rendered node
-			renderResult.env = { ...newNode.env }
+			// renderResult.env = { ...newNode.env }
+			renderResult._isSVG = newNode._isSVG
+			renderResult._document = newNode._document
 			diffNode( renderResult, componentInstance.children, element )
 			componentInstance.children = renderResult
 			newNode.dom = renderResult.dom

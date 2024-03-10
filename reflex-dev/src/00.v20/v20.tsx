@@ -5,7 +5,7 @@ import { hydrate } from "../../../src/render";
 import { renderToString } from "../../../src/renderToString";
 
 
-// drawReflexDebug();
+drawReflexDebug();
 
 export function startV20 () {
 	// render( <V20App />, document.getElementById("App") );

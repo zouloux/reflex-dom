@@ -2,7 +2,7 @@
 import {
 	h, state,
 	shouldUpdate, IState, createBatch,
-	getCurrentDiffingNode, updateDomFromState, VNode,
+	getCurrentDiffingNode, updateDomFromState, VNode, effect,
 } from "../../../src"
 import { For, createDomSelector } from "../../../src/performance-helpers"
 
@@ -61,9 +61,10 @@ const labelDomSelector = createDomSelector<number>( path => {
 
 // ----------------------------------------------------------------------------- DATA ACTIONS
 
-const run = () => $data.set( buildData(1000) )
+const run = () => $data.set( buildData(100) )
 const runLots = () => $data.set( buildData(10000) )
-const add = () => $data.set( d => [...d, ...buildData(1000)] )
+const add1 = () => $data.set( d => [...buildData(100), ...d] )
+const add2 = () => $data.set( d => [...d, ...buildData(100)] )
 const update = () => {
 	const data = $data.peek()
 	const length = data.length
@@ -73,6 +74,9 @@ const update = () => {
 		labelDomSelector.update( item.id )
 	}
 }
+// effect(() => {
+// 	console.log($data.value)
+// })
 const clear = () => {
 	$data.set([])
 	labelDomSelector.clear()
@@ -132,6 +136,7 @@ function Button ({ id, onClick, title }) {
 Row.isFactory = false
 Row.shouldUpdate = () => false
 function Row ( props ) {
+	// console.log("Render row", props.key)
 	return <tr class={ isSelectedClassNameDomSelector.connect( props.id ) }>
 		<td class="col-md-1">{ props.id }</td>
 		<td class="col-md-4">
@@ -158,9 +163,10 @@ function Jumbotron () {
 			</div>
 			<div class="col-md-6">
 				<div class="row">
-					<Button id="run" title="Create 1,000 rows" onClick={ run } />
+					<Button id="run" title="Create 100 rows" onClick={ run } />
 					<Button id="runlots" title="Create 10,000 rows" onClick={ runLots } />
-					<Button id="add" title="Append 1,000 rows" onClick={ add } />
+					<Button id="add1" title="Prepend 100 rows" onClick={ add1 } />
+					<Button id="add2" title="Append 100 rows" onClick={ add2 } />
 					<Button id="update" title="Update every 10th row" onClick={ update } />
 					<Button id="clear" title="Clear" onClick={ clear } />
 					<Button id="swaprows" title="Swap Rows" onClick={ swapRows } />
