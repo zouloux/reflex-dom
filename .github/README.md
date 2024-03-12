@@ -1,6 +1,4 @@
-<div style="text-align: center">
-	<h1>Reflex</h1>
-</div>	
+# Reflex
 
 __Reflex__ is a tiny and fast reactive UI library.
 
