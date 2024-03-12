@@ -75,7 +75,7 @@ export const invalidateComponent = createBatch<ComponentInstance>(
 export function updateDomFromState ( node:VNode, value ) {
 	// Do direct dom update
 	let propertyName:string
-	if ( node.type === 3 )
+	if ( node.type === 3/*VALUE STATE*/ )
 		node.dom.nodeValue = value as string
 	else {
 		propertyName = node._propertyName
@@ -292,23 +292,11 @@ function _prepareEffect <GCheck extends any[]> ( _handler:TEffectHandler<GCheck>
 	return unmounted( () => _detachEffectFromStates(_associatedStates, _effect) )
 }
 
-// TODO : DOC
-export function effect ( handler:TEffectHandler<[boolean]> ):TDisposeHandler {
-	return _prepareEffect( handler, false )
-}
-
-// TODO : DOC
-export function changed ( handler?:TEffectHandler<[boolean]> ):TDisposeHandler {
-	return _prepareEffect( handler, true )
-}
-
-// TODO : DOC
-export function checkEffect <GCheck extends any[]> ( check:TCheckEffect<GCheck>, handler:TEffectHandler<GCheck>, ):TDisposeHandler {
+export function effect <GCheck extends any[]> ( handler:TEffectHandler<GCheck>, check?:TCheckEffect<GCheck> ):TDisposeHandler {
 	return _prepareEffect( handler, false, check )
 }
 
-// TODO : DOC
-export function checkChanged <GCheck extends any[]> ( check:TCheckEffect<GCheck>, handler:TEffectHandler<GCheck>, ):TDisposeHandler {
+export function changed <GCheck extends any[]> ( handler:TEffectHandler<GCheck>, check?:TCheckEffect<GCheck> ):TDisposeHandler {
 	return _prepareEffect( handler, true, check )
 }
 

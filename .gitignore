@@ -1,7 +1,6 @@
 .idea
 .DS_Store
-_
 
 node_modules
 dist/
-/v8-deopt-viewer
+/deopt/v8-deopt-viewer
