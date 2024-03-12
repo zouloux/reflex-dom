@@ -3,6 +3,7 @@ import sdk from '@stackblitz/sdk';
 import { VM } from "@stackblitz/sdk/types/vm";
 import { limitRange } from "@zouloux/ecma-core";
 import S from "./App.module.less"
+import { marked } from "marked";
 
 
 function loadStackFiles () {
@@ -23,9 +24,12 @@ function loadStackFiles () {
 export function App ( props ) {
 	let _editor:VM
 	let _stepFiles:string[] = []
+	let _docsFiles:string[] = []
 	let stackFiles = loadStackFiles()
 	mounted( async () => {
-		_stepFiles = Object.keys( stackFiles ).filter( f => f.startsWith('steps/') )
+		const filteredStackFiles = Object.keys( stackFiles ).filter( f => f.startsWith('steps/') );
+		_stepFiles = filteredStackFiles.filter( f =>f.endsWith('.tsx') )
+		_docsFiles = filteredStackFiles.filter( f =>f.endsWith('.md') )
 		_editor = await sdk.embedProject(
 			'iframe', {
 				title: 'Learn Reflex',
@@ -85,6 +89,11 @@ export function App ( props ) {
 			destroy: [],
 			create: { 'index.tsx' : indexRaw },
 		})
+		// Replace markdown documentation
+		let docPath = _docsFiles[ step.value ]
+		console.log( docPath );
+		console.log( stackFiles[docPath] )
+		//marked( )
 	})
 
 	function changeStep ( delta:number ) {
