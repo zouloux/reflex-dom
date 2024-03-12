@@ -9,11 +9,11 @@
 		"start": "vite"
 	},
 	"devDependencies": {
-		"@types/node": "^20.8.9",
-		"typescript": "^5.2.2",
-		"vite": "^4.5.0"
+		"@types/node": "^20.11.26",
+		"typescript": "^5.4.2",
+		"vite": "^5.1.6"
 	},
 	"dependencies": {
-		"reflex-dom": "^0.18.0"
+		"reflex-dom": "^0.21.0"
 	}
 }

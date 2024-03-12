@@ -71,6 +71,9 @@ export function App ( props ) {
 	const step = state( -1 )
 
 	let isFirst = true
+
+	const docContent = state("")
+
 	changed( async () => {
 		let filePath = _stepFiles[ step.value ]
 		if ( !_editor )
@@ -89,12 +92,19 @@ export function App ( props ) {
 			destroy: [],
 			create: { 'index.tsx' : indexRaw },
 		})
-		// Replace markdown documentation
-		let docPath = _docsFiles[ step.value ]
-		console.log( docPath );
-		console.log( stackFiles[docPath] )
-		//marked( )
 	})
+
+	changed(() => {
+		console.log(">>", isReady.value, step.value)
+		if ( !isReady.value )
+			return
+		// Replace markdown documentation
+		const docPath = _docsFiles[ step.value ]
+		docContent.value = marked( stackFiles[docPath] ?? "", {
+			async: false
+		}) as string
+		console.log( docContent.value );
+	}, () => [isReady.value, step.value])
 
 	function changeStep ( delta:number ) {
 		step.value = limitRange( 0, step.value + delta, 2 )
@@ -119,5 +129,6 @@ export function App ( props ) {
 			<button onClick={ nextStep }>Next</button>
 			<button onClick={ reset }>Reset current file</button>
 		</div>}
+		<div innerHTML={ docContent.value } />
 	</div>
 }
