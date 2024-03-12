@@ -109,10 +109,6 @@ export type VNodeElementValue = keyof (HTMLElementTagNameMap|SVGElementTagNameMa
 export type VNodeTextValue = string
 export type VNodeValue = ( VNodeElementValue | VNodeTextValue | ComponentFunction | IState ) & TComponentFunctionProperties
 
-// export interface INodeEnv {
-// 	isSVG		: boolean
-// 	document	: Document | IVirtualDocument
-// }
 
 export interface VNode {
 	// Type of virtual node, as const
@@ -133,24 +129,21 @@ export interface VNode {
 	dom				?:RenderDom
 	// Associated component instance
 	component		?:ComponentInstance
+
+	// Private members ( starts with _, will be mangled )
+
 	// List of children, recorded with their keys
 	// Is used by diff algorithm to check differences between components
-	keys			?:Record<number|string, VNode>
-	// Node env is used to propagate the SVG mode
-	// - When an <svg> tag is discovered, current node and its children will be
-	//		created using createSVGElement
-	// Also to propagate current Document interface ( the page's document or a
-	//		fake document to render to string
-	// env				?:INodeEnv
-	// Private members ( starts with _, will be mangled )
+	_keys			?:Record<number|string, VNode>
 	// Property name is used by Argument States to know which argument to mutate
 	_propertyName	?:string
-	// Used by diff algorithm
-	// _keep			?:boolean
 	// Used by refs, to keep track of ref index in ref lists
 	_id				?:number
-
+	// When an <svg> tag is discovered, current node and its children will be
+	// created using createSVGElement
 	_isSVG			?: boolean
+	// Current Document interface
+	// ( the page's document or a fake document to render to string )
 	_document		?: Document | IVirtualDocument
 }
 
@@ -158,13 +151,12 @@ export interface DefaultReflexBaseProps {
 	key				?:number|string
 	ref				?:IRefOrRefs
 	innerHTML		?:string
-	children		?:any|any[]
+	// children		?:any|any[]
 }
 
-// FIXME : Can we delete change ?
 export interface DefaultReflexProps extends DefaultReflexBaseProps {
 	// Children are created by h here, so it's VNode, not string or number
-	children	?:VNode[]
+	children		?:VNode[]
 }
 
 // Helper to add class props when extending component props interface
@@ -175,8 +167,20 @@ export interface HasClassProp {
 // ----------------------------------------------------------------------------- DISPATCH
 
 // Can we minimize it ?
-// TODO : OPTIMIZE - Optimize this loop
+// https://esbench.com/bench/65ee13067ff73700a4dec0db
 export const _dispatch = ( handlers:Function[], ...rest:any[] ) => handlers.map( h => h?.(...rest) );
+
+// Browse key helpers
+// It's a good compromise between perfs and bundle size.
+// For loop is almost twice as fast as .filter.map
+// Having a common helper function is slightly slower than inlining the for loop
+// But it's a lot smaller in the bundle
+export const _browseKeys = ( obj:object, handler:(name:string) => void ) => {
+	const keys = Object.keys( obj )
+	const total = keys.length
+	for ( let i = 0; i < total; ++i )
+		handler( keys[i] )
+}
 
 // ----------------------------------------------------------------------------- BATCHED TASK
 
@@ -219,11 +223,10 @@ export function createBatch <GType> ( task:TTaskHandler<GType> ) {
 }
 
 // ----------------------------------------------------------------------------- FEATURE HOOKS
-// FIXME : This should take the minimum size possible ->
 
 export let _featureHooks:THookHandler[] = []
 
-type THookHandler = ( type:number, ...rest ) => any|void
+type THookHandler = ( type:number, ...rest:any[] ) => any|void
 
 /**
  * Hook into Reflex core functions.

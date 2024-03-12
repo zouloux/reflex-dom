@@ -1,4 +1,4 @@
-import { compute, h, mounted, state } from "../../src/index.js"
+import { compute, h, state } from "../../src"
 import { renderToString } from "../../src/renderToString.js"
 import { For } from "../../src/performance-helpers";
 

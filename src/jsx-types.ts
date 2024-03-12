@@ -7,7 +7,6 @@ import { IComputeState, IState } from "./states";
  * JSX types are straight stolen from Preact. Thanks Preact core team ✌️
  * https://github.com/preactjs/preact/blob/master/src/jsx.d.ts
  * It has been a bit adapted for Reflex API
- * (children, classes as array, style as object only)
  *
  * TODO : Missing
  * - JSX.Element
@@ -35,8 +34,8 @@ export type ComponentChild =
 	| bigint
 	| (() => VNode)
 
-export interface DefaultReflexAttributes {
-	// Children here can be string or number
+export interface DefaultReflexJSXAttributes extends DefaultReflexBaseProps {
+	// Children are created by h here, so it's VNode, not string or number
 	children	?:ComponentChild|ComponentChild[]
 }
 
@@ -97,11 +96,7 @@ type WheelEventHandler<Target extends Element> = EventHandler<TargetedWheelEvent
 
 // ----------------------------------------------------------------------------- DOM ATTRIBUTES
 
-export interface DOMAttributes <Target extends Element>
-{
-	innerHTML?:string
-
-	//extends ReflexDefaultDOMAttributes {
+export interface DOMAttributes <Target extends Element> {
 	// Image Events
 	onLoad?:GenericEventHandler<Target>;
 	onLoadCapture?:GenericEventHandler<Target>;
@@ -352,7 +347,7 @@ type AttributeState <G> = ( G | IState<G> | IComputeState<G> )
 
 export interface HTMLAttributes
 	<GDom extends Element = Element>
-	extends DefaultReflexAttributes, DOMAttributes<GDom>
+	extends DefaultReflexJSXAttributes, DOMAttributes<GDom>
 {
 	// Standard HTML Attributes
 	accept?: 				AttributeState<string>

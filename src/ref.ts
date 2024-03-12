@@ -32,6 +32,8 @@ export interface IInternalRefs <GDom extends Element = Element> extends IRefs {
 	_setFromVNode	: ( vNode:VNode ) => void
 }
 
+export type IRefOrRefs <GDom extends Element = Element> = IRef<GDom> | IRefs<GDom>
+
 export function refs <GDom extends Element = Element> ():IRefs<GDom> {
 	let _counter = 0;
 	let _list = []
@@ -72,12 +74,3 @@ export function refs <GDom extends Element = Element> ():IRefs<GDom> {
 	}
 	return value as never as IRefs<GDom>;
 }
-
-
-export type IRefOrRefs <GDom extends Element = Element> = IRef<GDom> | IRefs<GDom>
-
-// FIXME : When using web components with original dom not from Reflex
-// FIXME : Move it in module web-components ?
-// export function find () {
-//
-// }

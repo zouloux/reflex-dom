@@ -9,7 +9,6 @@ export const _DOM_PRIVATE_VIRTUAL_NODE_KEY = "__v"
 // ----------------------------------------------------------------------------- RENDER
 
 function _render ( rootNode:VNode, parentElement:HTMLElement|IVirtualElement, documentInterface:Document|IVirtualDocument = document, hydrateRoot:Element = null ) {
-	// console.log("v2")
 	// When using render, we create a new root node to detect new renders
 	// This node is never rendered, we just attach it to the parentElement and render its children
 	const root:VNode = {

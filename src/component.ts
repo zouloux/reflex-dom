@@ -1,4 +1,4 @@
-import { LifecycleHandler, MountHandler, RenderFunction, VNode } from "./common";
+import { _browseKeys, LifecycleHandler, MountHandler, RenderFunction, VNode } from "./common";
 import { IState } from "./states";
 import { getCurrentComponent } from "./diff";
 
@@ -68,14 +68,18 @@ export function defaultProps <
 	GDefaults extends Partial<GProps>,
 > ( props:GProps, defaults:GDefaults ) {
 	const component = getCurrentComponent()
-	//component.vnode.value.defaultProps = defaults
 	component._defaultProps = defaults
 	if ( component._propState )
 		props = component._propState.peek() as GProps
-	for ( let i in defaults )
-		if ( !(i in props) )
+	_browseKeys( defaults, name => {
+		if ( !(name in props) )
 			// @ts-ignore
-			props[ i ] = defaults[ i ]
+			props[ name ] = defaults[ name ]
+	})
+	// for ( let i in defaults )
+	// 	if ( !(i in props) )
+	// 		// @ts-ignore
+	// 		props[ i ] = defaults[ i ]
 }
 
 /**

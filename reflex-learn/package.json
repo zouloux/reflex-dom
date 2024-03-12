@@ -14,7 +14,7 @@
   "dependencies": {
     "@stackblitz/sdk": "^1.9.0",
     "@zouloux/ecma-core": "^0.2.3",
-    "reflex-dom": "^0.18.0",
+    "reflex-dom": "^0.20.3",
     "yadl": "^0.3.4"
   }
 }

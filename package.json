@@ -1,7 +1,7 @@
 {
 	"name": "reflex-dom",
 	"type": "module",
-	"version": "0.20.1",
+	"version": "0.20.3",
 	"description": "Reflex is a tiny and fast reactive UI library.",
 	"author": "Alexis Bouhet (ZoulouX)",
 	"license": "MIT",
@@ -15,7 +15,7 @@
 		"./hmr-runtime": "./dist/hmr-runtime.es2020.mjs",
 		"./debug": "./dist/debug.es2020.mjs",
 		"./render-to-string": "./dist/renderToString.es2020.mjs",
-		"./jsx-helpers": "./dist/jsx-helpers.es2020.mjs"
+		"./performance-helpers": "./dist/performance-helpers.es2020.mjs"
 	},
 	"scripts": {
 		"reset": "rm -rf node_modules package-lock.json && npm i",
@@ -26,8 +26,10 @@
 		"dev-build": "cd reflex-dev && npm run build",
 		"learn": "cd reflex-learn && npm run build --silent",
 		"learn-dev": "cd reflex-learn && npm run dev --silent",
-		"publish": "npm run clean --silent && npm run learn --silent && tsbundle publish",
-		"deopt": "rm -rf ./reflex-deopt/dist ./v8-deopt-viewer && esbuild reflex-deopt/src/index.tsx --bundle --outfile=reflex-deopt/dist/index.js && v8-deopt-viewer reflex-deopt/dist/index.js && npx @zouloux/static-http ./v8-deopt-viewer"
+		"__publish": "npm run clean --silent && npm run learn --silent && tsbundle publish",
+		"deopt-build": "rm -rf ./reflex-deopt/dist ./v8-deopt-viewer && esbuild reflex-deopt/src/index.tsx --bundle --outfile=reflex-deopt/dist/index.js",
+		"deopt-run": "v8-deopt-viewer reflex-deopt/dist/index.js && npx @zouloux/static-http ./v8-deopt-viewer",
+		"deopt": "npm run deopt-build && npm run deopt-run"
 	},
 	"devDependencies": {
 		"@zouloux/static-http": "^1.0.1",

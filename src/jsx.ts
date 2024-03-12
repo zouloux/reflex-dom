@@ -45,5 +45,6 @@ export function h ( value:any, props:any, ...children:any[] ):VNode {
 	const type = ( typeof value === "function" ? 7/*COMPONENTS*/ : 6/*ELEMENT*/ )
 	// Create and return the virtual node
 	// esbench : faster than { type: type, value: value, props: props }
-	return { type, value, props }
+	// Perfs : other properties set to null to avoid megamorphic deopt
+	return { type, value, props, dom: null, component: null, _keys: null }
 }

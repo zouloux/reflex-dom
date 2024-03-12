@@ -78,9 +78,10 @@ export function updateDomFromState ( node:VNode, value ) {
 	if ( node.type === 3 )
 		node.dom.nodeValue = value as string
 	else {
-		// Reset attribute for "src", allow empty images when changing src
 		propertyName = node._propertyName
-		if ( node.dom instanceof HTMLImageElement && propertyName === "src" )
+		// Reset attribute for "src", allow empty images when changing src
+		// if ( node.dom instanceof HTMLImageElement && propertyName === "src" )
+		if ( propertyName === "src" )
 			_setDomAttribute( node.dom as Element, propertyName, "" )
 		_setDomAttribute( node.dom as Element, propertyName, value )
 	}
@@ -106,16 +107,13 @@ let _currentStates = new Set<IState>()
 export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GType> {
 	// Prepare initial value if it's a function
 	initialValue = _prepareInitialValue( initialValue )
-
 	// List of side effects / node / components to update
 	let _effects = new Set<TEffect>()
 	let _nodes = new Set<VNode>()
 	let _components = new Set<ComponentInstance>()
-
 	// Listen effects that create states
 	if ( _currentEffect )
 		_effects.add( _currentEffect )
-
 	// Update the state value and dispatch changes
 	async function updateValue ( newValue:GType, forceUpdate = false ) {
 		// FIXME : Throw error in dev mode
@@ -181,7 +179,7 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 			// Register current text node
 			else if (
 				currentNode
-				&& (currentNode.type === 3/* TEXT */ || currentNode.type === 2 /* ARGUMENT */)
+				&& (currentNode.type === 3/*TEXT*/ || currentNode.type === 2 /*ARGUMENT*/)
 				&& currentNode.value === this // <- FIXME Explain
 			) {
 				// Save component to current text node to optimize later
@@ -330,7 +328,3 @@ export function compute <GType> ( handler:TComputed<GType> ):IComputeState<GType
 	})
 	return internalState
 }
-
-// TODO : No need for batch if renders are batched ? Effect will not be batched.
-// TODO : @see Preact signals API
-//export function batch () {}

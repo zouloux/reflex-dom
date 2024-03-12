@@ -31,7 +31,7 @@ export type {
 // Import / Export JSX types without creating a useless empty module into the bundle
 import type { ReflexIntrinsicElements } from "./jsx-types"
 export type {
-	ComponentChild, DOMAttributes, HTMLAttributes, DefaultReflexAttributes,
+	ComponentChild, DOMAttributes, HTMLAttributes, DefaultReflexJSXAttributes,
 	SVGAttributes, ReflexIntrinsicElements, CSSProperties, ClassName, ClassNameItem
 } from "./jsx-types"
 

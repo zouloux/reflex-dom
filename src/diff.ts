@@ -1,7 +1,4 @@
-import {
-	_dispatch, _featureHooks, ComponentReturn,
-	RenderDom, RenderFunction, VNode
-} from "./common";
+import { _browseKeys, _dispatch, _featureHooks, ComponentReturn, RenderDom, RenderFunction, VNode } from "./common";
 import { IInternalRef } from "./ref";
 import { ComponentInstance, shallowPropsCompare } from "./component";
 import { state } from "./states";
@@ -18,7 +15,6 @@ const _IS_NON_DIMENSIONAL_REGEX = /acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine
 const _CAPTURE_REGEX = /Capture$/
 
 // Namespace for SVG elements
-// FIXME : Inline ?
 const _svgNS = "http://www.w3.org/2000/svg"
 
 // ----------------------------------------------------------------------------- CURRENT SCOPED COMPONENT
@@ -28,15 +24,15 @@ let _currentComponent:ComponentInstance = null
 
 /**
  * Get current component instance.
- * TODO : Add to doc
  */
-export function getCurrentComponent
+// export function getCurrentComponent
+// 	<GComponent extends ComponentInstance = ComponentInstance>
+// ():GComponent {
+// 	return _currentComponent as GComponent
+// }
+export const getCurrentComponent =
 	<GComponent extends ComponentInstance = ComponentInstance>
-():GComponent {
-	// if ( !_currentComponent )
-	// 	throw new Error(`Reflex extension error`)
-	return _currentComponent as GComponent
-}
+	():GComponent => _currentComponent as GComponent
 
 // ----------------------------------------------------------------------------- COMMON
 
@@ -51,20 +47,8 @@ function _getEventNameAndKey ( name:string, dom:Element ) {
 	return { eventName, eventKey, useCapture }
 }
 
-// Stolen from Preact, attach some style à key / value to a dom element
-function _setStyle ( style:CSSStyleDeclaration, key:string, value:string|null ) {
-	if ( key[0] === '-' )
-		style.setProperty(key, value);
-	else if ( value == null )
-		style[key] = '';
-	else if ( typeof value != "number" || _IS_NON_DIMENSIONAL_REGEX.test(key) )
-		style[key] = value;
-	else
-		style[key] = value + 'px';
-}
-
 function _updateNodeRef ( node:VNode ) {
-	(node?.props?.ref as IInternalRef)?._setFromVNode( node as any )
+	(node.props?.ref as IInternalRef)?._setFromVNode( node as any )
 }
 
 // ----------------------------------------------------------------------------- DIFF ELEMENT
@@ -73,26 +57,40 @@ function _updateNodeRef ( node:VNode ) {
 let _currentDiffingNode:VNode
 export const getCurrentDiffingNode = () => _currentDiffingNode
 
-// FIXME : Doc
+/**
+ * FIXME : Doc
+ * @param dom
+ * @param name
+ * @param value
+ */
 export function _setDomAttribute ( dom:Element, name:string, value:any ) {
 	// className as class for non jsx components
-	if ( name == "className" )
+	if ( name === "className" )
 		name = "class"
-	if ( value === false || value === null )
+	// if ( value === false || value === null )
+	if ( value === null )
 		dom.removeAttribute( name )
 	else if ( value === true )
 		dom.setAttribute( name, "" )
 	// Manage style as object only
 	else if ( name == "style" && typeof value == "object" ) {
-		// https://esbench.com/bench/62ecb9866c89f600a5701b47
-		Object.keys( value ).forEach(
-			k => _setStyle( (dom as HTMLElement).style, k, value[k] )
-		);
+		const style = (dom as HTMLElement).style
+		_browseKeys( value, key => {
+			const propertyValue = value[key]
+			if ( key[0] === '-' )
+				style.setProperty(key, propertyValue);
+			else if ( propertyValue == null )
+				style[key] = '';
+			else if ( typeof propertyValue != "number" || _IS_NON_DIMENSIONAL_REGEX.test(key) )
+				style[key] = propertyValue;
+			else
+				style[key] = propertyValue + 'px';
+		})
 	}
 	else {
 		// Manage class as arrays
-		if ( name == "class" && Array.isArray( value ) )
-			value = value.flat( 1 ).filter( v => v !== true && !!v ).join(" ").trim()
+		if ( name === "class" && Array.isArray( value ) )
+			value = value.flat( 1 ).filter( v => v !== true && !!v ).join(" ")
 		dom.setAttribute( name, value )
 	}
 }
@@ -100,14 +98,11 @@ export function _setDomAttribute ( dom:Element, name:string, value:any ) {
 /**
  * TODO DOC
  */
-// TODO : OPTIMIZE : 0%
 export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom ) {
-	// console.log("_diffElement", newNode.value, newNode.props?.children, element)
-	// TODO : DOC
-	const { type, value } = newNode // todo : check if better perfs
+	const { type, value } = newNode
 	// If the whole component is re-rendered by any state change that is not a signal
 	// We need to update all state based text values
-	const isText = ( type === 1 || type === 3 )
+	const isText = ( type === 1/*TEXT*/ || type === 3/*STATE*/ )
 	let dom:RenderDom
 	// Hydrating
 	if ( element ) {
@@ -115,6 +110,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom 
 		dom = element
 		// Update value if it changed after client render
 		if ( isText ) {
+			// Save this node as currently diffing to allow state and effects to track it
 			_currentDiffingNode = newNode
 			if ( element.nodeValue != value )
 				element.nodeValue = value as string
@@ -132,11 +128,11 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom 
 	else {
 		if ( value as string === "svg" )
 			newNode._isSVG = true
-			// newNode.env.isSVG = true
 		const document = newNode._document as Document
 		if ( type === 0/*NULL*/ )
 			dom = document.createComment('')
 		else if ( isText ) {
+			// Save this node as currently diffing to allow state and effects to track it
 			_currentDiffingNode = newNode
 			// If newNode is a state, createTextNode will call .toString() on the state
 			// which will track the dependency
@@ -150,82 +146,91 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom 
 			)
 		}
 	}
-	// todo : opt cond ?
-	if ( type === 0/*NULL*/ || type === 1/*TEXT*/ || type === 3/*STATE*/ )
+	// Skip attributes for those types
+	if ( type === 0/*NULL*/ || isText )
 		return dom
 	else if ( type === 8/*LIST*/ ) {
+		// Diff children of lists
 		_diffChildren( newNode, oldNode, dom )
 		return dom
 	}
 	// Remove attributes which are removed from old node
 	// https://esbench.com/bench/652e2ce67ff73700a4debb26
-	oldNode && Object.keys( oldNode.props )
-		.filter( name => (
-			name !== 'children' && name !== 'key' && name !== 'ref'
-			&& !( name in newNode.props && newNode.props[name] === oldNode.props[name] )
-		))
-		.forEach( name => {
-			// Insert HTML directly without warning
-			if ( name == "innerHTML" )
-				(dom as Element).innerHTML = "" // FIXME : Maybe use delete or null ?
-			// Events starts with "on". On preact this is optimized with [0] == "o"
-			// But recent benchmarks are pointing to startsWith usage as faster
-			else if ( name.startsWith("on") ) {
-				const { eventName, eventKey, useCapture } = _getEventNameAndKey( name, dom as Element );
-				(dom as Element).removeEventListener( eventName, dom[ _DOM_PRIVATE_LISTENERS_KEY ].get( eventKey ), useCapture )
+	if ( oldNode ) {
+		_browseKeys(oldNode.props, name => {
+			if (
+				// Do not continue for "internal" attributes
+				name !== 'children' && name !== 'key' && name !== 'ref'
+				// Do not continue if this attribute is not removed
+				&& !( name in newNode.props && newNode.props[name] === oldNode.props[name] )
+			) {
+				// Insert HTML directly without warning
+				if ( name == "innerHTML" )
+					(dom as Element).innerHTML = "" // FIXME : Maybe use delete or null ?
+					// Events starts with "on". On preact this is optimized with [0] == "o"
+				// But recent benchmarks are pointing to startsWith usage as faster
+				else if ( name.startsWith("on") ) {
+					const { eventName, eventKey, useCapture } = _getEventNameAndKey( name, dom as Element );
+					(dom as Element).removeEventListener(
+						eventName,
+						dom[ _DOM_PRIVATE_LISTENERS_KEY ].get( eventKey ),
+						useCapture
+					)
+				}
+				// Other attributes
+				else {
+					(dom as Element).removeAttribute( name )
+				}
 			}
-			// Other attributes
-			else {
-				(dom as Element).removeAttribute( name )
-			}
-		});
+		})
+	}
 	// Update props
-	for ( let name in newNode.props ) {
+	_browseKeys(newNode.props, name => {
 		let value = newNode.props[ name ];
 		if (
 			// Do not continue if value is undefined or null.
 			// 	Undefined is checked here as a value, so no need for typeof check
 			// 	It can happen when JSX source is pushing a props from an undefined value
 			// Keep going if falsy to allow empty attributes
-			value === undefined || value === null
+			value !== undefined && value !== null
 			// Do not continue for "internal" attributes
-			|| name === "children" || name === "key" || name === "ref"
+			&& name !== "children" && name !== "key" && name !== "ref"
 			// Do not continue if attribute or event did not change
-			|| ( oldNode && name in oldNode.props && oldNode.props[ name ] === value )
-		)
-			continue;
-		// Insert HTML directly without warning
-		if ( name === "innerHTML" )
-			(dom as Element).innerHTML = value
-		// Events starts with "on". On preact this is optimized with [0] == "o"
-		// But recent benchmarks are pointing to startsWith usage as faster
-		else if ( name.startsWith("on") ) {
-			const { eventName, eventKey, useCapture } = _getEventNameAndKey( name, dom as Element );
-			// Init a collection of handlers on the dom object as private property
-			dom[ _DOM_PRIVATE_LISTENERS_KEY ] ??= new Map();
-			// Store original listener to be able to remove it later
-			dom[ _DOM_PRIVATE_LISTENERS_KEY ].set( eventKey, value );
-			// And attach listener
-			dom.addEventListener( eventName, value, useCapture )
-		}
-		// Other attributes
-		else {
-			// If value is a state, track its changes by creating an "argument state" type of node
-			if ( value !== null && typeof value === "object" && value.type === 3 ) {
-				_currentDiffingNode = {
-					type: 2/* ARGUMENT STATE */,
-					value,
-					_propertyName: name,
-					dom
-				}
-				value = value.value
+			&& !( oldNode && name in oldNode.props && oldNode.props[ name ] === value )
+		) {
+			// Insert HTML directly without warning
+			if ( name === "innerHTML" )
+				(dom as Element).innerHTML = value
+			// Events starts with "on". On preact this is optimized with [0] == "o"
+			// But recent benchmarks are pointing to startsWith usage as faster
+			else if ( name.startsWith("on") ) {
+				const { eventName, eventKey, useCapture } = _getEventNameAndKey( name, dom as Element );
+				// Init a collection of handlers on the dom object as private property
+				dom[ _DOM_PRIVATE_LISTENERS_KEY ] ??= new Map();
+				// Store original listener to be able to remove it later
+				dom[ _DOM_PRIVATE_LISTENERS_KEY ].set( eventKey, value );
+				// And attach listener
+				dom.addEventListener( eventName, value, useCapture )
 			}
-			// Set dom attribute on element
-			// Skip this when hydrating
-			if ( !element )
-				_setDomAttribute( dom as Element, name, value )
+			// Other attributes
+			else {
+				// If value is a state, track its changes by creating an "argument state" type of node
+				if ( value !== null && typeof value === "object" && value.type === 3 ) {
+					_currentDiffingNode = {
+						type: 2/* ARGUMENT STATE */,
+						value,
+						_propertyName: name,
+						dom
+					}
+					value = value.value
+				}
+				// Set dom attribute on element
+				// Skip this when hydrating
+				if ( !element )
+					_setDomAttribute( dom as Element, name, value )
+			}
 		}
-	}
+	})
 	return dom;
 }
 
@@ -241,78 +246,51 @@ export function _diffAndMount ( newNode:VNode, oldNode:VNode, element?:Element, 
 }
 
 export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
-	// FIXME : This seems useless, no memory leak without it in examples
-	// if ( node.dom && !doMount ) {
-	// 	const { dom } = node
-	// 	const events:Map<any, () => void> = dom[ _DOM_PRIVATE_LISTENERS_KEY ]
-	// 	if ( events ) {
-	// 		for ( const entry of events.entries() ) {
-	// 			const [ key, value ] = entry;
-	// 			// FIXME: ESBENCH [0] vs charAt
-	// 			const useCapture = key[0] == "C"
-	// 			// FIXME: ESBENCH slice vs substring
-	// 			dom.removeEventListener( key.slice(1), value, useCapture )
-	// 		}
-	// 	}
-	// }
 	if ( node.type === 7/*COMPONENTS*/ ) {
-		// FIXME : Can optimize and code-golf this
 		const { component } = node
-		if ( component ) { // FIXME : Is this check usefull ?
-			// First, we recursively mount children before mounting the parent component
-			recursivelyUpdateMountState( component.children, doMount )
-			// --- MOUNT
-			if ( doMount && !component.isMounted ) {
-				// Execute after render handlers
-				component.isMounted = true;
-				if ( node.value.isFactory !== false ) {
-					// Call every mount handler and store returned unmount handlers
-					// FIXME : Can we use _dispatch here ?
-					// TODO : ESBENCH
-					const total = component._mountHandlers.length
-					for ( let i = 0; i < total; ++i ) {
-						const mountedReturn = component._mountHandlers[ i ].apply( component );
-						// Allow mounted handler to return a single unmount
-						// TODO : ESBENCH for === ( already done in jsx.ts ? )
-						if ( typeof mountedReturn === "function" )
-							component._unmountHandlers.push( mountedReturn )
-						// Allow mounted handler to return an array of unmount
-						else if ( Array.isArray( mountedReturn ) )
-							mountedReturn.filter( v => v ).map( h => component._unmountHandlers.push( h ) )
-					}
-					// Reset mount handlers, no need to keep them
-					component._mountHandlers = []
-					_dispatch( component._renderHandlers)
-					_dispatch( component._nextRenderHandlers)
-					component._nextRenderHandlers = []
+		// First, we recursively mount children before mounting the parent component
+		recursivelyUpdateMountState( component.children, doMount )
+		// --- MOUNT
+		if ( doMount && !component.isMounted ) {
+			// Execute after render handlers
+			component.isMounted = true;
+			if ( node.value.isFactory !== false ) {
+				// Call every mount handler and store returned unmount handlers
+				// TODO : ESBENCH
+				const total = component._mountHandlers.length
+				for ( let i = 0; i < total; ++i ) {
+					const mountedReturn = component._mountHandlers[ i ].apply( component );
+					// Allow mounted handler to return a single unmount
+					if ( typeof mountedReturn === "function" )
+						component._unmountHandlers.push( mountedReturn )
+					// Allow mounted handler to return an array of unmount
+					else if ( Array.isArray( mountedReturn ) )
+						mountedReturn.filter( v => v ).map( h => component._unmountHandlers.push( h ) )
 				}
-				_dispatch(_featureHooks, 1/* MOUNT / UNMOUNT */, component, true )
+				// Reset mount handlers, no need to keep them
+				component._mountHandlers = []
+				_dispatch( component._renderHandlers )
+				_dispatch( component._nextRenderHandlers )
+				component._nextRenderHandlers = []
 			}
-			// --- UNMOUNT
-			else if ( !doMount && component.isMounted ) {
-				_dispatch(_featureHooks, 1/* MOUNT / UNMOUNT */, false )
-				_dispatch(component._unmountHandlers)
-				component.isMounted = false;
-				// Cut component branch from virtual node to allow GC to destroy component
-				delete node.component
-				delete component.vnode
-				// FIXME : Do we need to do this ? Is it efficient or is it just noise ?
-				// delete component.vnode
-				// delete component._mountHandlers;
-				// delete component._renderHandlers;
-				// delete component._unmountHandlers;
-				// delete component._afterRenderHandlers;
-				// delete component.methods
-				// delete component._observables
-				// TODO : Remove all listeners ?
-			}
+			_dispatch(_featureHooks, 1/* MOUNT / UNMOUNT */, component, true )
+		}
+		// --- UNMOUNT
+		else if ( !doMount && component.isMounted ) {
+			_dispatch(_featureHooks, 1/* MOUNT / UNMOUNT */, false )
+			_dispatch(component._unmountHandlers)
+			component.isMounted = false;
+			// Cut component branch from virtual node to allow GC to destroy component
+			delete node.component
+			delete component.vnode
+			// TODO : Remove all listeners ?
 		}
 	}
 	else if ( node.type > 4/*CONTAINERS*/ ) {
-		// TODO : ESBENCH ?
-		const total = node.props.children.length
+		const children = node.props.children
+		const total = children.length
 		for ( let i = 0; i < total; ++i )
-			recursivelyUpdateMountState( node.props.children[ i ], doMount )
+			recursivelyUpdateMountState( children[ i ], doMount )
 	}
 }
 
@@ -331,9 +309,9 @@ function _registerKeyAndEnv ( parentNode:VNode, childNode:VNode ) {
 	if ( childNode.props ) {
 		const childNodeKey = childNode.props.key
 		if ( childNodeKey ) {
-			if ( !parentNode.keys )
-				parentNode.keys = {}
-			parentNode.keys[ childNodeKey ] = childNode
+			if ( !parentNode._keys )
+				parentNode._keys = {}
+			parentNode._keys[ childNodeKey ] = childNode
 		}
 	}
 }
@@ -384,7 +362,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 			//			I don't know if we can improve this to avoid or delay those computations
 			let childElement:RenderDom
 			if ( element ) {
-				const currentIsText = ( child.type === 1/* TEXT */ || child.type === 3/* STATE */ )
+				const currentIsText = ( child.type === 1/*TEXT*/ || child.type === 3/*STATE*/ )
 				if ( currentIsText && previousIsText ) {
 					// Create a zero width space otherwise the browser will collapse it again.
 					childElement = document.createTextNode('\u200B')
@@ -405,7 +383,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 	for ( i = 0; i < totalNew; ++i )
 		_registerKeyAndEnv( newParentNode, newChildren[ i ] )
 	// Browse all new nodes
-	const oldParentKeys = oldParentNode.keys
+	const oldParentKeys = oldParentNode._keys
 	const oldNodesToKeep = new Set<VNode>()
 	let collapseCount = 0
 	for ( i = 0; i < totalNew; ++i ) {
@@ -419,8 +397,8 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 		const oldChildFromKey = oldParentKeys ? oldParentKeys[ newChildNodeKey ] : null
 		if (
 			oldChildNodeKey != null
-			&& newParentNode.keys
-			&& !(oldChildNodeKey in newParentNode.keys)
+			&& newParentNode._keys
+			&& !(oldChildNodeKey in newParentNode._keys)
 		) {
 			++collapseCount
 		}
@@ -435,8 +413,6 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 			oldNodesToKeep.add( oldChildFromKey )
 			// Check if index changed, compare with collapsed index to detect moves
 			const collapsedIndex = i + collapseCount
-			// FIXME : Should do 1 operation when swapping positions, not 2
-			// FIXME : Perf, is indexOf quick ? Maybe store every indexes in an array ?
 			if ( oldChildren.indexOf( oldChildFromKey ) !== collapsedIndex )
 				parentDom.insertBefore( newChildNode.dom, parentDom.children[ collapsedIndex + 1 ] )
 		}
@@ -447,7 +423,6 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 			&& oldParentKeys
 			&& !oldChildFromKey
 		) {
-			// console.log("create from key", newChildNode)
 			diffNode( newChildNode )
 			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 			--collapseCount
@@ -495,35 +470,29 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 
 // ----------------------------------------------------------------------------- RENDER COMPONENT
 
-// TODO : OPTIMIZE - 50%
+/**
+ * FIXME: Doc
+ * TODO : Improve / optimize
+ * @param node
+ */
 function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode ) :GReturn {
 	// Select current component before rendering
 	_currentComponent = node.component;
 	// Only on factory components
 	// we create a proxy for props which will update a state for dependency tracking
-	// TODO : Optimize this
-	if ( node.value.isFactory !== false ) {
-		// Create the props proxy with its state
-		if ( !_currentComponent._proxy ) {
-			// Create prop states to track dependencies
-			// We give _p quietly so HMR will know this is a prop state,
-			// that shouldn't be kept between refreshes
-			// @ts-ignore
-			const s = state( node.props, { _p: true } )
-			_currentComponent._propState = s
-			// Create proxy and map getter to the state to track effects
-			// FIXME : Proxy is not browsable :(
-			// TODO : Optimize this
-			const proxy = Proxy.revocable( {}, {
-				get : ( target, prop ) => Reflect.get( s.value, prop )
-			})
-			// Associate proxy to component and dispose proxy on component unmount
-			_currentComponent._proxy = proxy.proxy
-			_currentComponent._unmountHandlers.push( proxy.revoke )
-		}
-		// FIXME : Can't we ovoid that check ?
-		// else //if ( props !== _currentComponent._propStates.peek() )
-		// 	_currentComponent._propState.set( node.props )
+	if ( node.value.isFactory !== false && !_currentComponent._proxy ) {
+		// Create prop states to track dependencies
+		const s = state( node.props )
+		_currentComponent._propState = s
+		// Create proxy and map getter to the state to track effects
+		// FIXME : Proxy is not browsable :(
+		// TODO : Optimize this
+		const proxy = Proxy.revocable( {}, {
+			get : ( target, prop ) => Reflect.get( s.value, prop )
+		})
+		// Associate proxy to component and dispose proxy on component unmount
+		_currentComponent._proxy = proxy.proxy
+		_currentComponent._unmountHandlers.push( proxy.revoke )
 	}
 	// Render component with props instance and component API instance
 	return _currentComponent._render.apply(
@@ -533,7 +502,13 @@ function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode ) :GRetur
 
 // ----------------------------------------------------------------------------- DIFF NODE
 
-// TODO : OPTIMIZE - 90%
+/**
+ * FIXME : Doc
+ * @param newNode
+ * @param oldNode
+ * @param element
+ * @param forceUpdate
+ */
 export function diffNode ( newNode:VNode, oldNode?:VNode, element?:RenderDom, forceUpdate = false ) {
 	// IMPORTANT : Here we clone node if we got the same instance
 	// 			   Otherwise, altering props.children after render will fuck everything up
@@ -541,12 +516,9 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, element?:RenderDom, fo
 	if ( oldNode && oldNode === newNode ) {
 		// IMPORTANT : Do not deep clone to avoid changing nature of props
 		// IMPORTANT : Props properties can be the same instance between shouldUpdate here
-		// newNode = Object.assign({}, oldNode)
-		newNode = { ...oldNode }
 		// IMPORTANT : also clone props object
-		// newNode.props = Object.assign({}, oldNode.props)
 		// https://esbench.com/bench/65eb3c3c7ff73700a4dec08e
-		newNode.props = { ...oldNode.props }
+		newNode = { ...oldNode, props: { ...oldNode.props } }
 	}
 	// Transfer id for refs and env
 	if ( oldNode ) {
@@ -605,7 +577,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, element?:RenderDom, fo
 		let shouldUpdate = true
 		if ( !forceUpdate && !renderResult && oldNode ) {
 			// We check should update on functional and factory components
-			// FIXME : Do we keep shouldUpdate for factory components ?)
+			// FIXME : Do we keep shouldUpdate for factory components ?
 			// https://esbench.com/bench/652be1807ff73700a4debadb
 			// shouldUpdate = componentInstance._shouldUpdate?.( newNode.props, oldNode.props ) ?? true
 			// We check should update on functional and factory components
@@ -620,7 +592,6 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, element?:RenderDom, fo
 			if ( shouldUpdate && componentFunction.isFactory ) {
 				// Do not continue regular update, update props on state
 				// and let the state update its dependencies
-				// TODO : Check perfs of this vs Object.assign
 				componentInstance._propState.set({
 					...componentInstance._defaultProps,
 					...newNode.props
@@ -638,9 +609,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, element?:RenderDom, fo
 			renderResult = _renderComponentNode<VNode>( newNode as VNode )
 		// We rendered something (not reusing old component)
 		if ( renderResult ) {
-			// console.log('R', newNode)
 			// Transfer env from component to rendered node
-			// renderResult.env = { ...newNode.env }
 			renderResult._isSVG = newNode._isSVG
 			renderResult._document = newNode._document
 			diffNode( renderResult, componentInstance.children, element )
