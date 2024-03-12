@@ -8,10 +8,34 @@ import { renderToString } from "../../../src/renderToString";
 drawReflexDebug();
 
 export function startV20 () {
-	// render( <V20App />, document.getElementById("App") );
-	hydrate( <V20App />, document.getElementById("App2") );
+	render( <V20App />, document.getElementById("App") );
+	// hydrate( <V20App />, document.getElementById("App2") );
 	// const html = renderToString( <V20App /> )
 	// console.log( html )
+}
+
+function Component ( props ) {
+	return () => <div>
+		<div>Parent 1</div>
+		{ props.children }
+		<div>Parent 2</div>
+	</div>
+}
+
+function V20App2 () {
+	const c1 = <Component>
+		<div>Children</div>
+	</Component>
+	const c2 = <Component children={ <div>Children</div> }/>
+	const elements = ["a", "b", "c"].map( e => <span>{ e }</span>)
+	return <div>
+		<h1>Title</h1>
+		<div>{ c1 }</div>
+		<hr />
+		<div>{ c2 }</div>
+		<div>{ elements }</div>
+		<h2>OK</h2>
+	</div>
 }
 
 function V20App () {

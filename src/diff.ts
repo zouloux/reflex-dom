@@ -323,15 +323,18 @@ let _previousParentNode:VNode
 
 
 export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, element:RenderDom ) {
+	// console.log("DIFF CHILDREN", newParentNode)
 	// Keep node ref for lists, that does not have their own dom
 	const isList = newParentNode.type === 8/* LIST */
 	const parentDom = ( isList ? _previousParentNode.dom : newParentNode.dom ) as Element
-	_previousParentNode = newParentNode
 	// Target new and old children
 	const newChildren = newParentNode.props.children
 	const totalNew = newChildren.length
 	const oldChildren = oldParentNode?.props.children
 	const totalOld = oldChildren ? oldChildren.length : 0
+	// If only have one child, save the previous parent node because it's maybe a list
+	if ( totalNew === 1 )
+		_previousParentNode = newParentNode
 	// If we are on a list which has been cleared
 	// And this list is the only child of its parent node
 	// We can take a shortcut and clear dom with innerHTML
@@ -623,6 +626,6 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, element?:RenderDom, fo
 	_updateNodeRef( newNode )
 	// https://esbench.com/bench/652d0d307ff73700a4debaea
 	// More bytes but better perfs
-	if ( newNode.type >= 5/*CONTAINERS*/ )
+	if ( newNode.type > 4/*CONTAINERS*/ && newNode.type !== 7/*COMPONENT*/ )
 		_diffChildren( newNode, oldNode, element )
 }

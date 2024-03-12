@@ -16,7 +16,7 @@ export function h ( value:any, props:any, ...children:any[] ):VNode {
 	// esbench : Faster than naming it value and dropping it in object like { value } instead of { value: child }
 	// esbench : faster than for const of
 	// esbench : Faster than i++
-	const total = c.length
+	let total = c.length
 	for ( let i = 0; i < total; ++i ) {
 		const child = c[ i ]
 		// esbench : typeof child repeated is faster than `const typeofChild = typeof child`
@@ -26,8 +26,18 @@ export function h ( value:any, props:any, ...children:any[] ):VNode {
 			c[ i ] = { type: 1/*TEXT*/, value: child }
 		// Detect array nodes
 		// esbench : faster than `child instanceof Array`
-		else if ( Array.isArray(child) )
-			c[ i ] = { type: 8/*LIST*/, props: { children: child } }
+		else if ( Array.isArray(child) ) {
+			// Lists can only be the only child
+			if ( total === 1 )
+				c[ i ] = { type: 8/*LIST*/, props: { children: child } }
+			// If an array is not the only child, merge this array in the parent
+			else {
+				c.splice(i, 0, ...child);
+				const listSize = child.length
+				total += listSize;
+				i += listSize;
+			}
+		}
 		// Detect states ( object, non-null, with type 3 )
 		// Using bigger "child !== null" and not "child" -> https://esbench.com/bench/63f48b796c89f600a570216e
 		// Using !== and not != because it cannot be undefined here
