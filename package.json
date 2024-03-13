@@ -1,7 +1,7 @@
 {
 	"name": "reflex-dom",
 	"type": "module",
-	"version": "0.21.0",
+	"version": "0.21.1",
 	"description": "Reflex is a tiny and fast reactive UI library.",
 	"author": "Alexis Bouhet (ZoulouX)",
 	"license": "MIT",
@@ -35,7 +35,7 @@
 	"devDependencies": {
 		"@zouloux/static-http": "^1.0.1",
 		"@zouloux/store": "^0.1.2",
-		"@zouloux/tsbundle": "^1.4.0",
+		"@zouloux/tsbundle": "^1.5.1",
 		"esbuild": "^0.19.5",
 		"typescript": "^4.9.5",
 		"v8-deopt-viewer": "^0.3.0",

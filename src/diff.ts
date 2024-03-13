@@ -309,8 +309,8 @@ function _registerKeyAndEnv ( parentNode:VNode, childNode:VNode ) {
 	if ( childNode.props ) {
 		const childNodeKey = childNode.props.key
 		if ( childNodeKey ) {
-			if ( !parentNode._keys )
-				parentNode._keys = {}
+			// if ( !parentNode._keys )
+			parentNode._keys ??= {}
 			parentNode._keys[ childNodeKey ] = childNode
 		}
 	}
@@ -383,89 +383,97 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 		}
 		return
 	}
-	for ( i = 0; i < totalNew; ++i )
-		_registerKeyAndEnv( newParentNode, newChildren[ i ] )
-	// Browse all new nodes
-	const oldParentKeys = oldParentNode._keys
-	const oldNodesToKeep = new Set<VNode>()
-	let collapseCount = 0
-	for ( i = 0; i < totalNew; ++i ) {
-		// Collapsed corresponding index between old and new nodes
-		// To be able to detect moves or if just collapsing because a top sibling
-		// has been removed
-		const newChildNode:VNode = newChildren[ i ]
-		const oldChildNode:VNode = oldChildren[ i ]
-		const oldChildNodeKey = oldChildNode?.props?.key
-		const newChildNodeKey = newChildNode.props?.key
-		const oldChildFromKey = oldParentKeys ? oldParentKeys[ newChildNodeKey ] : null
-		if (
-			oldChildNodeKey != null
-			&& newParentNode._keys
-			&& !(oldChildNodeKey in newParentNode._keys)
-		) {
-			++collapseCount
+
+	const totalMax = Math.max( totalNew, totalOld )
+	let offset = 0
+	for ( i = 0; i < totalMax; ++i ) {
+		// Register new nodes
+		if ( i < totalNew )
+			_registerKeyAndEnv( newParentNode, newChildren[ i ] )
+		// We keep the old child node at index to compare with keyless new node
+		let oldChildNode:VNode
+		// Browse old nodes
+		if ( i < totalOld ) {
+			// Target old node and keep it for new node browsing
+			oldChildNode = oldChildren[ i ]
+			const oldChildNodeKey = oldChildNode.props?.key
+			let deleteOldNode = false
+			// Keyed node
+			if ( oldChildNodeKey ) {
+				// Keyed node has been removed
+				if ( !(oldChildNodeKey in newParentNode._keys) ) {
+					--offset
+					deleteOldNode = true
+				}
+			}
+			// Keyless node
+			else if ( i >= totalNew ) {
+				deleteOldNode = true
+			}
+
+			if ( deleteOldNode ) {
+				recursivelyUpdateMountState( oldChildNode, false );
+				oldChildNode.dom.remove()
+				oldChildNode.dom = null
+				_updateNodeRef( oldChildNode )
+			}
 		}
-		// Has key, same key found in old, same type on both
-		/** MOVE & UPDATE KEYED CHILD **/
-		if (
-			newChildNodeKey != null
-			&& oldChildFromKey
-			&& oldChildFromKey.type === newChildNode.type
-		) {
-			diffNode( newChildNode, oldChildFromKey )
-			oldNodesToKeep.add( oldChildFromKey )
-			// Check if index changed, compare with collapsed index to detect moves
-			const collapsedIndex = i + collapseCount
-			if ( oldChildren.indexOf( oldChildFromKey ) !== collapsedIndex )
-				parentDom.insertBefore( newChildNode.dom, parentDom.children[ collapsedIndex + 1 ] )
-		}
-		// Has key, but not found in old
-		/** CREATE HAS KEY**/
-		else if (
-			newChildNodeKey != null
-			&& oldParentKeys
-			&& !oldChildFromKey
-		) {
-			diffNode( newChildNode )
-			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
-			--collapseCount
-		}
-		// Found at same index, with same type.
-		// Old node does not have a key.
-		/** UPDATE IN PLACE **/
-		else if (
-			oldChildNode
-			&& oldChildNode.type === newChildNode.type
-			&& (
-				// If element tag name changes,
-				// Or if component function changes,
-				// Do not try to update in place, but replace whole node
-				(
-					newChildNode.type !== 6/*ELEMENTS*/
-					&& newChildNode.type !== 7/*COMPONENTS*/
+
+		// Browse new nodes
+		if ( i < totalNew ) {
+			const newChildNode:VNode = newChildren[ i ]
+			const newChildNodeKey = newChildNode.props?.key
+			let addNewNode = false
+			// Keyed node
+			if ( newChildNodeKey != null ) {
+				// Keyed node has been kept
+				if ( newChildNodeKey in oldParentNode._keys ) {
+					// Get index position from old
+					const oldChildNodeFromKey = oldParentNode._keys[ newChildNodeKey ]
+					const index = oldChildren.indexOf( oldChildNodeFromKey )
+					diffNode( newChildNode, oldChildNodeFromKey )
+					// Keyed node has been moved
+					const n = index + offset
+					if ( i !== n ) {
+						if ( i < n )
+							++offset
+						// console.log('Keyed moved', i, n)
+						parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
+					}
+					// Else keyed node didn't move, we replaced in place
+				}
+				// Keyed node has been added
+				else {
+					++offset
+					addNewNode = true
+				}
+			}
+			// Keyless, still in same stack
+			else if (
+				oldChildNode // Old child node from index
+				&& oldChildNode.type === newChildNode.type
+				&& (
+					// If element tag name changes,
+					// Or if component function changes,
+					// Do not try to update in place, but replace whole node
+					(
+						newChildNode.type !== 6/*ELEMENTS*/
+						&& newChildNode.type !== 7/*COMPONENTS*/
+					)
+					|| oldChildNode.value === newChildNode.value
 				)
-				|| oldChildNode.value === newChildNode.value
-			)
-		) {
-			diffNode( newChildNode, oldChildNode )
-			oldNodesToKeep.add( oldChildNode )
-		}
-		// Not found
-		/** CREATE **/
-		else {
-			diffNode( newChildNode )
-			parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
-			--collapseCount
-		}
-	}
-	// Remove old children which are not reused
-	for ( i = 0; i < totalOld; ++i ) {
-		const oldChildNode = oldChildren[ i ]
-		if ( !oldNodesToKeep.has( oldChildNode ) ) {
-			recursivelyUpdateMountState( oldChildNode, false );
-			oldChildNode.dom.remove()
-			oldChildNode.dom = null
-			_updateNodeRef( oldChildNode )
+			) {
+				diffNode( newChildNode, oldChildNode )
+			}
+			// Keyless, old stack overflowed, add new node
+			else {
+				addNewNode = true
+			}
+
+			if ( addNewNode ) {
+				diffNode( newChildNode )
+				parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
+			}
 		}
 	}
 }

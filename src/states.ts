@@ -130,7 +130,8 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 		// Call all associated effect handlers ( not "changed()" handlers )
 		// Do not attach effects ( false by default as second argument of _callEffect )
 		for ( const effect of _effects )
-			!effect._dom && _callEffect( effect )
+			if ( !effect._dom )
+				_callEffect( effect )
 		// Then dispatch direct dom updates
 		for ( const node of _nodes )
 			// Skip this node if the whole component needs to be refreshed

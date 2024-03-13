@@ -74,27 +74,32 @@ const update = () => {
 		labelDomSelector.update( item.id )
 	}
 }
-// effect(() => {
-// 	console.log($data.value)
-// })
+effect(() => {
+	console.log("L", $data.value.length)
+})
 const clear = () => {
 	$data.set([])
 	labelDomSelector.clear()
 	isSelectedClassNameDomSelector.clear()
 }
 const swapRows = () => $data.set( d => {
-	if ( d.length > 998 ) {
+	if ( d.length >= 100 ) {
 		let tmp = d[1];
-		d[1] = d[998];
-		d[998] = tmp;
+		d[1] = d[98];
+		d[98] = tmp;
 		return [...d];
 	}
 	return d
 })
 const remove = id => $data.set(d => {
+	// alert( id )
 	labelDomSelector.remove( id )
 	isSelectedClassNameDomSelector.remove( id )
 	const index = d.findIndex( d => d.id === id );
+	if ( index < 0 ){
+		console.error(`Id ${id} not found`)
+		return d
+	}
 	return [ ...d.slice(0, index), ...d.slice(index + 1) ];
 })
 const toggleSelection = ( id:number ) => {
@@ -147,6 +152,7 @@ function Row ( props ) {
 		<td class="col-md-1">
 			<a onClick={ () => remove( props.id ) }>
 				<span class="glyphicon glyphicon-remove" aria-hidden="true" />
+				{/*<span>{ props.id }</span>*/}
 			</a>
 		</td>
 		<td class="col-md-6" />
@@ -194,6 +200,9 @@ export function App () {
 		{ memoryDebugger }
 		<Jumbotron />
 		<table class="table table-hover table-striped test-data">
+			{/*<tbody>*/}
+			{/*	{ $data.value.map( item => <Row key={ item.id } id={ item.id } /> ) }*/}
+			{/*</tbody>*/}
 			<For each={ $data } as="tbody">
 				{ item => <Row key={ item.id } id={ item.id } /> }
 			</For>

@@ -1,8 +1,6 @@
 import { changed, effect, h, render, state } from "../../../src";
 import { App } from "./main"
 import { drawReflexDebug } from "../../../src/debug";
-import { hydrate } from "../../../src/render";
-import { renderToString } from "../../../src/renderToString";
 
 
 drawReflexDebug();
@@ -54,6 +52,7 @@ function V20App () {
 function StatefulComponent () {
 	const $s1 = state(0)
 	const $s2 = state(0)
+	const $s3 = state(0)
 	effect(() => {
 		console.log("Effect 1", $s1.value)
 	})
@@ -74,12 +73,17 @@ function StatefulComponent () {
 		<button onClick={ e => $s1.value ++ }>Increment 1</button>
 		<button onClick={ e => $s2.value ++ }>Increment 2</button>
 		<button onClick={ incrementBoth }>Increment both</button>
+		<button onClick={ e => $s3.value ++ }>Increment 3</button>
 		<div>
 			<h4>Values</h4>
 			<div>Seed : {Math.random()}</div>
 			<div>S1 : { $s1 }</div>
-			<div>S2 : { $s2 }</div>
-			<div>Test strings { $s2 } again <span /> autre</div>
+			<div key="S2">S2 : { $s2 }</div>
+			{
+				$s3.value % 2 === 1 && <h3>Test</h3>
+			}
+			{/*<div key="TS">Test strings { $s2 } again <span /> autre</div>*/}
+			<div key="TS">AH</div>
 		</div>
 	</div>
 }
