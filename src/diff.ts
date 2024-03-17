@@ -306,17 +306,16 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 function _registerKeyAndEnv ( parentNode:VNode, childNode:VNode ) {
 	childNode._isSVG = parentNode._isSVG
 	childNode._document = parentNode._document
-	if ( childNode.props ) {
-		const childNodeKey = childNode.props.key
-		if ( childNodeKey ) {
-			// if ( !parentNode._keys )
-			parentNode._keys ??= {}
-			parentNode._keys[ childNodeKey ] = childNode
-		}
-	}
+	if ( childNode.props?.key )
+		parentNode._keys[ childNode.props.key ] = childNode
 }
 
-
+function _removeNode ( node:VNode ) {
+	recursivelyUpdateMountState( node, false );
+	node.dom.remove()
+	node.dom = null
+	_updateNodeRef( node )
+}
 
 // Previous parent node that was in diffChildren for lists that does not have their own dom
 let _previousParentNode:VNode
@@ -346,12 +345,15 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 	// Nothing to add
 	if ( totalNew === 0 )
 		return;
+	// Init parent node keys
+	newParentNode._keys = {}
 	// No old parent node, or empty old parent node, we inject directly without checks.
 	// Also for hydration which will patch merged text nodes
 	// Target children lists
 	// https://esbench.com/bench/652d43c97ff73700a4debaee
 	let i:number
-	if ( !oldParentNode || totalOld === 0 ) {
+	// if ( !oldParentNode || totalOld === 0 ) {
+	if ( totalOld === 0 ) {
 		let previousIsText = false
 		for ( i = 0; i < totalNew; ++i ) {
 			const child = newChildren[ i ]
@@ -384,41 +386,43 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 		return
 	}
 
+	// Register keys before browsing in the big loop
+	// FIXME : Optimize : find a way to avoid double loops ?
+	//			Anyway, 2n is better than n(n)
+	//			Maybe having a cond which check all keys when we are looking for one
+	//			to run this loop only when needed ( in keyed lists actually )
+	for ( i = 0; i < totalNew; ++i )
+		_registerKeyAndEnv( newParentNode, newChildren[ i ] )
+
 	const totalMax = Math.max( totalNew, totalOld )
 	let offset = 0
 	for ( i = 0; i < totalMax; ++i ) {
-		// Register new nodes
-		if ( i < totalNew )
-			_registerKeyAndEnv( newParentNode, newChildren[ i ] )
 		// We keep the old child node at index to compare with keyless new node
 		let oldChildNode:VNode
+		let deleteOldNode = false
 		// Browse old nodes
 		if ( i < totalOld ) {
 			// Target old node and keep it for new node browsing
 			oldChildNode = oldChildren[ i ]
 			const oldChildNodeKey = oldChildNode.props?.key
-			let deleteOldNode = false
 			// Keyed node
 			if ( oldChildNodeKey ) {
 				// Keyed node has been removed
 				if ( !(oldChildNodeKey in newParentNode._keys) ) {
+					// console.log(i, "KEYED - DELETE")
 					--offset
 					deleteOldNode = true
 				}
 			}
 			// Keyless node
 			else if ( i >= totalNew ) {
+				// console.log(i, "KEYLESS - DELETE")
 				deleteOldNode = true
 			}
 
-			if ( deleteOldNode ) {
-				recursivelyUpdateMountState( oldChildNode, false );
-				oldChildNode.dom.remove()
-				oldChildNode.dom = null
-				_updateNodeRef( oldChildNode )
-			}
+			if ( deleteOldNode )
+				_removeNode( oldChildNode )
 		}
-
 		// Browse new nodes
 		if ( i < totalNew ) {
 			const newChildNode:VNode = newChildren[ i ]
@@ -433,17 +437,22 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 					const index = oldChildren.indexOf( oldChildNodeFromKey )
 					diffNode( newChildNode, oldChildNodeFromKey )
 					// Keyed node has been moved
-					const n = index + offset
-					if ( i !== n ) {
-						if ( i < n )
-							++offset
-						// console.log('Keyed moved', i, n)
+					// const n = index + offset
+					if ( i !== index + offset ) {
+						// if ( i < n )
+						// 	++offset
+						// console.log(newChildNode, oldChildNodeFromKey)
+						// console.log(i, "KEYED - MOVED", index, offset)
 						parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
 					}
 					// Else keyed node didn't move, we replaced in place
+					// else {
+					// 	console.log(i, "KEYED - UPDATE")
+					// }
 				}
 				// Keyed node has been added
 				else {
+					// console.log(i, "KEYED - ADDED")
 					++offset
 					addNewNode = true
 				}
@@ -463,11 +472,19 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 					|| oldChildNode.value === newChildNode.value
 				)
 			) {
+				// console.log(i, "KEYLESS - UPDATE")
 				diffNode( newChildNode, oldChildNode )
 			}
 			// Keyless, old stack overflowed, add new node
 			else {
 				addNewNode = true
+				if ( oldChildNode && !deleteOldNode ) {
+					// console.log(i, "KEYLESS - REPLACE", newChildNode, oldChildNode)
+					_removeNode( oldChildNode )
+				}
+				// else {
+					// console.log(i, "KEYLESS - CREATE", oldChildNode)
+				// }
 			}
 
 			if ( addNewNode ) {

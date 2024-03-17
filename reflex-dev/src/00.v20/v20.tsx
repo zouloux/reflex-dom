@@ -44,6 +44,7 @@ function V20App () {
 		<div>Test 2</div>
 		<StatefulComponent />
 		<StatelessComponent />
+		<hr />
 		<App />
 	</div>
 }
@@ -62,6 +63,9 @@ function StatefulComponent () {
 	changed(() => {
 		console.log("Changed both", $s1.value, $s2.value)
 	})
+	effect(() => {
+		console.log("-", $s3.value % 2 === 1, $s3.value % 5 === 3)
+	})
 	// console.log("COMPONENT CREATED")
 	function incrementBoth () {
 		// console.log("CLICKED")
@@ -79,11 +83,10 @@ function StatefulComponent () {
 			<div>Seed : {Math.random()}</div>
 			<div>S1 : { $s1 }</div>
 			<div key="S2">S2 : { $s2 }</div>
-			{
-				$s3.value % 2 === 1 && <h3>Test</h3>
-			}
-			{/*<div key="TS">Test strings { $s2 } again <span /> autre</div>*/}
-			<div key="TS">AH</div>
+			{ $s3.value % 2 === 1 && <h3 key="test">Test</h3> }
+			{ $s3.value % 5 === 3 && <h4>OK</h4> }
+			<div key="TS">Test strings { $s2 } again <span /> autre</div>
+			<div key="TS2">AH</div>
 		</div>
 	</div>
 }

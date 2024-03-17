@@ -74,9 +74,9 @@ const update = () => {
 		labelDomSelector.update( item.id )
 	}
 }
-effect(() => {
-	console.log("L", $data.value.length)
-})
+// effect(() => {
+// 	console.log("L", $data.value.length)
+// })
 const clear = () => {
 	$data.set([])
 	labelDomSelector.clear()
