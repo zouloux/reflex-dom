@@ -409,14 +409,14 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 			if ( oldChildNodeKey ) {
 				// Keyed node has been removed
 				if ( !(oldChildNodeKey in newParentNode._keys) ) {
-					// console.log(i, "KEYED - DELETE")
+					console.log(i, "KEYED - DELETE")
 					--offset
 					deleteOldNode = true
 				}
 			}
 			// Keyless node
 			else if ( i >= totalNew ) {
-				// console.log(i, "KEYLESS - DELETE")
+				console.log(i, "KEYLESS - DELETE")
 				deleteOldNode = true
 			}
 
@@ -440,19 +440,19 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 					// const n = index + offset
 					if ( i !== index + offset ) {
 						// if ( i < n )
-						++offset
+						// ++offset
 						// console.log(newChildNode, oldChildNodeFromKey)
-						// console.log(i, "KEYED - MOVED", index, offset)
-						parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
+						console.log(i, "KEYED - MOVED", index, offset)
+						parentDom.insertBefore( newChildNode.dom, parentDom.children[ i + 1 ] )
 					}
 					// Else keyed node didn't move, we replaced in place
-					// else {
-					// 	console.log(i, "KEYED - UPDATE")
-					// }
+					else {
+						console.log(i, "KEYED - UPDATE")
+					}
 				}
 				// Keyed node has been added
 				else {
-					// console.log(i, "KEYED - ADDED")
+					console.log(i, "KEYED - ADDED")
 					++offset
 					addNewNode = true
 				}
@@ -472,19 +472,19 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 					|| oldChildNode.value === newChildNode.value
 				)
 			) {
-				// console.log(i, "KEYLESS - UPDATE")
+				console.log(i, "KEYLESS - UPDATE")
 				diffNode( newChildNode, oldChildNode )
 			}
 			// Keyless, old stack overflowed, add new node
 			else {
 				addNewNode = true
 				if ( oldChildNode && !deleteOldNode ) {
-					// console.log(i, "KEYLESS - REPLACE", newChildNode, oldChildNode)
+					console.log(i, "KEYLESS - REPLACE", newChildNode, oldChildNode)
 					_removeNode( oldChildNode )
 				}
-				// else {
-					// console.log(i, "KEYLESS - CREATE", oldChildNode)
-				// }
+				else {
+					console.log(i, "KEYLESS - CREATE", oldChildNode)
+				}
 			}
 
 			if ( addNewNode ) {
