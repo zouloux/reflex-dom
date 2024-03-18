@@ -440,7 +440,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 					// const n = index + offset
 					if ( i !== index + offset ) {
 						// if ( i < n )
-						// 	++offset
+						++offset
 						// console.log(newChildNode, oldChildNodeFromKey)
 						// console.log(i, "KEYED - MOVED", index, offset)
 						parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
