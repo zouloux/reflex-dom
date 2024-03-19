@@ -1,14 +1,15 @@
 import { IVirtualDocument, VNode, VNodeTypes } from "./common";
 
-// Empty properties to add to every VNode created outside of h() ( after type, value, props )
-const _n = { _isSVG: null, _document: null, _id: null, component: null, dom: null }
-
 /**
  * Helper to create monomorphic VNode objects that are inline cached for V8.
+ * Always use this function to create virtual nodes.
+ * The speedups here are :
+ * - All properties are defined and are always in the same order ( 1 shape )
+ * - Source of object is always this function ( factory source )
  */
 export const hh = (
 	type:VNodeTypes, value:any = null, props:any = null,
-	_isSVG:boolean = null, _document:IVirtualDocument = null,
+	_isSVG:boolean = null, _document:Document|IVirtualDocument = null,
 ):VNode => ({
 	type, value, props,
 	_isSVG, _document,

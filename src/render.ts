@@ -1,5 +1,6 @@
 import { IVirtualDocument, IVirtualElement, VNode, _featureHooks, _dispatch } from "./common";
 import { _diffAndMount } from "./diff";
+import { hh } from "./jsx";
 
 // ----------------------------------------------------------------------------- CONSTANTS
 
@@ -11,18 +12,7 @@ export const _DOM_PRIVATE_VIRTUAL_NODE_KEY = "__v"
 function _render ( rootNode:VNode, parentElement:HTMLElement|IVirtualElement, documentInterface:Document|IVirtualDocument = document, hydrateRoot:Element = null ) {
 	// When using render, we create a new root node to detect new renders
 	// This node is never rendered, we just attach it to the parentElement and render its children
-	const root:VNode = {
-		// Properties order is important
-		type: 5 /*ROOT*/,
-		value: null,
-		props: { children: [rootNode] },
-		// Follow _n order to avoid megamorphic nodes
-		_isSVG: false,
-		_document: documentInterface,
-		_id: null,
-		component: null,
-		dom: null,
-	}
+	const root = hh(5, null, { children: [rootNode] }, false, documentInterface)
 	root.dom = parentElement as HTMLElement
 	const oldNode = parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ]
 	_diffAndMount(root, oldNode, hydrateRoot)
