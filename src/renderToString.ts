@@ -78,11 +78,15 @@ const virtualDocument:IVirtualDocument = {
 		let innerHTML = ""
 		let attributes = {}
 		let children = [];
-		return {
+		let parent:IVirtualElement = null;
+		const virtualElement:IVirtualElement = {
 			style: {},
 			/** Get components */
 			get attributes () { return attributes },
 			get children () { return children },
+			/** Get parent */
+			get parent () { return parent },
+			set parent ( value:IVirtualElement ) { parent = value },
 			/** Base element type */
 			virtualType: "element",
 			type, namespace,
@@ -105,9 +109,13 @@ const virtualDocument:IVirtualDocument = {
 			},
 			appendChild ( child:IVirtualNode ) {
 				children.push( child )
+				child.parent = this
 			},
 			insertBefore ( child:IVirtualNode, before:IVirtualNode ) {
 				children.splice( children.indexOf( before ), 0, child )
+			},
+			remove () {
+				parent.removeChild( virtualElement as IVirtualNode )
 			},
 			/** innerHTML */
 			get innerHTML () {
@@ -126,6 +134,7 @@ const virtualDocument:IVirtualDocument = {
 				return renderAbstractNodeToString( this )
 			}
 		}
+		return virtualElement
 	},
 }
 

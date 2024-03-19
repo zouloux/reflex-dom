@@ -9,12 +9,12 @@ import { For, createDomSelector } from "../../../src/performance-helpers"
 // ----------------------------------------------------------------------------- DEBUG
 
 // @ts-ignore
-let memoryDebugger
-import { drawReflexDebug, MemoryUsage } from "../../../src/debug";
-if ( process.env.NODE_ENV !== 'production' ) {
-	// drawReflexDebug();
-	memoryDebugger = <MemoryUsage />
-}
+// let memoryDebugger
+// import { drawReflexDebug, MemoryUsage } from "../../../src/debug";
+// if ( process.env.NODE_ENV !== 'production' ) {
+// 	drawReflexDebug();
+// 	memoryDebugger = <MemoryUsage />
+// }
 
 // ----------------------------------------------------------------------------- DATA HELPERS
 
@@ -197,7 +197,7 @@ export function App () {
 				height: 20px;
 			}
 		`} />
-		{ memoryDebugger }
+		{/*{ memoryDebugger }*/}
 		<Jumbotron />
 		<table class="table table-hover table-striped test-data">
 			{/*<tbody>*/}

@@ -76,10 +76,6 @@ export function defaultProps <
 			// @ts-ignore
 			props[ name ] = defaults[ name ]
 	})
-	// for ( let i in defaults )
-	// 	if ( !(i in props) )
-	// 		// @ts-ignore
-	// 		props[ i ] = defaults[ i ]
 }
 
 /**
@@ -103,7 +99,11 @@ export function shouldUpdate
 	)
 }
 
-
+/**
+ * Default compare props function.
+ * Will only check for first level strict equality between objects A and B.
+ * @see performances-helpers.ts advancedPropsCompare() to compare deeply
+ */
 export const shallowPropsCompare = ( a:object, b:object ) => (
 	// Same amount of properties ?
 	Object.keys( a ).length === Object.keys( b ).length

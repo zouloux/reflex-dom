@@ -1,9 +1,9 @@
 import { changed, effect, h, render, state } from "../../../src";
 import { App } from "./main"
-import { drawReflexDebug } from "../../../src/debug";
+import { drawReflexDebug, MemoryUsage } from "../../../src/debug";
 
 
-drawReflexDebug();
+// drawReflexDebug();
 
 export function startV20 () {
 	render( <V20App />, document.getElementById("App") );
@@ -38,6 +38,7 @@ function V20App2 () {
 
 function V20App () {
 	return () => <div>
+		<MemoryUsage />
 		<h1>Hello Reflex</h1>
 		<div>Test 1</div>
 		<SVGComponent />

@@ -2,6 +2,7 @@ import { compute, IState, updateDomFromState } from "./states";
 import type { ReflexIntrinsicElements } from "./jsx-types";
 import type { VNode } from "./common";
 import { getCurrentDiffingNode } from "./diff";
+import { hh } from "./jsx";
 
 // ----------------------------------------------------------------------------- FOR LOOP
 
@@ -23,18 +24,9 @@ export function For ( props:IForProps ) {
 	)
 	return () => {
 		const children = _eachState.value.map( props.children[0] )
-		return {
-			type: 6,
-			value: props.as ?? "div",
-			props: {
-				children: [
-					{
-						type: 8,
-						props: { children }
-					}
-				]
-			}
-		}
+		return hh(6, props.as ?? "div", {
+			children: [ hh(8, null, { children }) ]
+		})
 	}
 }
 
@@ -96,6 +88,12 @@ export function createDomSelector <GPath extends string|number> ( getter:( path:
 
 // ----------------------------------------------------------------------------- ADVANCED SHALLOW PROPS COMPARE
 
+/**
+ * Advanced check between objects A and B.
+ * Warning, can be very CPU intensive on big objects !
+ * But it's not a recursive check, only the first layers with "children" special case.
+ * Can be used with "shouldUpdate" extension -> "shouldUpdate( advancedPropsCompare )"
+ */
 export const advancedPropsCompare = ( a:object, b:object ) => (
 	// Same amount of properties ?
 	Object.keys( a ).length === Object.keys( b ).length

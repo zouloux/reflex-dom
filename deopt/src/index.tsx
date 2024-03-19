@@ -11,23 +11,32 @@ function Item ( props ) {
 	</div>
 }
 
-function getState () {
-	return Array.from({ length: 1000 }).map( (_, i) => ({
-		label: `Label ${i}`,
-		isSelected: i % 2 == 0,
+function getState ( start = 0, total = 1000 ) {
+	return Array.from({ length: total }).map( (_, i) => ({
+		key: start + i,
+		label: `Label ${start + i}`,
+		isSelected: (start + i) % 2 == 0,
 	}))
 }
 
+const $s1 = state( () => getState(0, 10) )
+
 function App () {
-	const $s1 = state( getState )
 	return <div>
 		<h1>Deoptigate test</h1>
 		<For each={ $s1 }>
-			{ item => <Item {...item} /> }
+			{ item => <Item key={ item.key } {...item} /> }
 		</For>
 	</div>
 }
 
-const c = renderToString( <App /> )
+(async function () {
+	const a = <App />
+	const c1 = renderToString( a )
+	await $s1.set( () => getState(5, 20) )
+	const c2 = renderToString( a )
 
-console.log( c )
+	console.log( c1 )
+	console.log("-----")
+	console.log( c2 )
+})()

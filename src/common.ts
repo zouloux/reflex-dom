@@ -12,6 +12,7 @@ export type VirtualNodeTypes = "comment"|"text"|"element"
 export interface IVirtualNode
 {
 	virtualType:VirtualNodeTypes
+	parent?:IVirtualElement
 }
 
 export interface IVirtualComment extends IVirtualNode
@@ -38,6 +39,7 @@ export interface IVirtualElement extends IVirtualNode
 	removeAttribute ( name:string )
 	removeChild ( child:IVirtualNode )
 	appendChild ( child:IVirtualNode )
+	remove ()
 	insertBefore ( child:IVirtualNode, before:IVirtualNode ),
 	innerHTML:string
 	toString():string
@@ -134,7 +136,7 @@ export interface VNode {
 
 	// List of children, recorded with their keys
 	// Is used by diff algorithm to check differences between components
-	_keys			?:Record<number|string, VNode>
+	_keys			?:Map<number|string, VNode>
 	// Property name is used by Argument States to know which argument to mutate
 	_propertyName	?:string
 	// Used by refs, to keep track of ref index in ref lists
@@ -151,7 +153,6 @@ export interface DefaultReflexBaseProps {
 	key				?:number|string
 	ref				?:IRefOrRefs
 	innerHTML		?:string
-	// children		?:any|any[]
 }
 
 export interface DefaultReflexProps extends DefaultReflexBaseProps {
@@ -161,14 +162,20 @@ export interface DefaultReflexProps extends DefaultReflexBaseProps {
 
 // Helper to add class props when extending component props interface
 export interface HasClassProp {
-	class ?: ClassNameItem | ClassNameItem[]
+	class 			?: ClassNameItem | ClassNameItem[]
 }
 
 // ----------------------------------------------------------------------------- DISPATCH
 
-// Can we minimize it ?
+
 // https://esbench.com/bench/65ee13067ff73700a4dec0db
-export const _dispatch = ( handlers:Function[], ...rest:any[] ) => handlers.map( h => h?.(...rest) );
+export const _dispatch = ( handlers:Function[], ...rest:any[] ) => {
+	let r = []
+	for ( const handler of handlers )
+		if ( handler )
+			r.push( handler( ... rest ) )
+	return r
+};
 
 // Browse key helpers
 // It's a good compromise between perfs and bundle size.
@@ -177,9 +184,8 @@ export const _dispatch = ( handlers:Function[], ...rest:any[] ) => handlers.map(
 // But it's a lot smaller in the bundle
 export const _browseKeys = ( obj:object, handler:(name:string) => void ) => {
 	const keys = Object.keys( obj )
-	const total = keys.length
-	for ( let i = 0; i < total; ++i )
-		handler( keys[i] )
+	for ( const key of keys )
+		handler( key )
 }
 
 // ----------------------------------------------------------------------------- BATCHED TASK

@@ -1,4 +1,7 @@
-import { _browseKeys, _dispatch, _featureHooks, ComponentReturn, RenderDom, RenderFunction, VNode } from "./common";
+import {
+	_browseKeys, _dispatch, _featureHooks, ComponentReturn,
+	IVirtualDocument, RenderDom, RenderFunction, VNode
+} from "./common";
 import { IInternalRef } from "./ref";
 import { ComponentInstance, shallowPropsCompare } from "./component";
 import { state } from "./states";
@@ -96,7 +99,10 @@ export function _setDomAttribute ( dom:Element, name:string, value:any ) {
 }
 
 /**
- * TODO DOC
+ * Diff an element node and create its attached dom element.
+ * @param newNode New node, can be the only argument to create dom element.
+ * @param oldNode Old node, for diffing.
+ * @param element for hydration only, the corresponding node already in document.
  */
 export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom ) {
 	const { type, value } = newNode
@@ -150,7 +156,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom 
 	if ( type === 0/*NULL*/ || isText )
 		return dom
 	else if ( type === 8/*LIST*/ ) {
-		// Diff children of lists
+		// Recursively diff children of lists
 		_diffChildren( newNode, oldNode, dom )
 		return dom
 	}
@@ -167,7 +173,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom 
 				// Insert HTML directly without warning
 				if ( name == "innerHTML" )
 					(dom as Element).innerHTML = "" // FIXME : Maybe use delete or null ?
-					// Events starts with "on". On preact this is optimized with [0] == "o"
+				// Events starts with "on". On preact this is optimized with [0] == "o"
 				// But recent benchmarks are pointing to startsWith usage as faster
 				else if ( name.startsWith("on") ) {
 					const { eventName, eventKey, useCapture } = _getEventNameAndKey( name, dom as Element );
@@ -245,7 +251,16 @@ export function _diffAndMount ( newNode:VNode, oldNode:VNode, element?:Element, 
 	}
 }
 
+/**
+ * Recursively update mount state of components associated to node.
+ * Will browse every component to update the mounting state in correct order.
+ * Will call mount / unmount / render extensions.
+ * @param node The starting node.
+ * @param doMount Mount, or unmount.
+ */
 export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
+	if ( (node._document as IVirtualDocument).isVirtual )
+		return
 	if ( node.type === 7/*COMPONENTS*/ ) {
 		const { component } = node
 		// First, we recursively mount children before mounting the parent component
@@ -256,60 +271,72 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 			component.isMounted = true;
 			if ( node.value.isFactory !== false ) {
 				// Call every mount handler and store returned unmount handlers
-				// TODO : ESBENCH
-				const total = component._mountHandlers.length
-				for ( let i = 0; i < total; ++i ) {
-					const mountedReturn = component._mountHandlers[ i ].apply( component );
+				// Faster to store handlers before using it in the for loop
+				// "for const of" faster that classic "for i"
+				const handlers = component._mountHandlers
+				for ( const mountHandler of handlers ) {
+					// const mountedReturn = component._mountHandlers[ i ].apply( component );
+					const mountedReturn = mountHandler.apply( component );
 					// Allow mounted handler to return a single unmount
 					if ( typeof mountedReturn === "function" )
 						component._unmountHandlers.push( mountedReturn )
 					// Allow mounted handler to return an array of unmount
 					else if ( Array.isArray( mountedReturn ) )
+						// todo : ESBENCH
+						// component._unmountHandlers.push( ...mountedReturn.filter( Boolean ) )
 						mountedReturn.filter( v => v ).map( h => component._unmountHandlers.push( h ) )
 				}
 				// Reset mount handlers, no need to keep them
-				component._mountHandlers = []
 				_dispatch( component._renderHandlers )
 				_dispatch( component._nextRenderHandlers )
+				component._mountHandlers = []
 				component._nextRenderHandlers = []
 			}
 			_dispatch(_featureHooks, 1/* MOUNT / UNMOUNT */, component, true )
 		}
 		// --- UNMOUNT
 		else if ( !doMount && component.isMounted ) {
-			_dispatch(_featureHooks, 1/* MOUNT / UNMOUNT */, false )
-			_dispatch(component._unmountHandlers)
+			_dispatch( _featureHooks, 1/* MOUNT / UNMOUNT */, false )
+			_dispatch( component._unmountHandlers )
 			component.isMounted = false;
 			// Cut component branch from virtual node to allow GC to destroy component
-			delete node.component
-			delete component.vnode
-			// TODO : Remove all listeners ?
+			node.component = null // avoid megamorphic, remove ref but keep key !
+			component.vnode = null
 		}
 	}
+	// --- RECURSIVE
 	else if ( node.type > 4/*CONTAINERS*/ ) {
 		const children = node.props.children
-		const total = children.length
-		for ( let i = 0; i < total; ++i )
-			recursivelyUpdateMountState( children[ i ], doMount )
+		for ( const child of children )
+			recursivelyUpdateMountState( child, doMount )
 	}
 }
 
 // ----------------------------------------------------------------------------- DIFF CHILDREN
 
 /**
- * TODO DOC
- * @param parentNode
- * @param childNode
+ * Register child key on parent keys map
+ * Init keys on parent
+ * Transfer SVG mark and document from parent to child
  */
-// esbench : Object faster than Map with number
-// https://esbench.com/bench/652d49867ff73700a4debb1a
 function _registerKeyAndEnv ( parentNode:VNode, childNode:VNode ) {
+	// Inject SVG and document from parent
+	// When a <svg> tag is discovered, every child is marked as SVG
+	// _isSVG is used to create element with the correct NS
 	childNode._isSVG = parentNode._isSVG
 	childNode._document = parentNode._document
-	if ( childNode.props?.key )
-		parentNode._keys[ childNode.props.key ] = childNode
+	// check for null and undefined, but 0 and "" are valid keys
+	if ( childNode.props?.key != null ) {
+		// esbench : Object faster than Map with number
+		// https://esbench.com/bench/652d49867ff73700a4debb1a
+		parentNode._keys ??= new Map()
+		parentNode._keys.set( childNode.props.key, childNode)
+	}
 }
 
+/**
+ * Remove a node drom DOM and unmount it.
+ */
 function _removeNode ( node:VNode ) {
 	recursivelyUpdateMountState( node, false );
 	node.dom.remove()
@@ -320,7 +347,12 @@ function _removeNode ( node:VNode ) {
 // Previous parent node that was in diffChildren for lists that does not have their own dom
 let _previousParentNode:VNode
 
-
+/**
+ * Diff all children, with or without keys.
+ * @param newParentNode New parent node to diff
+ * @param oldParentNode Old parent node to diff, can be null to create element with newParentNode
+ * @param element Used for hydration only. If defined, will not diff but only hydrate.
+ */
 export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, element:RenderDom ) {
 	// console.log("DIFF CHILDREN", newParentNode)
 	// Keep node ref for lists, that does not have their own dom
@@ -345,8 +377,6 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 	// Nothing to add
 	if ( totalNew === 0 )
 		return;
-	// Init parent node keys
-	newParentNode._keys = {}
 	// No old parent node, or empty old parent node, we inject directly without checks.
 	// Also for hydration which will patch merged text nodes
 	// Target children lists
@@ -355,6 +385,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 	// if ( !oldParentNode || totalOld === 0 ) {
 	if ( totalOld === 0 ) {
 		let previousIsText = false
+		// If using "i", it's faster to have a classic for ( instead of "for const of" )
 		for ( i = 0; i < totalNew; ++i ) {
 			const child = newChildren[ i ]
 			_registerKeyAndEnv( newParentNode, child )
@@ -387,13 +418,15 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 	}
 
 	// Register keys before browsing in the big loop
-	// FIXME : Optimize : find a way to avoid double loops ?
-	//			Anyway, 2n is better than n(n)
-	//			Maybe having a cond which check all keys when we are looking for one
-	//			to run this loop only when needed ( in keyed lists actually )
-	for ( i = 0; i < totalNew; ++i )
-		_registerKeyAndEnv( newParentNode, newChildren[ i ] )
+	// We have to loop 2 times here. This one to get all child keys before browsing for diffing.
+	// Anyway, 2n is better than n(n)
+	// Optimisation : Maybe having a cond which check for all keys when we are looking for the first one
+	// to run this loop only when needed ( in keyed lists only )
+	// esbench : https://esbench.com/bench/652d43c97ff73700a4debaee
+	for ( const child of newChildren )
+		_registerKeyAndEnv( newParentNode, child )
 
+	// If using "i", it's faster to have a classic for ( instead of "for const of" )
 	const totalMax = Math.max( totalNew, totalOld )
 	let offset = 0
 	for ( i = 0; i < totalMax; ++i ) {
@@ -406,9 +439,10 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 			oldChildNode = oldChildren[ i ]
 			const oldChildNodeKey = oldChildNode.props?.key
 			// Keyed node
-			if ( oldChildNodeKey ) {
+			// check for null and undefined, but 0 and "" are valid keys
+			if ( oldChildNodeKey != null ) {
 				// Keyed node has been removed
-				if ( !(oldChildNodeKey in newParentNode._keys) ) {
+				if ( !newParentNode._keys.has(oldChildNodeKey) ) {
 					// console.log(i, "KEYED - DELETE")
 					--offset
 					deleteOldNode = true
@@ -419,7 +453,6 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 				// console.log(i, "KEYLESS - DELETE")
 				deleteOldNode = true
 			}
-
 			if ( deleteOldNode )
 				_removeNode( oldChildNode )
 		}
@@ -429,26 +462,21 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 			const newChildNodeKey = newChildNode.props?.key
 			let addNewNode = false
 			// Keyed node
+			// check for null and undefined, but 0 and "" are valid keys
 			if ( newChildNodeKey != null ) {
 				// Keyed node has been kept
-				if ( newChildNodeKey in oldParentNode._keys ) {
+				if ( oldParentNode._keys.has(newChildNodeKey) ) {
 					// Get index position from old
-					const oldChildNodeFromKey = oldParentNode._keys[ newChildNodeKey ]
+					const oldChildNodeFromKey = oldParentNode._keys.get( newChildNodeKey )
 					const index = oldChildren.indexOf( oldChildNodeFromKey )
 					diffNode( newChildNode, oldChildNodeFromKey )
 					// Keyed node has been moved
-					// const n = index + offset
 					if ( i !== index + offset ) {
-						// if ( i < n )
-						// ++offset
-						// console.log(newChildNode, oldChildNodeFromKey)
 						// console.log(i, "KEYED - MOVED", index, offset)
 						parentDom.insertBefore( newChildNode.dom, parentDom.children[ i + 1 ] )
 					}
 					// Else keyed node didn't move, we replaced in place
-					// else {
-					// 	console.log(i, "KEYED - UPDATE")
-					// }
+					// else console.log(i, "KEYED - UPDATE")
 				}
 				// Keyed node has been added
 				else {
@@ -459,7 +487,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 			}
 			// Keyless, still in same stack
 			else if (
-				oldChildNode // Old child node from index
+				oldChildNode // Old child node from same index, fixme : regarget with offset ?
 				&& oldChildNode.type === newChildNode.type
 				&& (
 					// If element tag name changes,
@@ -482,11 +510,8 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 					// console.log(i, "KEYLESS - REPLACE", newChildNode, oldChildNode)
 					_removeNode( oldChildNode )
 				}
-				else {
-					// console.log(i, "KEYLESS - CREATE", oldChildNode)
-				}
+				// else console.log(i, "KEYLESS - CREATE", oldChildNode)
 			}
-
 			if ( addNewNode ) {
 				diffNode( newChildNode )
 				parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
@@ -499,8 +524,9 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 // ----------------------------------------------------------------------------- RENDER COMPONENT
 
 /**
- * FIXME: Doc
- * TODO : Improve / optimize
+ * Render a component node.
+ * Component is already instantiated and attached to node.
+ * Will create Proxy props for Factory components
  * @param node
  */
 function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode ) :GReturn {
@@ -531,11 +557,11 @@ function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode ) :GRetur
 // ----------------------------------------------------------------------------- DIFF NODE
 
 /**
- * FIXME : Doc
- * @param newNode
- * @param oldNode
- * @param element
- * @param forceUpdate
+ * Diff a node.
+ * @param newNode New node, can be the only parameter to only add.
+ * @param oldNode Old node, if diffing.
+ * @param element Dom element for hydration only.
+ * @param forceUpdate For update to bypass shouldUpdate on components.
  */
 export function diffNode ( newNode:VNode, oldNode?:VNode, element?:RenderDom, forceUpdate = false ) {
 	// IMPORTANT : Here we clone node if we got the same instance
@@ -546,7 +572,9 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, element?:RenderDom, fo
 		// IMPORTANT : Props properties can be the same instance between shouldUpdate here
 		// IMPORTANT : also clone props object
 		// https://esbench.com/bench/65eb3c3c7ff73700a4dec08e
-		newNode = { ...oldNode, props: { ...oldNode.props } }
+		newNode = { ...oldNode }
+		// Important, do not change properties order and set "props" to avoid megamorphic
+		newNode.props = { ...oldNode.props }
 	}
 	// Transfer id for refs and env
 	if ( oldNode ) {
@@ -605,9 +633,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, element?:RenderDom, fo
 		let shouldUpdate = true
 		if ( !forceUpdate && !renderResult && oldNode ) {
 			// We check should update on functional and factory components
-			// FIXME : Do we keep shouldUpdate for factory components ?
 			// https://esbench.com/bench/652be1807ff73700a4debadb
-			// shouldUpdate = componentInstance._shouldUpdate?.( newNode.props, oldNode.props ) ?? true
 			// We check should update on functional and factory components
 			shouldUpdate = (
 				// Use shouldUpdate function on component API

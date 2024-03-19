@@ -155,6 +155,7 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 	// if this state is created into a factory phase of a component,
 	// auto-dispose it on component unmount
 	const dispose = unmounted(() => {
+		console.log("dispose state")
 		// FIXME : For HMR, maybe delay it ? Maybe disable =null when hmr enabled ?
 		// initialValue = null;
 		_effects.clear()

@@ -12,11 +12,16 @@ function _render ( rootNode:VNode, parentElement:HTMLElement|IVirtualElement, do
 	// When using render, we create a new root node to detect new renders
 	// This node is never rendered, we just attach it to the parentElement and render its children
 	const root:VNode = {
+		// Properties order is important
 		type: 5 /*ROOT*/,
 		value: null,
 		props: { children: [rootNode] },
+		// Follow _n order to avoid megamorphic nodes
 		_isSVG: false,
 		_document: documentInterface,
+		_id: null,
+		component: null,
+		dom: null,
 	}
 	root.dom = parentElement as HTMLElement
 	const oldNode = parentElement[ _DOM_PRIVATE_VIRTUAL_NODE_KEY ]
