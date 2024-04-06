@@ -1,5 +1,5 @@
 import { compute, h, state } from "../../src"
-import { renderToString } from "../../src/renderToString.js"
+import { renderToString } from "../../src/render-to-string"
 import { For } from "../../src/performance-helpers";
 
 

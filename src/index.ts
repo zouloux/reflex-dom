@@ -9,7 +9,7 @@
 export { state, effect, compute, changed, invalidateComponent, updateDomFromState } from "./states"
 export { recursivelyUpdateMountState, getCurrentComponent, diffNode, getCurrentDiffingNode } from "./diff"
 export { ref, refs } from "./ref"
-export { render } from "./render"
+export { render, hydrate } from "./render"
 export { featureHook, createBatch } from "./common"
 export { mounted, unmounted, rendered, defaultProps, shouldUpdate, shallowPropsCompare } from "./component"
 
