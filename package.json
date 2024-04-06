@@ -1,21 +1,21 @@
 {
 	"name": "reflex-dom",
 	"type": "module",
-	"version": "0.22.1",
+	"version": "0.22.2",
 	"description": "Reflex is a tiny and fast reactive UI library.",
 	"author": "Alexis Bouhet (ZoulouX)",
 	"license": "MIT",
-	"main": "./dist/index.es2020.mjs",
-	"module": "./dist/index.es2020.mjs",
+	"main": "./dist/index.mjs",
+	"module": "./dist/index.mjs",
 	"unpkg": "./dist/reflex.es2017.min.js",
 	"types": "./dist/index.d.ts",
 	"exports": {
-		".": "./dist/index.es2020.mjs",
-		"./hmr-plugin": "./dist/hmr-plugin.es2020.mjs",
-		"./hmr-runtime": "./dist/hmr-runtime.es2020.mjs",
-		"./debug": "./dist/debug.es2020.mjs",
-		"./render-to-string": "./dist/render-to-string.es2020.mjs",
-		"./performance-helpers": "./dist/performance-helpers.es2020.mjs"
+		".": "./dist/index.mjs",
+		"./hmr-plugin": "./dist/hmr-plugin.mjs",
+		"./hmr-runtime": "./dist/hmr-runtime.mjs",
+		"./debug": "./dist/debug.mjs",
+		"./render-to-string": "./dist/render-to-string.mjs",
+		"./performance-helpers": "./dist/performance-helpers.mjs"
 	},
 	"typesVersions": {
 		"*": {
@@ -86,10 +86,6 @@
 				"input": "./src/debug.ts"
 			},
 			{
-				"formats": [
-					"es2020.mjs",
-					"es2017.min.js"
-				],
 				"input": "./src/render-to-string.ts",
 				"filterGlob": "render-to-string.*",
 				"exportBits": true
