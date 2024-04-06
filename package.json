@@ -1,11 +1,11 @@
 {
 	"name": "reflex-dom",
 	"type": "module",
-	"version": "0.22.0",
+	"version": "0.22.1",
 	"description": "Reflex is a tiny and fast reactive UI library.",
 	"author": "Alexis Bouhet (ZoulouX)",
 	"license": "MIT",
-	"main": "./dist/index.es2017.cjs",
+	"main": "./dist/index.es2020.mjs",
 	"module": "./dist/index.es2020.mjs",
 	"unpkg": "./dist/reflex.es2017.min.js",
 	"types": "./dist/index.d.ts",
@@ -16,6 +16,25 @@
 		"./debug": "./dist/debug.es2020.mjs",
 		"./render-to-string": "./dist/render-to-string.es2020.mjs",
 		"./performance-helpers": "./dist/performance-helpers.es2020.mjs"
+	},
+	"typesVersions": {
+		"*": {
+			"hmr-plugin": [
+				"dist/hmr-plugin.d.ts"
+			],
+			"hmr-runtime": [
+				"dist/hmr-runtime.d.ts"
+			],
+			"debug": [
+				"dist/debug.d.ts"
+			],
+			"render-to-string": [
+				"dist/render-to-string.d.ts"
+			],
+			"performance-helpers": [
+				"dist/performance-helpers.d.ts"
+			]
+		}
 	},
 	"scripts": {
 		"reset": "rm -rf node_modules package-lock.json && npm i",
@@ -47,7 +66,6 @@
 		},
 		"output": "./dist",
 		"formats": [
-			"es2017.cjs",
 			"es2020.mjs"
 		],
 		"files": [
@@ -69,7 +87,6 @@
 			},
 			{
 				"formats": [
-					"es2017.cjs",
 					"es2020.mjs",
 					"es2017.min.js"
 				],
