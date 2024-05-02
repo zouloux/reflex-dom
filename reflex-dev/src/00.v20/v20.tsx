@@ -3,7 +3,7 @@ import { App } from "./main"
 import { drawReflexDebug, MemoryUsage } from "../../../src/debug";
 
 
-// drawReflexDebug();
+drawReflexDebug();
 
 export function startV20 () {
 	render( <V20App />, document.getElementById("App") );
@@ -67,6 +67,9 @@ function StatefulComponent () {
 	effect(() => {
 		console.log("-", $s3.value % 2 === 1, $s3.value % 5 === 3)
 	})
+	// rendered(() => {
+	// 	console.log("Rendered")
+	// })
 	// console.log("COMPONENT CREATED")
 	function incrementBoth () {
 		// console.log("CLICKED")

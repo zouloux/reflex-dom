@@ -1,10 +1,7 @@
 // import { h, render, state, DefaultReflexBaseProps, shouldUpdate } from "reflex-dom"
-import {
-	h, state,
-	shouldUpdate, IState, createBatch,
-	getCurrentDiffingNode, updateDomFromState, VNode, effect,
-} from "../../../src"
-import { For, createDomSelector } from "../../../src/performance-helpers"
+import { h, state } from "../../../src"
+import { For, atom, particle } from "../../../src/performance-helpers"
+import { IAtom } from "../../../src/states";
 
 // ----------------------------------------------------------------------------- DEBUG
 
@@ -40,84 +37,51 @@ const _pick = array => array[Math.floor(Math.random() * array.length)]
 interface IDataItem
 {
 	id		:number
-	label	:string
+	label	:IAtom<string>
 }
 
 const $data = state<IDataItem[]>([])
-let _selectedId = null
-
-// ----------------------------------------------------------------------------- DOM SELECTOR
-
-// TODO : To include into reflex
-
-const isSelectedClassNameDomSelector = createDomSelector<string>( path => {
-	return _selectedId === path ? "danger" : ""
-})
-
-const labelDomSelector = createDomSelector<number>( path => {
-	const item = $data.peek().find( item => item.id === path )
-	return item.label
-})
+const $selected = state<number>( null )
 
 // ----------------------------------------------------------------------------- DATA ACTIONS
 
-const run = () => $data.set( buildData(100) )
+const run = () => $data.set( buildData(1000) )
 const runLots = () => $data.set( buildData(10000) )
 const add1 = () => $data.set( d => [...buildData(100), ...d] )
 const add2 = () => $data.set( d => [...d, ...buildData(100)] )
 const update = () => {
-	const data = $data.peek()
-	const length = data.length
-	for ( let i = 0; i < length; i += 10 ) {
-		const item = data[i]
-		item.label += ' !!!';
-		labelDomSelector.update( item.id )
-	}
+	const list = $data.peek()
+	for ( let i = 0; i < list.length; i += 10 )
+		list[i].label.value += ' !!!';
 }
-// effect(() => {
-// 	console.log("L", $data.value.length)
-// })
-const clear = () => {
-	$data.set([])
-	labelDomSelector.clear()
-	isSelectedClassNameDomSelector.clear()
-}
+const clear = () => $data.set([])
 const swapRows = () => $data.set( d => {
-	if ( d.length >= 100 ) {
+	if ( d.length > 998 ) {
 		let tmp = d[1];
-		d[1] = d[98];
-		d[98] = tmp;
+		d[1] = d[998];
+		d[998] = tmp;
 		return [...d];
 	}
 	return d
 })
 const remove = id => $data.set(d => {
-	// alert( id )
-	labelDomSelector.remove( id )
-	isSelectedClassNameDomSelector.remove( id )
-	const index = d.findIndex( d => d.id === id );
-	if ( index < 0 ){
-		console.error(`Id ${id} not found`)
-		return d
-	}
-	return [ ...d.slice(0, index), ...d.slice(index + 1) ];
+	const idx = d.findIndex( d => d.id === id );
+	return [ ...d.slice(0, idx), ...d.slice(idx + 1) ];
 })
 const toggleSelection = ( id:number ) => {
-	let previousId = _selectedId
-	_selectedId = _selectedId === id ? null : id
-	previousId && isSelectedClassNameDomSelector.update( previousId )
-	_selectedId && isSelectedClassNameDomSelector.update( _selectedId )
+	$selected.set( $selected.value === id ? null : id )
 }
 
 // ----------------------------------------------------------------------------- BUILD DATA
 
 let _counter = 1;
 const buildData = (count:number) => {
+	// eslint-disable-next-line unicorn/no-new-array
 	const data = new Array(count);
-	for ( let i = 0; i < count; i++ ) {
+	for ( let i = 0; i < count; ++i ) {
 		data[i] = {
 			id: _counter++,
-			label: `${_pick(A)} ${_pick(C)} ${_pick(N)}`,
+			label: atom( `${_pick(A)} ${_pick(C)} ${_pick(N)}` ),
 		};
 	}
 	return data;
@@ -125,8 +89,8 @@ const buildData = (count:number) => {
 
 // ----------------------------------------------------------------------------- BUTTON
 
-function Button ({ id, onClick, title }) {
-	return <div class="col-sm-6 smallpad">
+const Button = ({ id, onClick, title }) =>
+	<div class="col-sm-6 smallpad">
 		<button
 			type="button"
 			class="btn btn-primary btn-block"
@@ -134,35 +98,39 @@ function Button ({ id, onClick, title }) {
 			children={[ title ]}
 		/>
 	</div>
-}
 
 // ----------------------------------------------------------------------------- ROW
 
-Row.isFactory = false
-Row.shouldUpdate = () => false
-function Row ( props ) {
-	// console.log("Render row", props.key)
-	return <tr class={ isSelectedClassNameDomSelector.connect( props.id ) }>
+const Row = ( props ) => {
+	// const classes = atomic( () => $selected.value === props.id ? "danger" : "" )
+	// return <tr class={ classes }>
+	const classes = particle( () => $selected.value === props.id ? "danger" : "" )
+	// return <tr class={ atom( () => $selected.value === props.id ? "danger" : "" ) }>
+	// return <tr class={ props.selected ? "danger" : "" }>
+	return <tr class={ classes }>
+		{Math.random()}
 		<td class="col-md-1">{ props.id }</td>
 		<td class="col-md-4">
 			<a onClick={ () => toggleSelection( props.id ) }>
-				{ labelDomSelector.connect( props.id ) }
+				{ props.label }
 			</a>
 		</td>
 		<td class="col-md-1">
 			<a onClick={ () => remove( props.id ) }>
 				<span class="glyphicon glyphicon-remove" aria-hidden="true" />
-				{/*<span>{ props.id }</span>*/}
 			</a>
 		</td>
 		<td class="col-md-6" />
 	</tr>
 }
 
+// Row.shouldUpdate = (newProps, oldProps) => oldProps.label !== newProps.label
+Row.shouldUpdate = (newProps, oldProps) => false
+
 // ----------------------------------------------------------------------------- JUMBOTRON
 
-function Jumbotron () {
-	return <div class="jumbotron">
+const Jumbotron = () =>
+	<div class="jumbotron">
 		<div class="row">
 			<div class="col-md-6">
 				<h1>Reflex-DOM keyed</h1>
@@ -180,12 +148,11 @@ function Jumbotron () {
 			</div>
 		</div>
 	</div>
-}
 
 // ----------------------------------------------------------------------------- APP
 
-export function App () {
-	return () => <div class="container">
+export const App = () =>
+	<div class="container">
 		<style innerHTML={`
 			.danger {
 				background: red
@@ -200,15 +167,14 @@ export function App () {
 		{/*{ memoryDebugger }*/}
 		<Jumbotron />
 		<table class="table table-hover table-striped test-data">
-			{/*<tbody>*/}
-			{/*	{ $data.value.map( item => <Row key={ item.id } id={ item.id } /> ) }*/}
-			{/*</tbody>*/}
-			<For each={ $data } as="tbody">
-				{ item => <Row key={ item.id } id={ item.id } /> }
+			<For as="tbody" each={ $data }>
+				{ item => <Row
+					key={ item.id } id={ item.id }
+					label={ item.label }
+					// selected={ $selected.value === item.id }
+				/> }
 			</For>
 		</table>
-		{/*<span class="preloadicon glyphicon glyphicon-remove" aria-hidden="true" />*/}
 	</div>
-}
 
 //render(<App />, document.getElementById("main"))

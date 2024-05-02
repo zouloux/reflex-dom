@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 
 import { DefaultReflexBaseProps, VNode } from "./common";
-import { IComputeState, IState } from "./states";
+import { IAtom } from "./states";
 
 /**
  * JSX types are straight stolen from Preact. Thanks Preact core team ✌️
@@ -343,7 +343,7 @@ export type ClassName = (
 	| (ClassNameItem | (ClassNameItem[]))[]
 )
 
-type AttributeState <G> = ( G | IState<G> | IComputeState<G> )
+type AttributeState <G> = ( G | IAtom<G> )
 
 export interface HTMLAttributes
 	<GDom extends Element = Element>

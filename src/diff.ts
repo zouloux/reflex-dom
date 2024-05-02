@@ -22,17 +22,12 @@ const _svgNS = "http://www.w3.org/2000/svg"
 
 // ----------------------------------------------------------------------------- CURRENT SCOPED COMPONENT
 
-// We store current component in factory phase for hooks
+// Store current component in factory phase for hooks
 let _currentComponent:ComponentInstance = null
 
 /**
  * Get current component instance.
  */
-// export function getCurrentComponent
-// 	<GComponent extends ComponentInstance = ComponentInstance>
-// ():GComponent {
-// 	return _currentComponent as GComponent
-// }
 export const getCurrentComponent =
 	<GComponent extends ComponentInstance = ComponentInstance>
 	():GComponent => _currentComponent as GComponent
@@ -56,21 +51,24 @@ function _updateNodeRef ( node:VNode ) {
 
 // ----------------------------------------------------------------------------- DIFF ELEMENT
 
-// FIXME : Doc
+// Store current diffing node for atomic updates
 let _currentDiffingNode:VNode
+
+/**
+ * Get current diffing node for atomic updates
+ */
 export const getCurrentDiffingNode = () => _currentDiffingNode
 
 /**
- * FIXME : Doc
- * @param dom
- * @param name
- * @param value
+ * Set dom attribute
+ * @param dom dom element to set attributes on
+ * @param name name of the attribute
+ * @param value value of the attribute
  */
 export function _setDomAttribute ( dom:Element, name:string, value:any ) {
 	// className as class for non jsx components
 	if ( name === "className" )
 		name = "class"
-	// if ( value === false || value === null )
 	if ( value === null )
 		dom.removeAttribute( name )
 	else if ( value === true )
@@ -223,7 +221,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom 
 				// If value is a state, track its changes by creating an "argument state" type of node
 				if ( value !== null && typeof value === "object" && value.type === 3 ) {
 					_currentDiffingNode = {
-						type: 2/* ARGUMENT STATE */,
+						type: 2/*ARGUMENT*/,
 						value,
 						_propertyName: name,
 						dom
@@ -269,10 +267,12 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 		if ( doMount && !component.isMounted ) {
 			// Execute after render handlers
 			component.isMounted = true;
+			// Call mount only on factory components
 			if ( node.value.isFactory !== false ) {
 				// Call every mount handler and store returned unmount handlers
 				// Faster to store handlers before using it in the for loop
 				// "for const of" faster that classic "for i"
+				// todo : ESBENCH ?
 				const handlers = component._mountHandlers
 				for ( const mountHandler of handlers ) {
 					// const mountedReturn = component._mountHandlers[ i ].apply( component );
@@ -286,17 +286,18 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 						// component._unmountHandlers.push( ...mountedReturn.filter( Boolean ) )
 						mountedReturn.filter( v => v ).map( h => component._unmountHandlers.push( h ) )
 				}
-				// Reset mount handlers, no need to keep them
-				_dispatch( component._renderHandlers )
-				_dispatch( component._nextRenderHandlers )
+				// Call render handler only on factory components
+				// _dispatch( component._renderHandlers )
 				component._mountHandlers = []
-				component._nextRenderHandlers = []
 			}
+			// Call mount / unmount feature hook
 			_dispatch(_featureHooks, 1/* MOUNT / UNMOUNT */, component, true )
 		}
 		// --- UNMOUNT
 		else if ( !doMount && component.isMounted ) {
+			// Call mount / unmount feature hook
 			_dispatch( _featureHooks, 1/* MOUNT / UNMOUNT */, false )
+			// Call all unmount handler, for factory and functional components
 			_dispatch( component._unmountHandlers )
 			component.isMounted = false;
 			// Cut component branch from virtual node to allow GC to destroy component
@@ -416,7 +417,6 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 		}
 		return
 	}
-
 	// Register keys before browsing in the big loop
 	// We have to loop 2 times here. This one to get all child keys before browsing for diffing.
 	// Anyway, 2n is better than n(n)
@@ -425,7 +425,6 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 	// esbench : https://esbench.com/bench/652d43c97ff73700a4debaee
 	for ( const child of newChildren )
 		_registerKeyAndEnv( newParentNode, child )
-
 	// If using "i", it's faster to have a classic for ( instead of "for const of" )
 	const totalMax = Math.max( totalNew, totalOld )
 	let offset = 0
@@ -534,20 +533,31 @@ function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode ) :GRetur
 	_currentComponent = node.component;
 	// Only on factory components
 	// we create a proxy for props which will update a state for dependency tracking
-	if ( node.value.isFactory !== false && !_currentComponent._proxy ) {
+	const { value } = node
+	// Default the isFactory :
+	// - is a plain function ( function Component () {} ), defaults to true
+	// - is an arrow function ( () => {} ), defaults to false
+	// @ts-ignore
+	value.isFactory ??= !!value.prototype
+	// Create proxy for factory components
+	if ( value.isFactory && !_currentComponent._proxy ) {
 		// Create prop states to track dependencies
 		const s = state( node.props )
 		_currentComponent._propState = s
 		// Create proxy and map getter to the state to track effects
 		// FIXME : Proxy is not browsable :(
 		// TODO : Optimize this
+		// const proxy = Proxy.revocable( node.props, { // todo : to test ?
 		const proxy = Proxy.revocable( {}, {
-			get : ( target, prop ) => Reflect.get( s.value, prop )
+			get : ( _, prop ) => Reflect.get( s.value, prop )
 		})
 		// Associate proxy to component and dispose proxy on component unmount
 		_currentComponent._proxy = proxy.proxy
 		_currentComponent._unmountHandlers.push( proxy.revoke )
 	}
+	// todo
+	_dispatch( _currentComponent._beforeNextRenderHandlers )
+	_currentComponent._beforeNextRenderHandlers = []
 	// Render component with props instance and component API instance
 	return _currentComponent._render.apply(
 		_currentComponent, [ _currentComponent._proxy ?? node.props, _currentComponent ]
@@ -608,20 +618,29 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, element?:RenderDom, fo
 			componentInstance = {
 				vnode: newNode,
 				isMounted: false,
+				children: null,
 				// Private members, will be mangled
-				_render: componentFunction as RenderFunction,
-				_mountHandlers: [],
-				_renderHandlers: [],
-				_nextRenderHandlers: [],
-				_unmountHandlers: [],
+				// By default, we use the should-update attached to the component's function
 				_shouldUpdate: componentFunction.shouldUpdate,
+				_defaultProps: null,
+				//
+				_proxy: null,
+				_propState: null,
+				//
+				_render: componentFunction as RenderFunction,
+				//
+				_mountHandlers: [],
+				// _renderHandlers: [],
+				_beforeNextRenderHandlers: [],
+				_afterNextRenderHandlers: [],
+				_unmountHandlers: [],
 			}
 			newNode.component = componentInstance
 			componentInstance._render = componentFunction as RenderFunction
 			// Execute component's function and check what is returned
 			const result = _renderComponentNode( newNode )
 			// Check if this component returns a function or a dom node
-			// Check if this component returns a function or a dom node
+			// Override isFactory
 			const isFactory = typeof result === "function"
 			componentFunction.isFactory = isFactory
 			componentInstance._render = (isFactory ? result : componentFunction) as RenderFunction
@@ -669,6 +688,10 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, element?:RenderDom, fo
 			diffNode( renderResult, componentInstance.children, element )
 			componentInstance.children = renderResult
 			newNode.dom = renderResult.dom
+			// Call render handlers on factory and functional components
+			// _dispatch( componentInstance._renderHandlers )
+			_dispatch( componentInstance._afterNextRenderHandlers )
+			componentInstance._afterNextRenderHandlers = []
 		}
 		// We can clear component now
 		_currentComponent = null

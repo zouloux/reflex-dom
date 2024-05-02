@@ -14,18 +14,18 @@ export const _prepareInitialValue = <GType> ( initialValue:TInitialValue<GType>,
 
 // ----------------------------------------------------------------------------- STATE TYPES
 
-export type IState<GType = any> = {
+export type IAtom <GType> = {
+	readonly type:VNodeTypes
+	toString ():string
+	// valueOf ():GType
 	value:GType
-	set ( newValue:TInitialValue<GType> ):Promise<void>
+}
 
+export type IState<GType = any> = IAtom <GType> & {
+	set ( newValue:TInitialValue<GType> ):Promise<void>
 	peek ():GType
 	sneak (value:GType):void
-
-	readonly type:VNodeTypes
-
-	toString ():string
-	valueOf ():GType
-
+	// valueOf ():GType
 	dispose ():void
 }
 
@@ -155,7 +155,7 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 	// if this state is created into a factory phase of a component,
 	// auto-dispose it on component unmount
 	const dispose = unmounted(() => {
-		console.log("dispose state")
+		// console.log("dispose state")
 		// FIXME : For HMR, maybe delay it ? Maybe disable =null when hmr enabled ?
 		// initialValue = null;
 		_effects.clear()
@@ -207,7 +207,7 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 		get type () { return 3/*STATE*/ as VNodeTypes },
 		// Use state as a getter without .value
 		toString () { return this.value + '' },
-		valueOf () { return this.value },
+		// valueOf () { return this.value },
 		// Remove and clean this state
 		dispose,
 		// --- PRIVATE API ---
@@ -290,7 +290,7 @@ function _prepareEffect <GCheck extends any[]> ( _handler:TEffectHandler<GCheck>
 		// Clone associated states list to be able to detach later
 		_associatedStates = _captureAssociatedStates()
 	}
-	_dom ? getCurrentComponent()._nextRenderHandlers.push( _run ) : _run()
+	_dom ? getCurrentComponent()._afterNextRenderHandlers.push( _run ) : _run()
 	return unmounted( () => _detachEffectFromStates(_associatedStates, _effect) )
 }
 

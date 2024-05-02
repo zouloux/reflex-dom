@@ -1,7 +1,7 @@
-import { compute, IState, updateDomFromState } from "./states";
+import { compute, effect, IAtom, IState, updateDomFromState } from "./states";
 import type { ReflexIntrinsicElements } from "./jsx-types";
 import type { VNode } from "./common";
-import { getCurrentDiffingNode } from "./diff";
+import { getCurrentComponent, getCurrentDiffingNode } from "./diff";
 import { hh } from "./jsx";
 
 // ----------------------------------------------------------------------------- FOR LOOP
@@ -27,62 +27,6 @@ export function For ( props:IForProps ) {
 		return hh(6, props.as ?? "div", {
 			children: [ hh(8, null, { children }) ]
 		})
-	}
-}
-
-// ----------------------------------------------------------------------------- DOM SELECTOR
-
-interface IDomSelector <GPath extends string|number> {
-	connect ( path:GPath ):IState<GPath>
-	update ( path:GPath ):void
-	remove ( path:GPath ):void
-	clear ():void
-}
-
-/**
- * Create a DOM mutation selector, like states but with a manual control over changes.
- * Can have better performances than a list of states, and use less memory.
- * Can have one DOM node associated for 1 path only.
- * @param getter Return value corresponding to the path. Will be called at each update and at connection.
- */
-export function createDomSelector <GPath extends string|number> ( getter:( path:GPath ) => any ):IDomSelector<GPath> {
-	let _domNodes:Record<GPath, VNode> = {} as Record<GPath, VNode>
-	return {
-		/**
-		 * Connect data to a DOM Node.
-		 * Will return a partial state to get value from getter with path, and will capture dom node.
-		 * @param path
-		 */
-		connect ( path:GPath ) {
-			return {
-				type: 3,
-				get value () {
-					_domNodes[ path ] = getCurrentDiffingNode()
-					return getter( path )
-				},
-				toString () { return this.value + '' },
-			} as IState
-		},
-		/**
-		 * Update node connected to a path
-		 */
-		update ( path:GPath ) {
-			const node = _domNodes[ path ]
-			node && updateDomFromState( node, getter( path ) )
-		},
-		/**
-		 * Remove node connected to a path.
-		 * Important to call when DOM node is removed, otherwise it can create a memory leak.
-		 */
-		remove ( path:GPath ) {
-			delete _domNodes[ path as any ]
-		},
-		/**
-		 * Remove all node connections.
-		 */
-		clear () {
-			_domNodes = {} as Record<GPath, VNode>
-		}
 	}
 }
 
@@ -132,3 +76,81 @@ export const advancedPropsCompare = ( a:object, b:object ) => (
 		: b.hasOwnProperty(key) && a[key] === b[key]
 	)
 )
+
+// ----------------------------------------------------------------------------- ATOMS
+
+// todo : doc
+
+export function atom <GType> ( value:GType ):IAtom<GType> {
+	let _trackedNode:VNode
+	return {
+		type: 3,
+		toString () { return this.value + '' },
+		get value () {
+			const node = getCurrentDiffingNode()
+			if ( node )
+				_trackedNode = node
+			return value
+		},
+		set value ( newValue ) {
+			value = newValue
+			if ( _trackedNode )
+				updateDomFromState( _trackedNode, value )
+		}
+	}
+}
+
+export function atoms <GType> ( value:GType ):IAtom<GType> {
+	const _trackedNodes = new Set<VNode>()
+	return {
+		type: 3,
+		toString () { return this.value + '' },
+		get value () {
+			const node = getCurrentDiffingNode()
+			if ( node )
+				_trackedNodes.add( node )
+			return value
+		},
+		set value ( newValue ) {
+			value = newValue
+			for ( const node of _trackedNodes )
+				updateDomFromState( node, value )
+		}
+	}
+}
+
+export function particle <GType> ( getter:() => GType ):IAtom<GType> {
+	let _isFirst = true
+	let _value:GType
+	let _disposeEffect:() => void
+	let _trackedNode:VNode
+	const component = getCurrentComponent()
+	if ( component )
+		component._beforeNextRenderHandlers.push( () => _disposeEffect?.() )
+	return {
+		type: 3,
+		toString () { return this.value + '' },
+		get value ():GType {
+			let newValue:GType
+			_trackedNode = getCurrentDiffingNode()
+			_disposeEffect = effect(() => {
+				newValue = getter()
+				if ( _isFirst ) {
+					_value = newValue
+				}
+				else if ( newValue !== _value ) {
+					this.value = newValue
+				}
+			})
+			_value = newValue
+			_isFirst = false
+			return newValue
+		},
+		set value ( newValue:GType ) {
+			// console.log('Particle effect', newValue)
+			_value = newValue
+			if ( _trackedNode )
+				updateDomFromState( _trackedNode, _value )
+		}
+	}
+}

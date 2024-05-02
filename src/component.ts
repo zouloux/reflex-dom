@@ -8,25 +8,29 @@ export type TShouldUpdate <GProps extends object = object> = (newProps:GProps, o
 
 export interface ComponentInstance <GProps extends object = object> {
 	// --- Public members, not mangled
-	vnode					:VNode
-	isMounted				:boolean;
-	children				?:VNode
+	vnode						:VNode
+	isMounted					:boolean;
+	children					:VNode
 	// --- Private members, will be mangled
-	_shouldUpdate			?:TShouldUpdate
-	_proxy					?:object
-	_propState				?:IState<GProps>
-	_render					:RenderFunction
-	_mountHandlers			:MountHandler[]
-	_renderHandlers			:LifecycleHandler[]	// Called after each render
-	_nextRenderHandlers		:(() => any)[] 		// Called after next render only, then removed
-	_unmountHandlers		:LifecycleHandler[]
-	_defaultProps			?:Partial<GProps>
+	_shouldUpdate				:TShouldUpdate
+	_defaultProps				?:Partial<GProps>
+	//
+	_proxy						:object
+	_propState					:IState<GProps>
+	//
+	_render						:RenderFunction
+	//
+	_mountHandlers				:MountHandler[]
+	// _renderHandlers				:LifecycleHandler[]	// Called after each render
+	_beforeNextRenderHandlers	:(() => any)[] 		// Called before next render only, then removed
+	_afterNextRenderHandlers	:(() => any)[] 		// Called after next render only, then removed
+	_unmountHandlers			:LifecycleHandler[]
 }
 
 // ----------------------------------------------------------------------------- EXTENSIONS
 
 /**
- * FACTORY COMPONENTS ONLY
+ * FACTORY COMPONENTS ONLY EXTENSION
  * Handler is called when component is mounted, rendered, and added to the DOM.
  * Can return an unmount handler, or a list of unmount handler.
  * Can be asynchronous but without return.
@@ -37,7 +41,7 @@ export function mounted ( handler:MountHandler ) {
 }
 
 /**
- * FACTORY COMPONENTS ONLY
+ * FACTORY COMPONENTS ONLY EXTENSION
  * Handler is called when component is unmounted, just before removed from the DOM.
  * Can be asynchronous.
  */
@@ -47,17 +51,18 @@ export function unmounted ( handler:LifecycleHandler ) {
 }
 
 /**
- * FACTORY COMPONENTS ONLY
+ * FACTORY COMPONENTS ONLY EXTENSION
  * Handler is called just after component is rendered.
  * Can be asynchronous.
  */
-export function rendered ( handler:LifecycleHandler ) {
-	getCurrentComponent()?._renderHandlers.push( handler )
-}
+// export function rendered ( handler:LifecycleHandler ) {
+// 	getCurrentComponent()?._renderHandlers.push( handler )
+// }
 
 // ----------------------------------------------------------------------------- DEFAULT PROPS
 
 /**
+ * UNIVERSAL EXTENSION
  * Set default props
  * TODO : OPTIMIZE - 0%
  * @param props Props object from first argument.
@@ -68,17 +73,21 @@ export function defaultProps <
 	GDefaults extends Partial<GProps>,
 > ( props:GProps, defaults:GDefaults ) {
 	const component = getCurrentComponent()
-	component._defaultProps = defaults
-	if ( component._propState )
-		props = component._propState.peek() as GProps
-	_browseKeys( defaults, name => {
-		if ( !(name in props) )
-			// @ts-ignore
-			props[ name ] = defaults[ name ]
-	})
+	// Set it only once to be compatible with factory and functional components
+	if ( !component._defaultProps ) {
+		component._defaultProps = defaults
+		if ( component._propState )
+			props = component._propState.peek() as GProps
+		_browseKeys( defaults, name => {
+			if ( !(name in props) )
+				// @ts-ignore
+				props[ name ] = defaults[ name ]
+		})
+	}
 }
 
 /**
+ * UNIVERSAL EXTENSION
  * Optimize rendering by providing a shouldUpdate handler.
  * This handler will have old and new props as argument, and should return :
  * - false to keep current step and skip next rendering
@@ -91,7 +100,7 @@ export function shouldUpdate
 	( handler:TShouldUpdate<GProps>|boolean )
 {
 	// Assign the shouldUpdate to the function, and not the component
-	// Can assign it only once
+	// Can assign it only once to be compatible with factory and functional components
 	return getCurrentComponent()._shouldUpdate ??= (
 		typeof handler === "boolean"
 		? () => handler
