@@ -17,7 +17,7 @@ export { mounted, unmounted, /*rendered,*/ defaultProps, shouldUpdate, shallowPr
 export { h, h as createElement, hh } from "./jsx"
 
 // Export types ( do not export too much to keep it simple )
-export type { IState, IComputeState, TInitialValue, TEffectHandler, TDisposeHandler, TComputed } from "./states"
+export type { IAtom, IState, IComputeState, TInitialValue, TEffectHandler, TDisposeHandler, TComputed } from "./states"
 export type { IRef, IRefs, IRefOrRefs } from "./ref"
 export type { ComponentInstance } from "./component"
 export type {
