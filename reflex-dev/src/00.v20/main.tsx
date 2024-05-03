@@ -163,6 +163,13 @@ export const App = () =>
 				width: 20px;
 				height: 20px;
 			}
+			table {
+				width: 800px;
+				border: 1px solid red;
+			}
+			.col-md-4 {
+				width: 100%;
+			}
 		`} />
 		{/*{ memoryDebugger }*/}
 		<Jumbotron />

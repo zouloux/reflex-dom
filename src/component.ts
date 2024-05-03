@@ -1,4 +1,4 @@
-import { _browseKeys, LifecycleHandler, MountHandler, RenderFunction, VNode } from "./common";
+import { LifecycleHandler, MountHandler, RenderFunction, VNode } from "./common";
 import { IState } from "./states";
 import { getCurrentComponent } from "./diff";
 
@@ -78,11 +78,13 @@ export function defaultProps <
 		component._defaultProps = defaults
 		if ( component._propState )
 			props = component._propState.peek() as GProps
-		_browseKeys( defaults, name => {
+		const keys = Object.keys(defaults)
+		const total = keys.length
+		for ( let i = 0; i < total; ++i ) {
+			const name = keys[ i ]
 			if ( !(name in props) )
-				// @ts-ignore
 				props[ name ] = defaults[ name ]
-		})
+		}
 	}
 }
 

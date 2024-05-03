@@ -224,12 +224,12 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 
 // ----------------------------------------------------------------------------- EFFECTS / CHANGED
 
-function _detachEffectFromStates ( associatedStates:IState<any>[], effect:TEffect ) {
+function _detachEffectFromStates ( associatedStates:IState[], effect:TEffect ) {
 	// TODO : Dispose + register in component for later disposal
-	// TODO : TEST + OPTIM
-	for ( const state of associatedStates )
+	const total = associatedStates.length
+	for ( let i = 0; i < total; ++i )
 		// @ts-ignore
-		state._removeEffect( effect )
+		associatedStates[i]._removeEffect( effect )
 }
 
 function _captureAssociatedStates () {

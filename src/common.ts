@@ -167,26 +167,16 @@ export interface HasClassProp {
 
 // ----------------------------------------------------------------------------- DISPATCH
 
-
 // https://esbench.com/bench/65ee13067ff73700a4dec0db
 export const _dispatch = ( handlers:Function[], ...rest:any[] ) => {
 	let r = []
-	for ( const handler of handlers )
-		if ( handler )
-			r.push( handler( ... rest ) )
+	const total = handlers.length
+	for ( let i = 0; i < total; ++i ) {
+		const handler = handlers[ i ]
+		handler && r.push( handler( ... rest ) )
+	}
 	return r
 };
-
-// Browse key helpers
-// It's a good compromise between perfs and bundle size.
-// For loop is almost twice as fast as .filter.map
-// Having a common helper function is slightly slower than inlining the for loop
-// But it's a lot smaller in the bundle
-export const _browseKeys = ( obj:object, handler:(name:string) => void ) => {
-	const keys = Object.keys( obj )
-	for ( const key of keys )
-		handler( key )
-}
 
 // ----------------------------------------------------------------------------- BATCHED TASK
 

@@ -1,5 +1,5 @@
 import {
-	_browseKeys, _dispatch, _featureHooks, ComponentReturn,
+	_dispatch, _featureHooks, ComponentReturn,
 	IVirtualDocument, RenderDom, RenderFunction, VNode
 } from "./common";
 import { IInternalRef } from "./ref";
@@ -76,7 +76,10 @@ export function _setDomAttribute ( dom:Element, name:string, value:any ) {
 	// Manage style as object only
 	else if ( name == "style" && typeof value == "object" ) {
 		const style = (dom as HTMLElement).style
-		_browseKeys( value, key => {
+		const keys = Object.keys(value)
+		const total = keys.length
+		for ( let i = 0; i < total; ++i ) {
+			const key = keys[ i ]
 			const propertyValue = value[key]
 			if ( key[0] === '-' )
 				style.setProperty(key, propertyValue);
@@ -86,7 +89,7 @@ export function _setDomAttribute ( dom:Element, name:string, value:any ) {
 				style[key] = propertyValue;
 			else
 				style[key] = propertyValue + 'px';
-		})
+		}
 	}
 	else {
 		// Manage class as arrays
@@ -160,8 +163,14 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom 
 	}
 	// Remove attributes which are removed from old node
 	// https://esbench.com/bench/652e2ce67ff73700a4debb26
+	let total
+	let keys
+	let i;
 	if ( oldNode ) {
-		_browseKeys(oldNode.props, name => {
+		keys = Object.keys(oldNode.props)
+		total = keys.length
+		for ( i = 0; i < total; ++i ) {
+			const name = keys[ i ]
 			if (
 				// Do not continue for "internal" attributes
 				name !== 'children' && name !== 'key' && name !== 'ref'
@@ -186,25 +195,28 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom 
 					(dom as Element).removeAttribute( name )
 				}
 			}
-		})
+		}
 	}
 	// Update props
-	_browseKeys(newNode.props, name => {
-		let value = newNode.props[ name ];
+	keys = Object.keys(newNode.props)
+	total = keys.length
+	for ( i = 0; i < total; ++i ) {
+		const name = keys[ i ]
+		let propValue = newNode.props[ name ];
 		if (
 			// Do not continue if value is undefined or null.
 			// 	Undefined is checked here as a value, so no need for typeof check
 			// 	It can happen when JSX source is pushing a props from an undefined value
 			// Keep going if falsy to allow empty attributes
-			value !== undefined && value !== null
+			propValue !== undefined && propValue !== null
 			// Do not continue for "internal" attributes
 			&& name !== "children" && name !== "key" && name !== "ref"
 			// Do not continue if attribute or event did not change
-			&& !( oldNode && name in oldNode.props && oldNode.props[ name ] === value )
+			&& !( oldNode && name in oldNode.props && oldNode.props[ name ] === propValue )
 		) {
 			// Insert HTML directly without warning
 			if ( name === "innerHTML" )
-				(dom as Element).innerHTML = value
+				(dom as Element).innerHTML = propValue
 			// Events starts with "on". On preact this is optimized with [0] == "o"
 			// But recent benchmarks are pointing to startsWith usage as faster
 			else if ( name.startsWith("on") ) {
@@ -212,29 +224,29 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom 
 				// Init a collection of handlers on the dom object as private property
 				dom[ _DOM_PRIVATE_LISTENERS_KEY ] ??= new Map();
 				// Store original listener to be able to remove it later
-				dom[ _DOM_PRIVATE_LISTENERS_KEY ].set( eventKey, value );
+				dom[ _DOM_PRIVATE_LISTENERS_KEY ].set( eventKey, propValue );
 				// And attach listener
-				dom.addEventListener( eventName, value, useCapture )
+				dom.addEventListener( eventName, propValue, useCapture )
 			}
 			// Other attributes
 			else {
 				// If value is a state, track its changes by creating an "argument state" type of node
-				if ( value !== null && typeof value === "object" && value.type === 3 ) {
+				if ( propValue !== null && typeof propValue === "object" && propValue.type === 3 ) {
 					_currentDiffingNode = {
 						type: 2/*ARGUMENT*/,
-						value,
+						value: propValue,
 						_propertyName: name,
 						dom
 					}
-					value = value.value
+					propValue = propValue.value
 				}
 				// Set dom attribute on element
 				// Skip this when hydrating
 				if ( !element )
-					_setDomAttribute( dom as Element, name, value )
+					_setDomAttribute( dom as Element, name, propValue )
 			}
 		}
-	})
+	}
 	return dom;
 }
 
@@ -271,23 +283,19 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 			if ( node.value.isFactory !== false ) {
 				// Call every mount handler and store returned unmount handlers
 				// Faster to store handlers before using it in the for loop
-				// "for const of" faster that classic "for i"
-				// todo : ESBENCH ?
 				const handlers = component._mountHandlers
-				for ( const mountHandler of handlers ) {
-					// const mountedReturn = component._mountHandlers[ i ].apply( component );
-					const mountedReturn = mountHandler.apply( component );
-					// Allow mounted handler to return a single unmount
+				const total = handlers.length
+				for ( let i = 0; i < total; ++i ) {
+					const handler = handlers[ i ]
+					const mountedReturn = handler.apply( component );
 					if ( typeof mountedReturn === "function" )
 						component._unmountHandlers.push( mountedReturn )
 					// Allow mounted handler to return an array of unmount
 					else if ( Array.isArray( mountedReturn ) )
-						// todo : ESBENCH
-						// component._unmountHandlers.push( ...mountedReturn.filter( Boolean ) )
-						mountedReturn.filter( v => v ).map( h => component._unmountHandlers.push( h ) )
+						// todo : esbench this
+						component._unmountHandlers.push( ...mountedReturn )
 				}
 				// Call render handler only on factory components
-				// _dispatch( component._renderHandlers )
 				component._mountHandlers = []
 			}
 			// Call mount / unmount feature hook
@@ -308,8 +316,9 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 	// --- RECURSIVE
 	else if ( node.type > 4/*CONTAINERS*/ ) {
 		const children = node.props.children
-		for ( const child of children )
-			recursivelyUpdateMountState( child, doMount )
+		const total = children.length
+		for ( let i = 0; i < total; ++i )
+			recursivelyUpdateMountState( children[i], doMount )
 	}
 }
 
@@ -355,7 +364,6 @@ let _previousParentNode:VNode
  * @param element Used for hydration only. If defined, will not diff but only hydrate.
  */
 export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, element:RenderDom ) {
-	// console.log("DIFF CHILDREN", newParentNode)
 	// Keep node ref for lists, that does not have their own dom
 	const isList = newParentNode.type === 8/* LIST */
 	const parentDom = ( isList ? _previousParentNode.dom : newParentNode.dom ) as Element
@@ -372,7 +380,8 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 	// We can take a shortcut and clear dom with innerHTML
 	if ( isList && totalNew === 0 && totalOld > 0 ) {
 		recursivelyUpdateMountState( oldParentNode, false )
-		parentDom.innerHTML = ''
+		// parentDom.innerHTML = ''
+		parentDom.textContent = ''
 		return;
 	}
 	// Nothing to add
@@ -422,9 +431,9 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 	// Anyway, 2n is better than n(n)
 	// Optimisation : Maybe having a cond which check for all keys when we are looking for the first one
 	// to run this loop only when needed ( in keyed lists only )
-	// esbench : https://esbench.com/bench/652d43c97ff73700a4debaee
-	for ( const child of newChildren )
-		_registerKeyAndEnv( newParentNode, child )
+	// esbench : https://esbench.com/bench/652d43c97ff73700a4debaee todo : up to date ?
+	for ( i = 0; i < totalNew; ++i )
+		_registerKeyAndEnv( newParentNode, newChildren[i] )
 	// If using "i", it's faster to have a classic for ( instead of "for const of" )
 	const totalMax = Math.max( totalNew, totalOld )
 	let offset = 0
@@ -486,7 +495,7 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 			}
 			// Keyless, still in same stack
 			else if (
-				oldChildNode // Old child node from same index, fixme : regarget with offset ?
+				oldChildNode // Old child node from same index
 				&& oldChildNode.type === newChildNode.type
 				&& (
 					// If element tag name changes,
