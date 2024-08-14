@@ -158,12 +158,14 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 		// console.log("dispose state")
 		// FIXME : For HMR, maybe delay it ? Maybe disable =null when hmr enabled ?
 		// initialValue = null;
-		_effects.clear()
-		_nodes.clear()
-		_components.clear()
-		_effects = null
-		_nodes = null
-		_components = null
+		if ( _effects ) {
+			_effects.clear()
+			_nodes.clear()
+			_components.clear()
+			_effects = null
+			_nodes = null
+			_components = null
+		}
 	})
 
 	const _localState:IState<GType> = {
