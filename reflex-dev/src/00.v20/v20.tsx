@@ -1,14 +1,15 @@
-import { changed, effect, h, render, state } from "../../../src";
+import { changed, effect, h, hydrate, render, state } from "../../../src";
 import { App } from "./main"
 import { drawReflexDebug, MemoryUsage } from "../../../src/debug";
+import { renderToString } from "../../../src/render-to-string";
 
 
 // drawReflexDebug();
 
 export function startV20 () {
-	render( <V20App />, document.getElementById("App") );
-	// hydrate( <V20App />, document.getElementById("App2") );
-	// const html = renderToString( <V20App /> )
+	// render( <V20App />, document.getElementById("App") );
+	hydrate( <V20App2 />, document.getElementById("App2") );
+	// const html = renderToString( <V20App2 /> )
 	// console.log( html )
 }
 

@@ -167,7 +167,7 @@ function swapComponent ( node, newFunction ) {
 	try {
 		// Mount new node and replace old node dom
 		parent = node.dom.parentElement;
-		_reflexLib.diffNode( newNode, null, true );
+		_reflexLib.diffNode( newNode, null, null, true );
 		parent.insertBefore( newNode.dom, node.dom );
 		// FIXME : This is also where children states can't be kept.
 		//			Because we update a children which may be overridden by parent swap later
