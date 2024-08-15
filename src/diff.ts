@@ -269,7 +269,7 @@ export function _diffAndMount ( newNode:VNode, oldNode:VNode, element?:Element, 
  * @param doMount Mount, or unmount.
  */
 export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
-	if ( (node._document as IVirtualDocument).isVirtual )
+	if ( !node || (node._document as IVirtualDocument).isVirtual )
 		return
 	if ( node.type === 7/*COMPONENTS*/ ) {
 		const { component } = node
@@ -398,31 +398,33 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 		// If using "i", it's faster to have a classic for ( instead of "for const of" )
 		for ( i = 0; i < totalNew; ++i ) {
 			const child = newChildren[ i ]
-			_registerKeyAndEnv( newParentNode, child )
-			// HYDRATION ONLY
-			// Text nodes are merged when rendering to string
-			// Ex : <div>Hello { name }</div> becomes <div>Hello Jean-Mi</div>
-			// Which collapse two nodes into one. We need to create new text nodes and
-			// inject them in between. DiffNode will set the correct value of the node later.
-			// NOTE : Here, DOM is mutated while hydrating, which can cause reflow / redraw
-			//			I don't know if we can improve this to avoid or delay those computations
-			let childElement:RenderDom
-			if ( element ) {
-				const currentIsText = ( child.type === 1/*TEXT*/ || child.type === 3/*STATE*/ )
-				if ( currentIsText && previousIsText ) {
-					// Create a zero width space otherwise the browser will collapse it again.
-					childElement = document.createTextNode('\u200B')
-					element.insertBefore( childElement, element.childNodes[i] )
+			if ( child ) {
+				_registerKeyAndEnv( newParentNode, child )
+				// HYDRATION ONLY
+				// Text nodes are merged when rendering to string
+				// Ex : <div>Hello { name }</div> becomes <div>Hello Jean-Mi</div>
+				// Which collapse two nodes into one. We need to create new text nodes and
+				// inject them in between. DiffNode will set the correct value of the node later.
+				// NOTE : Here, DOM is mutated while hydrating, which can cause reflow / redraw
+				//			I don't know if we can improve this to avoid or delay those computations
+				let childElement:RenderDom
+				if ( element ) {
+					const currentIsText = ( child.type === 1/*TEXT*/ || child.type === 3/*STATE*/ )
+					if ( currentIsText && previousIsText ) {
+						// Create a zero width space otherwise the browser will collapse it again.
+						childElement = document.createTextNode('\u200B')
+						element.insertBefore( childElement, element.childNodes[i] )
+					}
+					else {
+						childElement = element.childNodes[ i ] as RenderDom
+					}
+					previousIsText = currentIsText
 				}
-				else {
-					childElement = element.childNodes[ i ] as RenderDom
-				}
-				previousIsText = currentIsText
+				diffNode( child, null, childElement )
+				// Append child only on render mode, not in hydration mode
+				if ( !element && child.dom )
+					parentDom.appendChild( child.dom )
 			}
-			diffNode( child, null, childElement )
-			// Append child only on render mode, not in hydration mode
-			if ( !element && child.dom )
-				parentDom.appendChild( child.dom )
 		}
 		return
 	}

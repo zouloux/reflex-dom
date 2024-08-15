@@ -376,6 +376,7 @@ export interface HTMLAttributes
 	cite?: 					AttributeState<string>
 	class?: 				AttributeState<ClassName>
 	className?: 			AttributeState<ClassName>
+	inert?:		 			AttributeState<boolean>
 	cols?: 					AttributeState<number>
 	colSpan?: 				AttributeState<number>
 	content?: 				AttributeState<string>
