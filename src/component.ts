@@ -21,7 +21,7 @@ export interface ComponentInstance <GProps extends object = object> {
 	_render						:RenderFunction
 	//
 	_mountHandlers				:MountHandler[]
-	// _renderHandlers				:LifecycleHandler[]	// Called after each render
+	_renderHandlers				:LifecycleHandler[]	// Called after each render
 	_beforeNextRenderHandlers	:(() => any)[] 		// Called before next render only, then removed
 	_afterNextRenderHandlers	:(() => any)[] 		// Called after next render only, then removed
 	_unmountHandlers			:LifecycleHandler[]
@@ -55,9 +55,9 @@ export function unmounted ( handler:LifecycleHandler ) {
  * Handler is called just after component is rendered.
  * Can be asynchronous.
  */
-// export function rendered ( handler:LifecycleHandler ) {
-// 	getCurrentComponent()?._renderHandlers.push( handler )
-// }
+export function rendered ( handler:LifecycleHandler ) {
+	getCurrentComponent()?._renderHandlers.push( handler )
+}
 
 // ----------------------------------------------------------------------------- DEFAULT PROPS
 

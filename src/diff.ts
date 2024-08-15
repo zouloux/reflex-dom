@@ -434,8 +434,11 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 	// Optimisation : Maybe having a cond which check for all keys when we are looking for the first one
 	// to run this loop only when needed ( in keyed lists only )
 	// esbench : https://esbench.com/bench/652d43c97ff73700a4debaee todo : up to date ?
-	for ( i = 0; i < totalNew; ++i )
-		_registerKeyAndEnv( newParentNode, newChildren[i] )
+	for ( i = 0; i < totalNew; ++i ) {
+		const child = newChildren[i]
+		if ( child )
+			_registerKeyAndEnv( newParentNode, child )
+	}
 	// If using "i", it's faster to have a classic for ( instead of "for const of" )
 	const totalMax = Math.max( totalNew, totalOld )
 	let offset = 0
@@ -447,84 +450,88 @@ export function _diffChildren ( newParentNode:VNode, oldParentNode:VNode, elemen
 		if ( i < totalOld ) {
 			// Target old node and keep it for new node browsing
 			oldChildNode = oldChildren[ i ]
-			const oldChildNodeKey = oldChildNode.props?.key
-			// Keyed node
-			// check for null and undefined, but 0 and "" are valid keys
-			if ( oldChildNodeKey != null ) {
-				// Keyed node has been removed
-				if ( !newParentNode._keys.has(oldChildNodeKey) ) {
-					// console.log(i, "KEYED - DELETE")
-					--offset
+			if ( oldChildNode ) {
+				const oldChildNodeKey = oldChildNode.props?.key
+				// Keyed node
+				// check for null and undefined, but 0 and "" are valid keys
+				if ( oldChildNodeKey != null ) {
+					// Keyed node has been removed
+					if ( !newParentNode._keys.has(oldChildNodeKey) ) {
+						// console.log(i, "KEYED - DELETE")
+						--offset
+						deleteOldNode = true
+					}
+				}
+				// Keyless node
+				else if ( i >= totalNew ) {
+					// console.log(i, "KEYLESS - DELETE")
 					deleteOldNode = true
 				}
+				if ( deleteOldNode )
+					_removeNode( oldChildNode )
 			}
-			// Keyless node
-			else if ( i >= totalNew ) {
-				// console.log(i, "KEYLESS - DELETE")
-				deleteOldNode = true
-			}
-			if ( deleteOldNode )
-				_removeNode( oldChildNode )
 		}
 		// Browse new nodes
 		if ( i < totalNew ) {
 			const newChildNode:VNode = newChildren[ i ]
-			const newChildNodeKey = newChildNode.props?.key
-			let addNewNode = false
-			// Keyed node
-			// check for null and undefined, but 0 and "" are valid keys
-			if ( newChildNodeKey != null ) {
-				// Keyed node has been kept
-				if ( oldParentNode._keys.has(newChildNodeKey) ) {
-					// Get index position from old
-					const oldChildNodeFromKey = oldParentNode._keys.get( newChildNodeKey )
-					const index = oldChildren.indexOf( oldChildNodeFromKey )
-					diffNode( newChildNode, oldChildNodeFromKey )
-					// Keyed node has been moved
-					if ( i !== index + offset ) {
-						// console.log(i, "KEYED - MOVED", index, offset)
-						parentDom.insertBefore( newChildNode.dom, parentDom.children[ i + 1 ] )
+			if ( newChildNode ) {
+				const newChildNodeKey = newChildNode.props?.key
+				let addNewNode = false
+				// Keyed node
+				// check for null and undefined, but 0 and "" are valid keys
+				if ( newChildNodeKey != null ) {
+					// Keyed node has been kept
+					if ( oldParentNode._keys.has(newChildNodeKey) ) {
+						// Get index position from old
+						const oldChildNodeFromKey = oldParentNode._keys.get( newChildNodeKey )
+						const index = oldChildren.indexOf( oldChildNodeFromKey )
+						diffNode( newChildNode, oldChildNodeFromKey )
+						// Keyed node has been moved
+						if ( i !== index + offset ) {
+							// console.log(i, "KEYED - MOVED", index, offset)
+							parentDom.insertBefore( newChildNode.dom, parentDom.children[ i + 1 ] )
+						}
+						// Else keyed node didn't move, we replaced in place
+						// else console.log(i, "KEYED - UPDATE")
 					}
-					// Else keyed node didn't move, we replaced in place
-					// else console.log(i, "KEYED - UPDATE")
+					// Keyed node has been added
+					else {
+						// console.log(i, "KEYED - ADDED")
+						++offset
+						addNewNode = true
+					}
 				}
-				// Keyed node has been added
-				else {
-					// console.log(i, "KEYED - ADDED")
-					++offset
-					addNewNode = true
-				}
-			}
-			// Keyless, still in same stack
-			else if (
-				oldChildNode // Old child node from same index
-				&& oldChildNode.type === newChildNode.type
-				&& (
-					// If element tag name changes,
-					// Or if component function changes,
-					// Do not try to update in place, but replace whole node
-					(
-						newChildNode.type !== 6/*ELEMENTS*/
-						&& newChildNode.type !== 7/*COMPONENTS*/
+				// Keyless, still in same stack
+				else if (
+					oldChildNode // Old child node from same index
+					&& oldChildNode.type === newChildNode.type
+					&& (
+						// If element tag name changes,
+						// Or if component function changes,
+						// Do not try to update in place, but replace whole node
+						(
+							newChildNode.type !== 6/*ELEMENTS*/
+							&& newChildNode.type !== 7/*COMPONENTS*/
+						)
+						|| oldChildNode.value === newChildNode.value
 					)
-					|| oldChildNode.value === newChildNode.value
-				)
-			) {
-				// console.log(i, "KEYLESS - UPDATE")
-				diffNode( newChildNode, oldChildNode )
-			}
-			// Keyless, old stack overflowed, add new node
-			else {
-				addNewNode = true
-				if ( oldChildNode && !deleteOldNode ) {
-					// console.log(i, "KEYLESS - REPLACE", newChildNode, oldChildNode)
-					_removeNode( oldChildNode )
+				) {
+					// console.log(i, "KEYLESS - UPDATE")
+					diffNode( newChildNode, oldChildNode )
 				}
-				// else console.log(i, "KEYLESS - CREATE", oldChildNode)
-			}
-			if ( addNewNode ) {
-				diffNode( newChildNode )
-				parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
+				// Keyless, old stack overflowed, add new node
+				else {
+					addNewNode = true
+					if ( oldChildNode && !deleteOldNode ) {
+						// console.log(i, "KEYLESS - REPLACE", newChildNode, oldChildNode)
+						_removeNode( oldChildNode )
+					}
+					// else console.log(i, "KEYLESS - CREATE", oldChildNode)
+				}
+				if ( addNewNode ) {
+					diffNode( newChildNode )
+					parentDom.insertBefore( newChildNode.dom, parentDom.children[ i ] )
+				}
 			}
 		}
 	}
@@ -641,7 +648,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, element?:RenderDom, fo
 				_render: componentFunction as RenderFunction,
 				//
 				_mountHandlers: [],
-				// _renderHandlers: [],
+				_renderHandlers: [],
 				_beforeNextRenderHandlers: [],
 				_afterNextRenderHandlers: [],
 				_unmountHandlers: [],
@@ -700,7 +707,7 @@ export function diffNode ( newNode:VNode, oldNode?:VNode, element?:RenderDom, fo
 			componentInstance.children = renderResult
 			newNode.dom = renderResult.dom
 			// Call render handlers on factory and functional components
-			// _dispatch( componentInstance._renderHandlers )
+			_dispatch( componentInstance._renderHandlers )
 			_dispatch( componentInstance._afterNextRenderHandlers )
 			componentInstance._afterNextRenderHandlers = []
 		}
