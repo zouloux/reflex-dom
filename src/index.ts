@@ -11,7 +11,7 @@ export { recursivelyUpdateMountState, getCurrentComponent, diffNode, getCurrentD
 export { ref, refs } from "./ref"
 export { render, hydrate } from "./render"
 export { featureHook, createBatch } from "./common"
-export { mounted, unmounted, /*rendered,*/ defaultProps, shouldUpdate, shallowPropsCompare } from "./component"
+export { mounted, unmounted, rendered, defaultProps, shouldUpdate, shallowPropsCompare } from "./component"
 
 // Also export createElement for JSX pragma React
 export { h, h as createElement, hh } from "./jsx"
