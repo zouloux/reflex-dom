@@ -69,9 +69,11 @@ export function _setDomAttribute ( dom:Element, name:string, value:any ) {
 	// className as class for non jsx components
 	if ( name === "className" )
 		name = "class"
-	if ( value === null )
+	// false / null - remove attribute
+	if ( value === null || value === false )
 		dom.removeAttribute( name )
-	else if ( value === true )
+	// true / "" - set attribute without value
+	else if ( value === true || value === "" )
 		dom.setAttribute( name, "" )
 	// Manage style as object only
 	else if ( name == "style" && typeof value == "object" ) {
