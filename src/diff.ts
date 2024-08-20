@@ -275,6 +275,9 @@ export function recursivelyUpdateMountState ( node:VNode, doMount:boolean ) {
 		return
 	if ( node.type === 7/*COMPONENTS*/ ) {
 		const { component } = node
+		// fixme : can't be smaller ?
+		if ( !component )
+			return
 		// First, we recursively mount children before mounting the parent component
 		recursivelyUpdateMountState( component.children, doMount )
 		// --- MOUNT

@@ -116,6 +116,8 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 		_effects.add( _currentEffect )
 	// Update the state value and dispatch changes
 	async function updateValue ( newValue:GType, forceUpdate = false ) {
+		if ( !_effects )
+			return
 		// FIXME : Throw error in dev mode
 		// Halt update if not forced and if new value is same as previous
 		if ( newValue === initialValue && !forceUpdate )
@@ -147,9 +149,10 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 		await Promise.all( _promises )
 		// Call all associated "changed()" handlers ( effects associated to a component render )
 		// Do not attach effects ( false by default as second argument of _callEffect as task of _invalidateEffect )
-		for ( const effect of _effects )
-			if ( effect._dom )
-				_invalidateEffect( effect )
+		if ( _effects )
+			for ( const effect of _effects )
+				if ( effect._dom )
+					_invalidateEffect( effect )
 	}
 
 	// if this state is created into a factory phase of a component,
