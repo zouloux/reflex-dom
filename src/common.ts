@@ -153,6 +153,7 @@ export interface DefaultReflexBaseProps {
 	key				?:number|string
 	ref				?:IRefOrRefs
 	innerHTML		?:string
+	innerText		?:string
 }
 
 export interface DefaultReflexProps extends DefaultReflexBaseProps {

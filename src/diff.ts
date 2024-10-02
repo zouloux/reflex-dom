@@ -180,7 +180,7 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom 
 				&& !( name in newNode.props && newNode.props[name] === oldNode.props[name] )
 			) {
 				// Insert HTML directly without warning
-				if ( name == "innerHTML" )
+				if ( name == "innerHTML" || name == "innerText" )
 					(dom as Element).innerHTML = "" // FIXME : Maybe use delete or null ?
 				// Events starts with "on". On preact this is optimized with [0] == "o"
 				// But recent benchmarks are pointing to startsWith usage as faster
@@ -219,6 +219,8 @@ export function _diffElement ( newNode:VNode, oldNode:VNode, element?:RenderDom 
 			// Insert HTML directly without warning
 			if ( name === "innerHTML" )
 				(dom as Element).innerHTML = propValue
+			else if ( name === "innerText" )
+				(dom as HTMLElement).innerText = propValue
 			// Events starts with "on". On preact this is optimized with [0] == "o"
 			// But recent benchmarks are pointing to startsWith usage as faster
 			else if ( name.startsWith("on") ) {
