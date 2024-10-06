@@ -26,6 +26,7 @@ export type IState<GType = any> = IAtom <GType> & {
 	peek ():GType
 	sneak (value:GType):void
 	// valueOf ():GType
+	register ():void
 	dispose ():void
 }
 
@@ -171,31 +172,35 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 		}
 	})
 
+	function register () {
+		// Get current node and component
+		const currentNode = getCurrentDiffingNode()
+		const currentComponent = getCurrentComponent()
+		// Register current before effect handler
+		if ( _currentEffect ) {
+			_effects.add( _currentEffect )
+			_currentStates.add( this )
+		}
+		// Register current text node
+		else if (
+			currentNode
+			&& (currentNode.type === 3/*TEXT*/ || currentNode.type === 2 /*ARGUMENT*/)
+			&& currentNode.value === this // <- FIXME Explain
+		) {
+			// Save component to current text node to optimize later
+			currentNode.component = currentComponent
+			_nodes.add( currentNode )
+		}
+		// Register current component
+		else if ( currentComponent )
+			_components.add( currentComponent )
+	}
+
 	const _localState:IState<GType> = {
 		// --- PUBLIC API ---
 		// Get current value and register effects
 		get value () {
-			// Get current node and component
-			const currentNode = getCurrentDiffingNode()
-			const currentComponent = getCurrentComponent()
-			// Register current before effect handler
-			if ( _currentEffect ) {
-				_effects.add( _currentEffect )
-				_currentStates.add( this )
-			}
-			// Register current text node
-			else if (
-				currentNode
-				&& (currentNode.type === 3/*TEXT*/ || currentNode.type === 2 /*ARGUMENT*/)
-				&& currentNode.value === this // <- FIXME Explain
-			) {
-				// Save component to current text node to optimize later
-				currentNode.component = currentComponent
-				_nodes.add( currentNode )
-			}
-			// Register current component
-			else if ( currentComponent )
-				_components.add( currentComponent )
+			register()
 			return initialValue as GType
 		},
 		// Set value with .value and update dependencies
@@ -208,6 +213,7 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 		peek () { return initialValue as GType },
 		// Set value without calling effects
 		sneak ( value:GType ) { initialValue = value },
+		register,
 		// Get type of this object
 		get type () { return 3/*STATE*/ as VNodeTypes },
 		// Use state as a getter without .value
