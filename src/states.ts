@@ -179,13 +179,13 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 		// Register current before effect handler
 		if ( _currentEffect ) {
 			_effects.add( _currentEffect )
-			_currentStates.add( this )
+			_currentStates.add( _localState )
 		}
 		// Register current text node
 		else if (
 			currentNode
 			&& (currentNode.type === 3/*TEXT*/ || currentNode.type === 2 /*ARGUMENT*/)
-			&& currentNode.value === this // <- FIXME Explain
+			&& currentNode.value === _localState // <- FIXME Explain
 		) {
 			// Save component to current text node to optimize later
 			currentNode.component = currentComponent
@@ -217,7 +217,7 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 		// Get type of this object
 		get type () { return 3/*STATE*/ as VNodeTypes },
 		// Use state as a getter without .value
-		toString () { return this.value + '' },
+		toString () { return _localState.value + '' },
 		// valueOf () { return this.value },
 		// Remove and clean this state
 		dispose,
