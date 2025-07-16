@@ -564,28 +564,32 @@ function _renderComponentNode <GReturn = ComponentReturn> ( node:VNode ) :GRetur
 	// - is an arrow function ( () => {} ), defaults to false
 	// @ts-ignore
 	value.isFactory ??= !!value.prototype
+	// Set props  so it's :
+	// - always the proxy on factory component functions
+	// - always the real object on render function or non factory components
+	let props = node.props
 	// Create proxy for factory components
 	if ( value.isFactory && !_currentComponent._proxy ) {
 		// Create prop states to track dependencies
-		const s = state( node.props )
+		const s = state( props )
 		_currentComponent._propState = s
 		// Create proxy and map getter to the state to track effects
-		// FIXME : Proxy is not browsable :(
-		// TODO : Optimize this
-		// const proxy = Proxy.revocable( node.props, { // todo : to test ?
-		const proxy = Proxy.revocable( {}, {
+		// TODO : Optimize this ?
+		const p = Proxy.revocable( props, {
 			get : ( _, prop ) => Reflect.get( s.value, prop )
 		})
+		const { proxy, revoke } = p
 		// Associate proxy to component and dispose proxy on component unmount
-		_currentComponent._proxy = proxy.proxy
-		_currentComponent._unmountHandlers.push( proxy.revoke )
+		_currentComponent._proxy = proxy
+		_currentComponent._unmountHandlers.push( revoke ) // fixme does it work ?
+		props = proxy
 	}
 	// todo
 	_dispatch( _currentComponent._beforeNextRenderHandlers )
 	_currentComponent._beforeNextRenderHandlers = []
 	// Render component with props instance and component API instance
 	return _currentComponent._render.apply(
-		_currentComponent, [ _currentComponent._proxy ?? node.props, _currentComponent ]
+		_currentComponent, [ props, _currentComponent ]
 	)
 }
 

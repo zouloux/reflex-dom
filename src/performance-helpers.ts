@@ -15,18 +15,23 @@ export type IForProps<GItem = any, GAs extends keyof ReflexIntrinsicElements = k
 /**
  * This component can be attached to an array or a state with array as value to improve performances on changes.
  * This will add a dom element. Default is "div", can be changed with <For as="ul"> for example.
- * @param props
+ * For will prevent rendering outside the loop and optimize list diffing.
+ * @param props All other props are passed to container.
  * @constructor
  */
 export function For ( props:IForProps ) {
 	const _eachState = compute( () =>
 		Array.isArray( props.each ) ? props.each : ( props.each as IState ).value
 	)
-	return () => {
+	return (props) => {
+		// Copy props object to remove the "as"
+		const cleanProps = { ...props }
+		delete cleanProps.as
+		// Set children from state
 		const children = _eachState.value.map( props.children[0] )
-		return hh(6, props.as ?? "div", {
-			children: [ hh(8, null, { children }) ]
-		})
+		cleanProps.children = [ hh(8, null, { children }) ]
+		// 
+		return hh(6, props.as ?? "div", cleanProps)
 	}
 }
 
@@ -80,11 +85,13 @@ export const advancedPropsCompare = ( a:object, b:object ) => (
 // ----------------------------------------------------------------------------- ATOMS
 
 // todo : doc
-
+// TLDR : A very small state with no effects and compute compatibility.
+// 				It can be tied to only 1 dom node
+// 				Use atom.value = ... to change value on node
 export function atom <GType> ( value:GType ):IAtom<GType> {
 	let _trackedNode:VNode
 	return {
-		type: 3,
+		type: 3/*VALUE STATE*/,
 		toString () { return this.value + '' },
 		get value () {
 			const node = getCurrentDiffingNode()
@@ -100,10 +107,14 @@ export function atom <GType> ( value:GType ):IAtom<GType> {
 	}
 }
 
+// todo : doc
+// TLDR : A very small state with no effects and compute compatibility.
+// 				It can be tied to multiple dom nodes
+// 				Use atom.value = ... to change value and all nodes
 export function atoms <GType> ( value:GType ):IAtom<GType> {
 	const _trackedNodes = new Set<VNode>()
 	return {
-		type: 3,
+		type: 3/*VALUE STATE*/,
 		toString () { return this.value + '' },
 		get value () {
 			const node = getCurrentDiffingNode()
@@ -124,11 +135,12 @@ export function particle <GType> ( getter:() => GType ):IAtom<GType> {
 	let _value:GType
 	let _disposeEffect:() => void
 	let _trackedNode:VNode
-	const component = getCurrentComponent()
-	if ( component )
-		component._beforeNextRenderHandlers.push( () => _disposeEffect?.() )
+	// const component = getCurrentComponent()
+	// if ( component )
+	// 	component._beforeNextRenderHandlers.push( () => _disposeEffect?.() )
+	getCurrentComponent()?._beforeNextRenderHandlers.push( () => _disposeEffect?.() )
 	return {
-		type: 3,
+		type: 3/*VALUE STATE*/,
 		toString () { return this.value + '' },
 		get value ():GType {
 			let newValue:GType
