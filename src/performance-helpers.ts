@@ -8,8 +8,8 @@ import { hh } from "./jsx";
 
 export type IForProps<GItem = any, GAs extends keyof ReflexIntrinsicElements = keyof ReflexIntrinsicElements> = {
 	each: IState<GItem[]> | GItem[];
-	children?: (item: GItem) => VNode;
 	as?: GAs;
+	children?: (item: GItem) => VNode;
 } & ReflexIntrinsicElements[GAs];
 
 /**
@@ -24,9 +24,11 @@ export function For ( props:IForProps ) {
 		Array.isArray( props.each ) ? props.each : ( props.each as IState ).value
 	)
 	return (props) => {
-		// Copy props object to remove the "as"
+		// Clone props object to remove the "as" and "each" props,
+		// without mutating the original props object
 		const cleanProps = { ...props }
 		delete cleanProps.as
+		delete cleanProps.each
 		// Set children from state
 		const children = _eachState.value.map( props.children[0] )
 		cleanProps.children = [ hh(8, null, { children }) ]
