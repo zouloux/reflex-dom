@@ -30,7 +30,7 @@ export function For ( props:IForProps ) {
 		// Set children from state
 		const children = _eachState.value.map( props.children[0] )
 		cleanProps.children = [ hh(8, null, { children }) ]
-		// 
+		//
 		return hh(6, props.as ?? "div", cleanProps)
 	}
 }
