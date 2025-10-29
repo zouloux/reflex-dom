@@ -25,6 +25,7 @@ export type IState<GType = any> = IAtom <GType> & {
 	set ( newValue:TInitialValue<GType> ):Promise<void>
 	peek ():GType
 	sneak (value:GType):void
+	update ():void
 	// valueOf ():GType
 	register ():void
 	dispose ():void
@@ -209,6 +210,8 @@ export function state <GType> ( initialValue?:TInitialValue<GType> ):IState<GTyp
 		// Asynchronous function
 		set: ( newValue:TInitialValue<GType>, forceUpdate = false ) =>
 			updateValue( _prepareInitialValue( newValue, initialValue as GType ), forceUpdate ),
+		// Update manually ( force by default )
+		update: (forceUpdate = true) => updateValue(initialValue as GType, forceUpdate),
 		// Get value without registering effects
 		peek () { return initialValue as GType },
 		// Set value without calling effects
