@@ -53,7 +53,7 @@ export type TComputed <GType> = () => GType
 type TEffect<GCheck extends any[] = any[]> = {
 	_check		:TCheckEffect<GCheck>|null
 	_handler	:TEffectHandler<GCheck>
-	_dom		:boolean
+	_dom			:boolean
 	_values		:GCheck
 	_dispose	:TDisposeHandler
 }
